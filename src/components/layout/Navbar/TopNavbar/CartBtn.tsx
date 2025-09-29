@@ -1,5 +1,3 @@
-"use client";
-
 import { useAppSelector } from "@/lib/hooks/redux";
 import { RootState } from "@/lib/store";
 import { Link } from "react-router-dom";

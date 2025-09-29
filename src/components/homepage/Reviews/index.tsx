@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 import * as motion from "framer-motion/client";
 import { cn } from "@/lib/utils";

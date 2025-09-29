@@ -8,16 +8,9 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import ProductCard from "./ProductCard";
-import { Product } from "@/types/product.types";
 import { Link } from "react-router-dom";
 
-type ProductListSecProps = {
-  title: string;
-  data: Product[];
-  viewAllLink?: string;
-};
-
-const ProductListSec = ({ title, data, viewAllLink }: ProductListSecProps) => {
+const ProductListSec = ({ title, data, viewAllLink }) => {
   return (
     <section className="max-w-frame mx-auto text-center">
       <motion.h2
