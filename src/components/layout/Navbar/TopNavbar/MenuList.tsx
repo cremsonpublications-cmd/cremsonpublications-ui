@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 
 import { cn } from "@/lib/utils";
 import {
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuTrigger,
@@ -21,15 +20,6 @@ export function MenuList({ data, label }: MenuListProps) {
       <NavigationMenuTrigger className="font-normal px-3">
         {label}
       </NavigationMenuTrigger>
-      <NavigationMenuContent>
-        <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] ">
-          {data.map((item) => (
-            <ListItem key={item.id} title={item.label} href={item.url ?? "/"}>
-              {item.description ?? ""}
-            </ListItem>
-          ))}
-        </ul>
-      </NavigationMenuContent>
     </NavigationMenuItem>
   );
 }

@@ -1,30 +1,37 @@
 import React from "react";
 import CategoriesSection from "@/components/shop-page/filters/CategoriesSection";
-import ColorsSection from "@/components/shop-page/filters/ColorsSection";
-import DressStyleSection from "@/components/shop-page/filters/DressStyleSection";
+import AuthorSection from "@/components/shop-page/filters/AuthorSection";
+import ClassesSection from "@/components/shop-page/filters/ClassesSection";
 import PriceSection from "@/components/shop-page/filters/PriceSection";
-import SizeSection from "@/components/shop-page/filters/SizeSection";
+import StatusSection from "@/components/shop-page/filters/StatusSection";
 import { Button } from "@/components/ui/button";
+import { useFilters } from "../../../context/FilterContext";
 
 const Filters = () => {
+  const { clearFilters, hasActiveFilters } = useFilters();
+
   return (
     <>
       <hr className="border-t-black/10" />
       <CategoriesSection />
       <hr className="border-t-black/10" />
+      <AuthorSection />
+      <hr className="border-t-black/10" />
       <PriceSection />
       <hr className="border-t-black/10" />
-      <ColorsSection />
+      <ClassesSection />
       <hr className="border-t-black/10" />
-      <SizeSection />
-      <hr className="border-t-black/10" />
-      <DressStyleSection />
-      <Button
-        type="button"
-        className="bg-black w-full rounded-full text-sm font-medium py-4 h-12"
-      >
-        Apply Filter
-      </Button>
+      <StatusSection />
+      {hasActiveFilters && (
+        <Button
+          type="button"
+          onClick={clearFilters}
+          variant="outline"
+          className="w-full rounded-full text-sm font-medium py-4 h-12 mb-3"
+        >
+          Clear All Filters
+        </Button>
+      )}
     </>
   );
 };

@@ -1,29 +1,101 @@
 import React from "react";
 import Rating from "../ui/Rating";
 import { Link } from "react-router-dom";
+import { Heart, Plus, Minus } from "lucide-react";
 import { Product } from "@/types/product.types";
+import { useWishlist } from "../../context/WishlistContext";
+import { useCart } from "../../context/CartContext";
 
 type ProductCardProps = {
   data: Product;
 };
 
 const ProductCard = ({ data }: ProductCardProps) => {
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const { addToCart, getItemQuantity, incrementQuantity, decrementQuantity } = useCart();
+
+  const cartQuantity = getItemQuantity(data.id);
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(data);
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(data, 1);
+  };
+
+  const handleIncrement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    incrementQuantity(data.id);
+  };
+
+  const handleDecrement = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    decrementQuantity(data.id);
+  };
+
+  // Calculate discount percentage if old_price exists
+  const discountPercentage = data.old_price ?
+    Math.round(((data.old_price - data.price) / data.old_price) * 100) : 0;
+
+  const isOutOfStock = data.status === "Out of Stock";
+
   return (
     <Link
       to={`/shop/product/${data.id}`}
       className="flex flex-col items-start aspect-auto"
     >
-      <div className="bg-[#F0EEED] rounded-[13px] lg:rounded-[20px] w-full lg:max-w-[295px] aspect-square mb-2.5 xl:mb-4 overflow-hidden">
+      <div className="bg-[#F0EEED] rounded-[13px] lg:rounded-[20px] w-full lg:max-w-[295px] aspect-square mb-2.5 xl:mb-4 overflow-hidden relative p-4">
         <img
-          src={data.srcUrl}
-          className="rounded-md w-full h-full object-contain hover:scale-110 transition-all duration-500"
-          alt={data.title}
+          src={data.main_image}
+          className="w-full h-full object-contain hover:scale-105 transition-all duration-500"
+          alt={data.name}
         />
+
+        {/* Top-left badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {/* Show SOLD OUT if out of stock, otherwise show discount badges */}
+          {isOutOfStock ? (
+            <span className="bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded shadow-md">
+              SOLD OUT
+            </span>
+          ) : (
+            <>
+              {/* Discount badge - only show if not sold out and has discount */}
+              {discountPercentage > 0 && (
+                <span className="bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded shadow-md">
+                  -{discountPercentage}%
+                </span>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Wishlist button - top right */}
+        <button
+          onClick={handleWishlistClick}
+          className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200"
+        >
+          <Heart
+            size={18}
+            className={`transition-all duration-200 ${
+              isInWishlist(data.id)
+                ? "text-red-500 fill-red-500"
+                : "text-gray-600 hover:text-red-500"
+            }`}
+          />
+        </button>
       </div>
-      <strong className="text-black xl:text-xl">{data.title}</strong>
+      <strong className="text-black xl:text-xl">{data.name}</strong>
       <div className="flex items-end mb-1 xl:mb-2">
         <Rating
-          initialValue={data.rating}
+          initialValue={data.rating && data.rating > 0 ? data.rating : 4.5}
           allowFraction
           SVGclassName="inline-block"
           emptyClassName="fill-gray-50"
@@ -31,47 +103,49 @@ const ProductCard = ({ data }: ProductCardProps) => {
           readonly
         />
         <span className="text-black text-xs xl:text-sm ml-[11px] xl:ml-[13px] pb-0.5 xl:pb-0">
-          {data.rating.toFixed(1)}
+          {data.rating && data.rating > 0 ? data.rating.toFixed(1) : '4.5'}
           <span className="text-black/60">/5</span>
         </span>
       </div>
-      <div className="flex items-center space-x-[5px] xl:space-x-2.5">
-        {data.discount.percentage > 0 ? (
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center space-x-[5px] xl:space-x-2.5">
           <span className="font-bold text-black text-xl xl:text-2xl">
-            {`$${Math.round(
-              data.price - (data.price * data.discount.percentage) / 100
-            )}`}
+            ₹{data.price}
           </span>
-        ) : data.discount.amount > 0 ? (
-          <span className="font-bold text-black text-xl xl:text-2xl">
-            {`$${data.price - data.discount.amount}`}
-          </span>
-        ) : (
-          <span className="font-bold text-black text-xl xl:text-2xl">
-            ${data.price}
-          </span>
-        )}
-        {data.discount.percentage > 0 && (
-          <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-            ${data.price}
-          </span>
-        )}
-        {data.discount.amount > 0 && (
-          <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-            ${data.price}
-          </span>
-        )}
-        {data.discount.percentage > 0 ? (
-          <span className="font-medium text-[10px] xl:text-xs py-1.5 px-3.5 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
-            {`-${data.discount.percentage}%`}
-          </span>
-        ) : (
-          data.discount.amount > 0 && (
-            <span className="font-medium text-[10px] xl:text-xs py-1.5 px-3.5 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
-              {`-$${data.discount.amount}`}
+          {data.old_price && (
+            <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
+              ₹{data.old_price}
             </span>
-          )
-        )}
+          )}
+        </div>
+
+        {/* Add to Cart Button - inline with price */}
+        <div className="flex justify-end">
+          {cartQuantity === 0 ? (
+            <button
+              onClick={handleAddToCart}
+              className="h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 rounded-full transition-all duration-200 text-sm whitespace-nowrap"
+            >
+              Add to Cart
+            </button>
+          ) : (
+            <div className="flex items-center justify-between bg-orange-500 text-white rounded-full px-3 h-10 min-w-[100px]">
+              <button
+                onClick={handleDecrement}
+                className="hover:bg-orange-600 rounded-full p-1 transition-all duration-200"
+              >
+                <Minus size={12} />
+              </button>
+              <span className="text-sm font-semibold">{cartQuantity}</span>
+              <button
+                onClick={handleIncrement}
+                className="hover:bg-orange-600 rounded-full p-1 transition-all duration-200"
+              >
+                <Plus size={12} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </Link>
   );

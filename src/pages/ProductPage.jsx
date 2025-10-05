@@ -3,6 +3,8 @@ import ProductListSec from "../components/common/ProductListSec";
 import BreadcrumbProduct from "../components/product-page/BreadcrumbProduct";
 import Header from "../components/product-page/Header";
 import Tabs from "../components/product-page/Tabs";
+import { useProducts } from "../context/ProductContext";
+import ProductPageSkeleton from "../components/product-page/ProductPageSkeleton";
 
 const newArrivalsData = [
   {
@@ -121,35 +123,56 @@ const relatedProductData = [
   },
 ];
 
-const data = [
-  ...newArrivalsData,
-  ...topSellingData,
-  ...relatedProductData,
-];
+const data = [...newArrivalsData, ...topSellingData, ...relatedProductData];
 
 export default function ProductPage() {
   const { id } = useParams();
+  const { products, loading, error, getProductById } = useProducts();
 
-  const productData = data.find(
-    (product) => product.id === Number(id)
-  );
+  if (loading) {
+    return <ProductPageSkeleton />;
+  }
 
-  if (!productData?.title) {
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-lg text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
+
+  // Find product from Supabase data
+  const productData = products.find((product) => product.id === Number(id));
+
+  if (!productData?.name) {
     return <Navigate to="/shop" replace />;
   }
+
+  // Get related products from same category
+  const relatedProducts = products
+    .filter(
+      (product) =>
+        product.category_id === productData.category_id &&
+        product.id !== productData.id
+    )
+    .slice(0, 4);
 
   return (
     <main>
       <div className="max-w-frame mx-auto px-4 xl:px-0">
         <hr className="h-[1px] border-t-black/10 mb-5 sm:mb-6" />
-        <BreadcrumbProduct title={productData?.title ?? "product"} />
+        <BreadcrumbProduct title={productData?.name ?? "product"} />
         <section className="mb-11">
           <Header data={productData} />
         </section>
-        <Tabs />
       </div>
       <div className="mb-[50px] sm:mb-20">
-        <ProductListSec title="You might also like" data={relatedProductData} />
+        <ProductListSec
+          title="You might also like"
+          data={
+            relatedProducts.length > 0 ? relatedProducts : products.slice(0, 4)
+          }
+        />
       </div>
     </main>
   );

@@ -53,7 +53,7 @@ const Reviews = ({ data }: ReviewsProps) => {
             align: "center",
             loop: true,
           }}
-          className="relative w-full mb-6 md:mb-9"
+          className="relative w-full mt-[100px] mb-6 md:mb-9"
         >
           <div className="relative flex items-end sm:items-center max-w-frame mx-auto mb-6 md:mb-10 px-4 xl:px-0">
             <motion.h2

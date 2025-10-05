@@ -17,7 +17,7 @@ const ProductListSec = ({ title, data, viewAllLink }) => {
         initial={{ y: "100px", opacity: 0 }}
         whileInView={{ y: "0", opacity: 1 }}
         viewport={{ once: true }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.1 }}
         className={cn([
           integralCF.className,
           "text-[32px] md:text-5xl mb-8 md:mb-14 capitalize",

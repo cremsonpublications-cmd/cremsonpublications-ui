@@ -1,110 +1,68 @@
 import React from "react";
 import { FooterLinks } from "./footer.types";
 import { Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
 
 const footerLinksData: FooterLinks[] = [
   {
     id: 1,
-    title: "company",
+    title: "shop",
     children: [
       {
         id: 11,
-        label: "about",
-        url: "#",
+        label: "all books",
+        url: "/shop",
       },
       {
         id: 12,
-        label: "features",
-        url: "#",
+        label: "wishlist",
+        url: "/wishlist",
       },
       {
         id: 13,
-        label: "works",
-        url: "#",
-      },
-      {
-        id: 14,
-        label: "career",
-        url: "#",
+        label: "cart",
+        url: "/cart",
       },
     ],
   },
   {
     id: 2,
-    title: "help",
+    title: "categories",
     children: [
       {
         id: 21,
-        label: "customer support",
-        url: "#",
+        label: "science",
+        url: "/shop?category=science",
       },
       {
         id: 22,
-        label: "delivery details",
-        url: "#",
+        label: "mathematics",
+        url: "/shop?category=mathematics",
       },
       {
         id: 23,
-        label: "terms & conditions",
-        url: "#",
+        label: "english",
+        url: "/shop?category=english",
       },
       {
         id: 24,
-        label: "privacy policy",
-        url: "#",
+        label: "sociology",
+        url: "/shop?category=sociology",
       },
     ],
   },
   {
     id: 3,
-    title: "faq",
+    title: "company",
     children: [
       {
         id: 31,
-        label: "account",
-        url: "#",
+        label: "about us",
+        url: "/about-us",
       },
       {
         id: 32,
-        label: "manage deliveries",
-        url: "#",
-      },
-      {
-        id: 33,
-        label: "orders",
-        url: "#",
-      },
-      {
-        id: 34,
-        label: "payments",
-        url: "#",
-      },
-    ],
-  },
-  {
-    id: 4,
-    title: "resources",
-    children: [
-      {
-        id: 41,
-        label: "Free eBooks",
-        url: "#",
-      },
-      {
-        id: 42,
-        label: "development tutorial",
-        url: "#",
-      },
-      {
-        id: 43,
-        label: "How to - Blog",
-        url: "#",
-      },
-      {
-        id: 44,
-        label: "youtube playlist",
-        url: "#",
+        label: "contact us",
+        url: "/contact-us",
       },
     ],
   },
@@ -122,10 +80,7 @@ const LinksSection = () => {
             <Link
               to={link.url}
               key={link.id}
-              className={cn([
-                link.id !== 41 && link.id !== 43 && "capitalize",
-                "text-black/60 text-sm md:text-base mb-4 w-fit",
-              ])}
+              className="text-black/60 text-sm md:text-base mb-4 w-fit capitalize hover:text-black transition-colors"
             >
               {link.label}
             </Link>

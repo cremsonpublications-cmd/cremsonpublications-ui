@@ -1,0 +1,375 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getUserOrders, getAllOrders } from '../services/orderService';
+import {
+  Package,
+  Truck,
+  CheckCircle,
+  Clock,
+  Calendar,
+  MapPin,
+  CreditCard,
+  Eye,
+  ShoppingBag
+} from 'lucide-react';
+
+const MyOrdersPage = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [user]);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (user?.email) {
+        // Fetch orders for logged-in user by email
+        const result = await getUserOrders(user.email);
+
+        if (result.success) {
+          setOrders(result.orders);
+        } else {
+          setError(result.error);
+        }
+      } else {
+        // No logged-in user, show empty state
+        setOrders([]);
+      }
+    } catch (err) {
+      setError('Failed to fetch orders');
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmed':
+        return 'text-green-600 bg-green-100';
+      case 'processing':
+        return 'text-blue-600 bg-blue-100';
+      case 'shipped':
+        return 'text-purple-600 bg-purple-100';
+      case 'delivered':
+        return 'text-green-700 bg-green-200';
+      case 'cancelled':
+        return 'text-red-600 bg-red-100';
+      default:
+        return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'confirmed':
+        return <CheckCircle size={16} />;
+      case 'processing':
+        return <Clock size={16} />;
+      case 'shipped':
+        return <Truck size={16} />;
+      case 'delivered':
+        return <Package size={16} />;
+      default:
+        return <Package size={16} />;
+    }
+  };
+
+  const OrderCard = ({ order }) => (
+    <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Package className="w-5 h-5 text-gray-400" />
+          <div>
+            <h3 className="font-semibold text-gray-900">Order #{order.order_id}</h3>
+            <p className="text-sm text-gray-600 flex items-center gap-1">
+              <Calendar size={14} />
+              {new Date(order.order_date).toLocaleDateString()}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(order.order_status)}`}>
+            {getStatusIcon(order.order_status)}
+            {order.order_status}
+          </span>
+          <button
+            onClick={() => setSelectedOrder(order)}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+          >
+            <Eye size={14} />
+            View Details
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div>
+          <p className="text-sm text-gray-600">Items</p>
+          <p className="font-semibold">{order.items?.length || 0} items</p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-600">Total Amount</p>
+          <p className="font-semibold">₹{order.order_summary?.grandTotal?.toFixed(2) || '0.00'}</p>
+        </div>
+        <div>
+          <p className="text-sm text-gray-600">Expected Delivery</p>
+          <p className="font-semibold">
+            {order.delivery?.expectedDate ? new Date(order.delivery.expectedDate).toLocaleDateString() : 'TBD'}
+          </p>
+        </div>
+      </div>
+
+      {order.items && order.items.length > 0 && (
+        <div className="border-t border-gray-200 pt-4">
+          <p className="text-sm text-gray-600 mb-2">Items in this order:</p>
+          <div className="space-y-2">
+            {order.items.slice(0, 2).map((item, index) => (
+              <div key={index} className="flex items-center justify-between text-sm">
+                <span className="text-gray-900">{item.name}</span>
+                <span className="text-gray-600">Qty: {item.quantity}</span>
+              </div>
+            ))}
+            {order.items.length > 2 && (
+              <p className="text-sm text-gray-500">+ {order.items.length - 2} more items</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const OrderDetailsModal = ({ order, onClose }) => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Order Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Package size={18} />
+                  Order Information
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <p><span className="text-gray-600">Order ID:</span> {order.order_id}</p>
+                  <p><span className="text-gray-600">Date:</span> {new Date(order.order_date).toLocaleDateString()}</p>
+                  <p className="flex items-center gap-2">
+                    <span className="text-gray-600">Status:</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(order.order_status)}`}>
+                      {getStatusIcon(order.order_status)}
+                      {order.order_status}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <MapPin size={18} />
+                  Shipping Address
+                </h3>
+                <div className="text-sm text-gray-700">
+                  <p>{order.user_info?.address?.street}</p>
+                  {order.user_info?.address?.apartment && <p>{order.user_info.address.apartment}</p>}
+                  <p>{order.user_info?.address?.city} {order.user_info?.address?.pincode}</p>
+                  <p>{order.user_info?.address?.state}, {order.user_info?.address?.country}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <CreditCard size={18} />
+                  Payment Information
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <p><span className="text-gray-600">Method:</span> {order.payment?.method || 'N/A'}</p>
+                  <p><span className="text-gray-600">Status:</span> {order.payment?.status || 'N/A'}</p>
+                  <p><span className="text-gray-600">Transaction ID:</span> {order.payment?.transactionId || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Truck size={18} />
+                  Delivery Information
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <p><span className="text-gray-600">Method:</span> {order.delivery?.deliveryType || 'Standard'}</p>
+                  <p><span className="text-gray-600">Expected Date:</span> {order.delivery?.expectedDate ? new Date(order.delivery.expectedDate).toLocaleDateString() : 'TBD'}</p>
+                  {order.delivery?.trackingId && (
+                    <p><span className="text-gray-600">Tracking ID:</span> {order.delivery.trackingId}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Items */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <ShoppingBag size={18} />
+              Order Items
+            </h3>
+            <div className="space-y-3">
+              {order.items?.map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900">{item.name}</h4>
+                    <p className="text-sm text-gray-600">by {item.author || 'Unknown Author'}</p>
+                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium text-gray-900">₹{item.totalPrice?.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600">₹{item.currentPrice?.toFixed(2)} each</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Order Summary */}
+          <div className="border-t border-gray-200 pt-4">
+            <h3 className="font-semibold text-gray-900 mb-4">Order Summary</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal:</span>
+                <span>₹{order.order_summary?.subTotal?.toFixed(2) || '0.00'}</span>
+              </div>
+              {order.order_summary?.discountTotal > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount:</span>
+                  <span>-₹{order.order_summary.discountTotal.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-gray-600">Delivery:</span>
+                <span>{order.order_summary?.deliveryCharge === 0 ? 'FREE' : `₹${order.order_summary?.deliveryCharge?.toFixed(2)}`}</span>
+              </div>
+              <div className="flex justify-between font-semibold text-lg border-t border-gray-200 pt-2">
+                <span>Total:</span>
+                <span>₹{order.order_summary?.grandTotal?.toFixed(2) || '0.00'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div className="max-w-frame mx-auto px-4 py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading your orders...</h2>
+          <p className="text-gray-600">Please wait while we fetch your order history.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-frame mx-auto px-4 py-8">
+        <div className="text-center">
+          <Package size={64} className="mx-auto text-gray-400 mb-4" />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Error loading orders</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchOrders}
+            className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user is not signed in
+  if (!user?.email) {
+    return (
+      <div className="max-w-frame mx-auto px-4 py-8">
+        <div className="text-center">
+          <ShoppingBag size={64} className="mx-auto text-gray-400 mb-4" />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Sign in required</h2>
+          <p className="text-gray-600 mb-4">Please sign in to view your orders.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors"
+          >
+            Go to Homepage
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (orders.length === 0 && !loading) {
+    return (
+      <div className="max-w-frame mx-auto px-4 py-8">
+        <div className="text-center">
+          <ShoppingBag size={64} className="mx-auto text-gray-400 mb-4" />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">No orders found</h2>
+          <p className="text-gray-600 mb-4">You haven't placed any orders yet.</p>
+          <button
+            onClick={() => navigate('/shop')}
+            className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors"
+          >
+            Start Shopping
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-frame mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">My Orders</h1>
+        <p className="text-gray-600">
+          Track and manage your orders for {user?.email}
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {orders.map((order) => (
+          <OrderCard key={order.id} order={order} />
+        ))}
+      </div>
+
+      {selectedOrder && (
+        <OrderDetailsModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default MyOrdersPage;

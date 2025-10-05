@@ -1,22 +1,20 @@
 import React from "react";
 import { PiTrashFill } from "react-icons/pi";
 import { Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import CartCounter from "@/components/ui/CartCounter";
 import { Button } from "../ui/button";
-import {
-  addToCart,
-  CartItem,
-  remove,
-  removeCartItem,
-} from "@/lib/features/carts/cartsSlice";
+import { Plus, Minus } from "lucide-react";
+import { useCart } from "../../context/CartContext";
 
 type ProductCardProps = {
-  data: CartItem;
+  data: any; // Cart item with quantity
 };
 
 const ProductCard = ({ data }: ProductCardProps) => {
-  const dispatch = useDispatch();
+  const { removeFromCart, incrementQuantity, decrementQuantity } = useCart();
+
+  // Calculate discount percentage if old_price exists
+  const discountPercentage = data.old_price ?
+    Math.round(((data.old_price - data.price) / data.old_price) * 100) : 0;
 
   return (
     <div className="flex items-start space-x-4">
@@ -25,7 +23,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
         className="bg-[#F0EEED] rounded-lg w-full min-w-[100px] max-w-[100px] sm:max-w-[124px] aspect-square overflow-hidden"
       >
         <img
-          src={data.srcUrl}
+          src={data.main_image}
           className="rounded-md w-full h-full object-cover hover:scale-110 transition-all duration-500"
           alt={data.name}
         />
@@ -42,89 +40,64 @@ const ProductCard = ({ data }: ProductCardProps) => {
             variant="ghost"
             size="icon"
             className="h-5 w-5 md:h-9 md:w-9"
-            onClick={() =>
-              dispatch(
-                remove({
-                  id: data.id,
-                  attributes: data.attributes,
-                  quantity: data.quantity,
-                })
-              )
-            }
+            onClick={() => removeFromCart(data.id)}
           >
             <PiTrashFill className="text-xl md:text-2xl text-red-600" />
           </Button>
         </div>
-        <div className="-mt-1">
-          <span className="text-black text-xs md:text-sm mr-1">Size:</span>
-          <span className="text-black/60 text-xs md:text-sm">
-            {data.attributes[0]}
-          </span>
-        </div>
-        <div className="mb-auto -mt-1.5">
-          <span className="text-black text-xs md:text-sm mr-1">Color:</span>
-          <span className="text-black/60 text-xs md:text-sm">
-            {data.attributes[1]}
-          </span>
-        </div>
+
+        {/* Author and Category info */}
+        {data.author && (
+          <div className="-mt-1">
+            <span className="text-black text-xs md:text-sm mr-1">Author:</span>
+            <span className="text-black/60 text-xs md:text-sm">
+              {data.author}
+            </span>
+          </div>
+        )}
+
+        {data.categories?.name && (
+          <div className="mb-auto -mt-1.5">
+            <span className="text-black text-xs md:text-sm mr-1">Category:</span>
+            <span className="text-black/60 text-xs md:text-sm">
+              {data.categories.name}
+            </span>
+          </div>
+        )}
+
         <div className="flex items-center flex-wrap justify-between">
           <div className="flex items-center space-x-[5px] xl:space-x-2.5">
-            {data.discount.percentage > 0 ? (
-              <span className="font-bold text-black text-xl xl:text-2xl">
-                {`$${Math.round(
-                  data.price - (data.price * data.discount.percentage) / 100
-                )}`}
-              </span>
-            ) : data.discount.amount > 0 ? (
-              <span className="font-bold text-black text-xl xl:text-2xl">
-                {`$${data.price - data.discount.amount}`}
-              </span>
-            ) : (
-              <span className="font-bold text-black text-xl xl:text-2xl">
-                ${data.price}
-              </span>
-            )}
-            {data.discount.percentage > 0 && (
+            <span className="font-bold text-black text-xl xl:text-2xl">
+              ₹{data.price}
+            </span>
+            {data.old_price && (
               <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-                ${data.price}
+                ₹{data.old_price}
               </span>
             )}
-            {data.discount.amount > 0 && (
-              <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-                ${data.price}
-              </span>
-            )}
-            {data.discount.percentage > 0 ? (
+            {discountPercentage > 0 && (
               <span className="font-medium text-[10px] xl:text-xs py-1.5 px-3.5 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
-                {`-${data.discount.percentage}%`}
+                -{discountPercentage}%
               </span>
-            ) : (
-              data.discount.amount > 0 && (
-                <span className="font-medium text-[10px] xl:text-xs py-1.5 px-3.5 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
-                  {`-$${data.discount.amount}`}
-                </span>
-              )
             )}
           </div>
-          <CartCounter
-            initialValue={data.quantity}
-            onAdd={() => dispatch(addToCart({ ...data, quantity: 1 }))}
-            onRemove={() =>
-              data.quantity === 1
-                ? dispatch(
-                    remove({
-                      id: data.id,
-                      attributes: data.attributes,
-                      quantity: data.quantity,
-                    })
-                  )
-                : dispatch(
-                    removeCartItem({ id: data.id, attributes: data.attributes })
-                  )
-            }
-            isZeroDelete
-            className="px-5 py-3 max-h-8 md:max-h-10 min-w-[105px] max-w-[105px] sm:max-w-32"
-          />
+
+          {/* Quantity Controls */}
+          <div className="flex items-center justify-between bg-orange-500 text-white rounded-full px-3 h-8 md:h-10 min-w-[105px] max-w-[105px] sm:max-w-32">
+            <button
+              onClick={() => decrementQuantity(data.id)}
+              className="hover:bg-orange-600 rounded-full p-1 transition-all duration-200"
+            >
+              <Minus size={12} />
+            </button>
+            <span className="text-sm font-semibold">{data.quantity}</span>
+            <button
+              onClick={() => incrementQuantity(data.id)}
+              className="hover:bg-orange-600 rounded-full p-1 transition-all duration-200"
+            >
+              <Plus size={12} />
+            </button>
+          </div>
         </div>
       </div>
     </div>
