@@ -24,8 +24,12 @@ import CartPage from "./pages/CartPage";
 import WishlistPage from "./pages/WishlistPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import ShippingPage from "./pages/ShippingPage";
-import PaymentPage from "./pages/PaymentPage";
 import MyOrdersPage from "./pages/MyOrdersPage";
+import PricingPolicy from "./pages/PricingPolicy";
+import ShippingPolicy from "./pages/ShippingPolicy";
+import TermsConditions from "./pages/TermsConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CancellationRefund from "./pages/CancellationRefund";
 
 import "./styles/globals.css";
 
@@ -71,8 +75,12 @@ function App() {
                           />
                           <Route path="/checkout" element={<CheckoutPage />} />
                           <Route path="/checkout/shipping" element={<ShippingPage />} />
-                          <Route path="/checkout/payment" element={<PaymentPage />} />
                           <Route path="/my-orders" element={<MyOrdersPage />} />
+                          <Route path="/pricing-policy" element={<PricingPolicy />} />
+                          <Route path="/shipping-policy" element={<ShippingPolicy />} />
+                          <Route path="/terms-conditions" element={<TermsConditions />} />
+                          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                          <Route path="/cancellation-refund" element={<CancellationRefund />} />
                         </Routes>
                       </div>
                       <Footer />

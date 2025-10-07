@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import React from "react";
 import { NavMenu } from "../navbar.types";
 import { MenuList } from "./MenuList";
@@ -51,10 +51,16 @@ const data: NavMenu = [
 
 const TopNavbar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { getWishlistCount } = useWishlist();
   const { user, signOut, isSignedIn } = useAuth();
   const [showMobileSearch, setShowMobileSearch] = React.useState(false);
   const [showSignInModal, setShowSignInModal] = React.useState(false);
+
+  const handleSignOut = () => {
+    signOut();
+    navigate('/');
+  };
 
   const isActiveRoute = (url) => {
     if (url === "/") {
@@ -157,7 +163,7 @@ const TopNavbar = () => {
                     My Orders
                   </Link>
                   <button
-                    onClick={signOut}
+                    onClick={handleSignOut}
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                   >
                     Sign Out

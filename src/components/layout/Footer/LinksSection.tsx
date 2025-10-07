@@ -66,6 +66,37 @@ const footerLinksData: FooterLinks[] = [
       },
     ],
   },
+  {
+    id: 4,
+    title: "policies",
+    children: [
+      {
+        id: 41,
+        label: "pricing policy",
+        url: "/pricing-policy",
+      },
+      {
+        id: 42,
+        label: "shipping policy",
+        url: "/shipping-policy",
+      },
+      {
+        id: 43,
+        label: "terms & conditions",
+        url: "/terms-conditions",
+      },
+      {
+        id: 44,
+        label: "privacy policy",
+        url: "/privacy-policy",
+      },
+      {
+        id: 45,
+        label: "cancellation & refund",
+        url: "/cancellation-refund",
+      },
+    ],
+  },
 ];
 
 const LinksSection = () => {

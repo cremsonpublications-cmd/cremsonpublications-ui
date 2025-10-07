@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
-import { toast } from 'sonner';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
+import { useRazorpay } from "react-razorpay";
+import { supabase } from "../lib/supabase";
+import { toast } from "sonner";
 import {
   CreditCard,
   MapPin,
-  User,
   Mail,
   ShoppingBag,
   Truck,
-  Edit
-} from 'lucide-react';
+  Edit,
+} from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -20,12 +20,13 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '../components/ui/breadcrumb';
-import { Link } from 'react-router-dom';
+} from "../components/ui/breadcrumb";
+import { Link } from "react-router-dom";
 
 const ShippingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { error, Razorpay } = useRazorpay();
   const {
     cartItems,
     getTotalPrice,
@@ -37,7 +38,7 @@ const ShippingPage = () => {
     updateShippingMethod,
     updateShippingNotes,
     clearCart,
-    clearCheckoutData
+    clearCheckoutData,
   } = useCart();
   const { user } = useAuth();
 
@@ -45,51 +46,32 @@ const ShippingPage = () => {
   const navigationData = location.state;
   const displayCustomerInfo = navigationData?.customerInfo || customerInfo;
 
-  // Order processing state
-  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
-  const [orderPlaced, setOrderPlaced] = useState(false);
-  const [orderDetails, setOrderDetails] = useState(null);
-
-  // Validation function to check if customer info is complete
-  const isCustomerInfoComplete = () => {
-    return (
-      customerInfo.email?.trim() &&
-      customerInfo.firstName?.trim() &&
-      customerInfo.lastName?.trim() &&
-      customerInfo.address?.street?.trim() &&
-      customerInfo.address?.city?.trim() &&
-      customerInfo.address?.state?.trim() &&
-      customerInfo.address?.pincode?.trim() &&
-      customerInfo.phone?.trim()
-    );
-  };
-
-  // No validation alerts - just let users navigate freely
-
   // Order summary state
   const [orderSummary, setOrderSummary] = useState({
     subtotal: 0,
     couponDiscount: 0,
     deliveryCharge: 0,
-    total: 0
+    total: 0,
   });
+
+  // Payment processing state
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Shipping methods
   const shippingMethods = [
     {
-      id: 'free',
-      name: 'Free shipping',
-      description: 'Standard delivery (5-7 business days)',
+      id: "free",
+      name: "Free shipping",
+      description: "Standard delivery (5-7 business days)",
       price: 0,
-      icon: <Truck size={20} />
-    }
+      icon: <Truck size={20} />,
+    },
   ];
 
   // Calculate order summary
   useEffect(() => {
     const subtotal = getTotalPrice();
     const couponDiscount = getCouponDiscount();
-    const selectedMethod = shippingMethods.find(method => method.id === shippingInfo.method);
     const deliveryCharge = 0; // Always free delivery
     const total = subtotal - couponDiscount + deliveryCharge;
 
@@ -97,7 +79,7 @@ const ShippingPage = () => {
       subtotal,
       couponDiscount,
       deliveryCharge,
-      total: Math.max(0, total)
+      total: Math.max(0, total),
     });
   }, [cartItems, getTotalPrice, getCouponDiscount, shippingInfo.method]);
 
@@ -113,131 +95,184 @@ const ShippingPage = () => {
     return `BOOK${timestamp}${random}`;
   };
 
-  const createOrderInDatabase = async () => {
+  const createOrderInDatabase = async (paymentDetails) => {
     try {
       const orderId = generateOrderId();
-      const currentDate = new Date().toISOString().split('T')[0];
+      const currentDate = new Date().toISOString().split("T")[0];
 
       // Prepare order data according to database schema
       const orderData = {
         order_id: orderId,
         user_info: {
-          userId: user?.id || 'guest',
-          name: displayCustomerInfo.firstName && displayCustomerInfo.lastName
-            ? `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`
-            : user?.name || 'Guest User',
-          email: displayCustomerInfo.email || user?.email || 'guest@example.com',
-          phone: displayCustomerInfo.phone || '+91-9876543210',
+          userId: user?.id || "guest",
+          name:
+            displayCustomerInfo.firstName && displayCustomerInfo.lastName
+              ? `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`
+              : user?.name || "Guest User",
+          email:
+            displayCustomerInfo.email || user?.email || "guest@example.com",
+          phone: displayCustomerInfo.phone || "+91-9876543210",
           address: {
-            street: displayCustomerInfo.address.street || '54 Green First Parkway',
-            apartment: displayCustomerInfo.address.apartment || '',
-            city: displayCustomerInfo.address.city || 'Tirunelveli',
-            state: displayCustomerInfo.address.state || 'Tamil Nadu',
-            pincode: displayCustomerInfo.address.pincode || '627426',
-            country: displayCustomerInfo.address.country || 'India'
-          }
+            street:
+              displayCustomerInfo.address.street || "54 Green First Parkway",
+            apartment: displayCustomerInfo.address.apartment || "",
+            city: displayCustomerInfo.address.city || "Tirunelveli",
+            state: displayCustomerInfo.address.state || "Tamil Nadu",
+            pincode: displayCustomerInfo.address.pincode || "627426",
+            country: displayCustomerInfo.address.country || "India",
+          },
         },
-        items: cartItems.map(item => ({
+        items: cartItems.map((item) => ({
           productId: item.id,
           name: item.name,
-          author: item.author || 'Unknown Author',
+          author: item.author || "Unknown Author",
           quantity: item.quantity,
           currentPrice: item.price,
-          totalPrice: item.price * item.quantity
+          totalPrice: item.price * item.quantity,
         })),
         order_summary: {
           subTotal: subtotal,
           couponDiscount: couponDiscount,
           discountTotal: couponDiscount,
           deliveryCharge: deliveryCharge,
-          grandTotal: total
+          grandTotal: total,
         },
         payment: {
-          method: 'Cash on Delivery',
-          status: 'Confirmed',
-          transactionId: `TXN${Date.now()}`,
-          amount: total
+          method: "Razorpay",
+          status: "Paid",
+          transactionId: paymentDetails.razorpay_payment_id,
+          razorpay_order_id: paymentDetails.razorpay_order_id || null,
+          razorpay_signature: paymentDetails.razorpay_signature || null,
+          amount: total,
         },
         delivery: {
-          status: 'Processing',
-          deliveryType: shippingInfo.method === 'free' ? 'Free Shipping' : 'Standard Delivery',
-          expectedDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+          status: "Processing",
+          deliveryType:
+            shippingInfo.method === "free"
+              ? "Free Shipping"
+              : "Standard Delivery",
+          expectedDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0], // 7 days from now
           trackingId: `TRK${Date.now()}`,
-          notes: shippingInfo.notes || ''
+          notes: shippingInfo.notes || "",
         },
-        order_status: 'Confirmed',
-        order_date: currentDate
+        order_status: "Confirmed",
+        order_date: currentDate,
       };
 
       // Insert order into database
-      const { data, error } = await supabase
-        .from('orders')
+      const { error } = await supabase
+        .from("orders")
         .insert([orderData])
         .select()
         .single();
 
       if (error) {
-        console.error('Error creating order:', error);
-        throw new Error('Failed to save order to database');
+        console.error("Error creating order:", error);
+        throw new Error("Failed to save order to database");
       }
 
       return { orderId, orderData };
     } catch (error) {
-      console.error('Error in createOrderInDatabase:', error);
+      console.error("Error in createOrderInDatabase:", error);
       throw error;
     }
   };
 
-  const handlePlaceOrder = async () => {
-    setIsProcessingOrder(true);
-
-    try {
-      // Create order directly in database
-      const { orderId, orderData } = await createOrderInDatabase();
-
-      // Store order details and show success
-      setOrderDetails({
-        orderId: orderId,
-        total: total,
-        items: cartItems.length,
-        deliveryDate: orderData.delivery.expectedDate
-      });
-
-      // Clear cart and checkout data after successful order
-      clearCart();
-      clearCheckoutData();
-
-      // Show success and navigate to orders page
-      setOrderPlaced(true);
-      toast.success('Order placed successfully! 🎉');
-
-      // Navigate to orders page after a short delay
-      setTimeout(() => {
-        navigate('/my-orders');
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error creating order:', error);
-      toast.error('Failed to place order. Please try again.');
-      setIsProcessingOrder(false);
+  const handleContinueToPayment = () => {
+    if (error) {
+      toast.error("Razorpay failed to load. Please refresh and try again.");
+      return;
     }
+
+    if (isProcessingPayment) {
+      return;
+    }
+
+    setIsProcessingPayment(true);
+
+    const options = {
+      key: "rzp_live_lslxYYP0RMxOyr",
+      amount: Math.round(total * 100), // Amount in paise
+      currency: "INR",
+      name: "Cremson Publications",
+      description: `Order for ${cartItems.length} books`,
+      handler: async (response) => {
+        console.log("Payment Success:", response);
+
+        try {
+          // Create order in database after successful payment
+          await createOrderInDatabase(response);
+
+          // Clear cart and checkout data
+          clearCart();
+          clearCheckoutData();
+
+          // Navigate to my orders page
+          navigate("/my-orders");
+
+          toast.success("Payment successful! Order placed. 🎉");
+        } catch (error) {
+          console.error("Error saving order to database:", error);
+          toast.error(
+            "Payment successful but failed to save order. Please contact support with payment ID: " +
+              response.razorpay_payment_id
+          );
+        } finally {
+          setIsProcessingPayment(false);
+        }
+      },
+      prefill: {
+        name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
+        email: displayCustomerInfo.email,
+        contact: displayCustomerInfo.phone,
+      },
+      notes: {
+        address: `${displayCustomerInfo.address.street}, ${displayCustomerInfo.address.city}, ${displayCustomerInfo.address.state} - ${displayCustomerInfo.address.pincode}`,
+        items: cartItems
+          .map((item) => `${item.name} (${item.quantity})`)
+          .join(", "),
+      },
+      theme: {
+        color: "#000000", // Black theme to match your site
+      },
+      modal: {
+        ondismiss: () => {
+          console.log("Payment dismissed");
+          toast.info("Payment cancelled");
+          setIsProcessingPayment(false);
+        },
+      },
+    };
+
+    const razorpayInstance = new Razorpay(options);
+    razorpayInstance.on("payment.failed", (response) => {
+      console.error("Payment Failed:", response.error);
+      toast.error(
+        `Payment failed: ${response.error.description || "Unknown error"}`
+      );
+      setIsProcessingPayment(false);
+    });
+
+    razorpayInstance.open();
   };
 
   const handleChangeContact = () => {
-    navigate('/checkout', {
+    navigate("/checkout", {
       state: {
         customerInfo: displayCustomerInfo,
-        returnFromShipping: true
-      }
+        returnFromShipping: true,
+      },
     });
   };
 
   const handleChangeAddress = () => {
-    navigate('/checkout', {
+    navigate("/checkout", {
       state: {
         customerInfo: displayCustomerInfo,
-        returnFromShipping: true
-      }
+        returnFromShipping: true,
+      },
     });
   };
 
@@ -246,9 +281,14 @@ const ShippingPage = () => {
       <div className="max-w-frame mx-auto px-4 py-8">
         <div className="text-center">
           <ShoppingBag size={64} className="mx-auto text-gray-400 mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            Your cart is empty
+          </h2>
           <p className="text-gray-600 mb-4">Add some books to get started!</p>
-          <a href="/shop" className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors">
+          <a
+            href="/shop"
+            className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors"
+          >
             Continue Shopping
           </a>
         </div>
@@ -300,7 +340,11 @@ const ShippingPage = () => {
               </button>
             </div>
             <p className="text-gray-700">
-              {displayCustomerInfo.email || <span className="text-gray-500 italic">No email provided. Please go back to add your email.</span>}
+              {displayCustomerInfo.email || (
+                <span className="text-gray-500 italic">
+                  No email provided. Please go back to add your email.
+                </span>
+              )}
             </p>
           </div>
 
@@ -323,14 +367,21 @@ const ShippingPage = () => {
               {displayCustomerInfo.address?.street ? (
                 <>
                   <p>{displayCustomerInfo.address.street}</p>
-                  {displayCustomerInfo.address.apartment && <p>{displayCustomerInfo.address.apartment}</p>}
+                  {displayCustomerInfo.address.apartment && (
+                    <p>{displayCustomerInfo.address.apartment}</p>
+                  )}
                   <p>
-                    {displayCustomerInfo.address.city} {displayCustomerInfo.address.pincode}, {displayCustomerInfo.address.state}
+                    {displayCustomerInfo.address.city}{" "}
+                    {displayCustomerInfo.address.pincode},{" "}
+                    {displayCustomerInfo.address.state}
                   </p>
                   <p>{displayCustomerInfo.address.country}</p>
                 </>
               ) : (
-                <p className="text-gray-500 italic">No shipping address provided. Please go back to add your address.</p>
+                <p className="text-gray-500 italic">
+                  No shipping address provided. Please go back to add your
+                  address.
+                </p>
               )}
             </div>
           </div>
@@ -347,8 +398,8 @@ const ShippingPage = () => {
                   key={method.id}
                   className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
                     shippingInfo.method === method.id
-                      ? 'border-black bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? "border-black bg-gray-50"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
                   <input
@@ -363,13 +414,17 @@ const ShippingPage = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {method.icon}
-                        <span className="font-medium text-gray-900">{method.name}</span>
+                        <span className="font-medium text-gray-900">
+                          {method.name}
+                        </span>
                       </div>
                       <span className="font-medium text-gray-900">
-                        {method.price === 0 ? 'FREE' : `₹${method.price}`}
+                        {method.price === 0 ? "FREE" : `₹${method.price}`}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{method.description}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {method.description}
+                    </p>
                   </div>
                 </label>
               ))}
@@ -393,7 +448,7 @@ const ShippingPage = () => {
           {/* Return to Information Button */}
           <div className="flex justify-start">
             <button
-              onClick={() => navigate('/checkout')}
+              onClick={() => navigate("/checkout")}
               className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
             >
               ← Return to information
@@ -404,7 +459,9 @@ const ShippingPage = () => {
         {/* Order Summary */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Order Summary
+            </h2>
 
             <div className="space-y-4 mb-6">
               {cartItems.map((item) => (
@@ -418,7 +475,9 @@ const ShippingPage = () => {
                     <h4 className="text-sm font-medium text-gray-900 truncate">
                       {item.name}
                     </h4>
-                    <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                    <p className="text-sm text-gray-500">
+                      Qty: {item.quantity}
+                    </p>
                   </div>
                   <div className="text-sm font-medium text-gray-900">
                     ₹{(item.price * item.quantity).toFixed(2)}
@@ -430,8 +489,12 @@ const ShippingPage = () => {
             {/* Order Total */}
             <div className="border-t border-gray-200 pt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotal ({getTotalItems()} items)</span>
-                <span className="text-gray-900">₹{orderSummary.subtotal.toFixed(2)}</span>
+                <span className="text-gray-600">
+                  Subtotal ({getTotalItems()} items)
+                </span>
+                <span className="text-gray-900">
+                  ₹{orderSummary.subtotal.toFixed(2)}
+                </span>
               </div>
 
               {orderSummary.couponDiscount > 0 && (
@@ -444,34 +507,58 @@ const ShippingPage = () => {
                       </span>
                     )}
                   </div>
-                  <span className="text-green-600">-₹{orderSummary.couponDiscount.toFixed(2)}</span>
+                  <span className="text-green-600">
+                    -₹{orderSummary.couponDiscount.toFixed(2)}
+                  </span>
                 </div>
               )}
 
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Shipping</span>
                 <span className="text-gray-900">
-                  {orderSummary.deliveryCharge === 0 ? 'FREE' : `₹${orderSummary.deliveryCharge.toFixed(2)}`}
+                  {orderSummary.deliveryCharge === 0
+                    ? "FREE"
+                    : `₹${orderSummary.deliveryCharge.toFixed(2)}`}
                 </span>
               </div>
 
               <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-semibold">
                 <span className="text-gray-900">Total</span>
-                <span className="text-gray-900">₹{orderSummary.total.toFixed(2)}</span>
+                <span className="text-gray-900">
+                  ₹{orderSummary.total.toFixed(2)}
+                </span>
               </div>
             </div>
 
-            {/* Place Order Button */}
+            {/* Pay Now Button */}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-red-600 text-sm">
+                  Error loading Razorpay: {error}
+                </p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="text-red-600 underline mt-2 text-sm"
+                >
+                  Refresh Page
+                </button>
+              </div>
+            )}
+
             <button
-              onClick={handlePlaceOrder}
-              disabled={isProcessingOrder}
-              className={`w-full mt-6 py-3 px-4 rounded-md transition-colors ${
-                isProcessingOrder
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-black text-white hover:bg-gray-800'
+              onClick={handleContinueToPayment}
+              disabled={isProcessingPayment || error}
+              className={`w-full mt-6 py-3 px-4 rounded-md font-semibold transition-colors flex items-center justify-center gap-2 ${
+                isProcessingPayment || error
+                  ? "bg-gray-400 cursor-not-allowed text-white"
+                  : "bg-black text-white hover:bg-gray-800"
               }`}
             >
-              {isProcessingOrder ? 'Placing Order...' : 'Place Order →'}
+              <CreditCard size={16} />
+              {isProcessingPayment
+                ? "Processing..."
+                : `Pay ₹${orderSummary.total.toFixed(2)}`}
             </button>
           </div>
         </div>
