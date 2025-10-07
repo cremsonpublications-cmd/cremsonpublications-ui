@@ -13,9 +13,11 @@ export const useFilters = () => {
 export const FilterProvider = ({ children }) => {
   const [filters, setFilters] = useState({
     categories: [],
+    sub_categories: [],
     authors: [],
     classes: [],
-    priceRange: { min: 0, max: 1000 },
+    editions: [],
+    priceRange: { min: 0, max: 10000 },
     status: [],
     sortBy: 'most-popular'
   });
@@ -42,9 +44,11 @@ export const FilterProvider = ({ children }) => {
   const clearFilters = () => {
     setFilters({
       categories: [],
+      sub_categories: [],
       authors: [],
       classes: [],
-      priceRange: { min: 0, max: 1000 },
+      editions: [],
+      priceRange: { min: 0, max: 10000 },
       status: [],
       sortBy: 'most-popular'
     });
@@ -60,12 +64,42 @@ export const FilterProvider = ({ children }) => {
     }));
   };
 
+  // Calculate product price with discounts
+  const calculateProductPrice = (product) => {
+    const mrp = product.mrp || 0;
+    let finalPrice = mrp;
+
+    if (product.has_own_discount && product.own_discount_percentage) {
+      finalPrice = mrp - (mrp * product.own_discount_percentage / 100);
+    } else if (product.use_category_discount && product.categories) {
+      const category = product.categories;
+      if (category.offer_type === 'percentage' && category.offer_percentage) {
+        finalPrice = mrp - (mrp * category.offer_percentage / 100);
+      } else if (category.offer_type === 'flat_amount' && category.offer_amount) {
+        finalPrice = mrp - category.offer_amount;
+      }
+    }
+
+    return Math.max(0, Math.round(finalPrice));
+  };
+
   // Filter products based on current filters
   const filterProducts = (products) => {
     return products.filter(product => {
       // Category filter
-      if (filters.categories.length > 0 && !filters.categories.includes(product.categories?.name)) {
+      if (filters.categories.length > 0 && !filters.categories.includes(product.categories?.main_category_name)) {
         return false;
+      }
+
+      // Sub-category filter
+      if (filters.sub_categories.length > 0) {
+        const productSubCategories = product.sub_categories || [];
+        const hasMatchingSubCategory = filters.sub_categories.some(filterSub => 
+          productSubCategories.includes(filterSub)
+        );
+        if (!hasMatchingSubCategory) {
+          return false;
+        }
       }
 
       // Author filter
@@ -73,13 +107,25 @@ export const FilterProvider = ({ children }) => {
         return false;
       }
 
-      // Classes filter
-      if (filters.classes.length > 0 && !filters.classes.includes(product.classes)) {
+      // Classes filter - product.classes is an array
+      if (filters.classes.length > 0) {
+        const productClasses = product.classes || [];
+        const hasMatchingClass = filters.classes.some(filterClass => 
+          productClasses.includes(filterClass)
+        );
+        if (!hasMatchingClass) {
+          return false;
+        }
+      }
+
+      // Edition filter
+      if (filters.editions.length > 0 && !filters.editions.includes(product.edition)) {
         return false;
       }
 
-      // Price range filter
-      if (product.price < filters.priceRange.min || product.price > filters.priceRange.max) {
+      // Price range filter - use calculated price
+      const productPrice = calculateProductPrice(product);
+      if (productPrice < filters.priceRange.min || productPrice > filters.priceRange.max) {
         return false;
       }
 
@@ -98,9 +144,9 @@ export const FilterProvider = ({ children }) => {
 
     switch (filters.sortBy) {
       case 'low-price':
-        return sortedProducts.sort((a, b) => a.price - b.price);
+        return sortedProducts.sort((a, b) => calculateProductPrice(a) - calculateProductPrice(b));
       case 'high-price':
-        return sortedProducts.sort((a, b) => b.price - a.price);
+        return sortedProducts.sort((a, b) => calculateProductPrice(b) - calculateProductPrice(a));
       case 'newest':
         return sortedProducts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       case 'oldest':
@@ -123,19 +169,33 @@ export const FilterProvider = ({ children }) => {
 
   // Extract unique values from products for dynamic filter options
   const getFilterOptions = (products) => {
-    const categories = [...new Set(products.map(p => p.categories?.name).filter(Boolean))];
+    const categories = [...new Set(products.map(p => p.categories?.main_category_name).filter(Boolean))];
     const authors = [...new Set(products.map(p => p.author).filter(Boolean))];
-    const classes = [...new Set(products.map(p => p.classes).filter(Boolean))];
+    
+    // Extract all unique sub-categories from all products
+    const allSubCategories = products.flatMap(p => p.sub_categories || []);
+    const sub_categories = [...new Set(allSubCategories)].filter(Boolean);
+    
+    // Extract all unique classes from all products
+    const allClasses = products.flatMap(p => p.classes || []);
+    const classes = [...new Set(allClasses)].filter(Boolean);
+    
+    // Extract unique editions
+    const editions = [...new Set(products.map(p => p.edition).filter(Boolean))];
+    
     const statuses = [...new Set(products.map(p => p.status).filter(Boolean))];
 
-    const prices = products.map(p => p.price).filter(Boolean);
-    const minPrice = Math.min(...prices);
-    const maxPrice = Math.max(...prices);
+    // Calculate prices with discounts
+    const prices = products.map(p => calculateProductPrice(p)).filter(Boolean);
+    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+    const maxPrice = prices.length > 0 ? Math.max(...prices) : 10000;
 
     return {
       categories,
+      sub_categories,
       authors,
       classes,
+      editions,
       statuses,
       priceRange: { min: minPrice, max: maxPrice }
     };
@@ -144,11 +204,13 @@ export const FilterProvider = ({ children }) => {
   // Check if any filters are active
   const hasActiveFilters = useMemo(() => {
     return filters.categories.length > 0 ||
+           filters.sub_categories.length > 0 ||
            filters.authors.length > 0 ||
            filters.classes.length > 0 ||
+           filters.editions.length > 0 ||
            filters.status.length > 0 ||
            filters.priceRange.min > 0 ||
-           filters.priceRange.max < 1000;
+           filters.priceRange.max < 10000;
   }, [filters]);
 
   const value = {

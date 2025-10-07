@@ -12,7 +12,8 @@ type ProductCardProps = {
 
 const ProductCard = ({ data }: ProductCardProps) => {
   const { toggleWishlist, isInWishlist } = useWishlist();
-  const { addToCart, getItemQuantity, incrementQuantity, decrementQuantity } = useCart();
+  const { addToCart, getItemQuantity, incrementQuantity, decrementQuantity } =
+    useCart();
 
   const cartQuantity = getItemQuantity(data.id);
 
@@ -40,10 +41,48 @@ const ProductCard = ({ data }: ProductCardProps) => {
     decrementQuantity(data.id);
   };
 
-  // Calculate discount percentage if old_price exists
-  const discountPercentage = data.old_price ?
-    Math.round(((data.old_price - data.price) / data.old_price) * 100) : 0;
+  // Calculate actual price based on discounts
+  const calculatePrice = () => {
+    const mrp = data.mrp || 0;
+    let finalPrice = mrp;
+    let discountPercentage = 0;
 
+    // Check if product has its own discount
+    if (data.has_own_discount && data.own_discount_percentage) {
+      discountPercentage = data.own_discount_percentage;
+    }
+    // Otherwise use category discount if enabled
+    else if (data.use_category_discount && data.categories) {
+      const category = data.categories;
+      if (category.offer_type === "percentage" && category.offer_percentage) {
+        discountPercentage = category.offer_percentage;
+      } else if (
+        category.offer_type === "flat_amount" &&
+        category.offer_amount
+      ) {
+        finalPrice = mrp - category.offer_amount;
+        return {
+          finalPrice: Math.max(0, finalPrice),
+          mrp,
+          discountPercentage: 0,
+        };
+      }
+    }
+
+    // Apply percentage discount
+    if (discountPercentage > 0) {
+      finalPrice = mrp - (mrp * discountPercentage) / 100;
+    }
+
+    return {
+      finalPrice: Math.round(finalPrice),
+      mrp,
+      discountPercentage: Math.round(discountPercentage),
+    };
+  };
+
+  const { finalPrice, mrp, discountPercentage } = calculatePrice();
+  const hasDiscount = finalPrice < mrp;
   const isOutOfStock = data.status === "Out of Stock";
 
   return (
@@ -103,19 +142,21 @@ const ProductCard = ({ data }: ProductCardProps) => {
           readonly
         />
         <span className="text-black text-xs xl:text-sm ml-[11px] xl:ml-[13px] pb-0.5 xl:pb-0">
-          {data.rating && data.rating > 0 ? data.rating.toFixed(1) : '4.5'}
+          {data.rating && data.rating > 0 ? data.rating.toFixed(1) : "4.5"}
           <span className="text-black/60">/5</span>
         </span>
       </div>
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center space-x-[5px] xl:space-x-2.5">
           <span className="font-bold text-black text-xl xl:text-2xl">
-            ₹{data.price}
+            ₹{finalPrice}
           </span>
-          {data.old_price && (
-            <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-              ₹{data.old_price}
-            </span>
+          {hasDiscount && (
+            <>
+              <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
+                ₹{mrp}
+              </span>
+            </>
           )}
         </div>
 

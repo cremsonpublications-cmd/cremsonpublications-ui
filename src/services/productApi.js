@@ -8,7 +8,7 @@ export const categoriesApi = {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('name', { ascending: true });
+        .order('main_category_name', { ascending: true });
 
       if (error) throw error;
       return data || [];
@@ -47,8 +47,7 @@ export const productsApi = {
           *,
           categories (
             id,
-            name,
-            slug
+            main_category_name
           )
         `)
         .order('created_at', { ascending: false });
@@ -70,8 +69,7 @@ export const productsApi = {
           *,
           categories (
             id,
-            name,
-            slug
+            main_category_name
           )
         `)
         .eq('id', id)
@@ -94,8 +92,7 @@ export const productsApi = {
           *,
           categories (
             id,
-            name,
-            slug
+            main_category_name
           )
         `)
         .eq('category_id', categoryId)
@@ -118,8 +115,7 @@ export const productsApi = {
           *,
           categories (
             id,
-            name,
-            slug
+            main_category_name
           )
         `)
         .or(`name.ilike.%${searchTerm}%, description.ilike.%${searchTerm}%`)
@@ -142,8 +138,7 @@ export const productsApi = {
           *,
           categories (
             id,
-            name,
-            slug
+            main_category_name
           )
         `)
         .eq('is_featured', true)
@@ -166,8 +161,7 @@ export const productsApi = {
           *,
           categories (
             id,
-            name,
-            slug
+            main_category_name
           )
         `)
         .or('discount_percentage.gt.0, discount_amount.gt.0')

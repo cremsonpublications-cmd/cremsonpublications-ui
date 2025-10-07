@@ -97,7 +97,9 @@ const Footer = () => {
               </div>
 
               <p className="text-black/60 text-sm mb-6">
-                Discover quality educational books and publications that enhance learning and inspire knowledge. From textbooks to reference materials.
+                Discover quality educational books and publications that enhance
+                learning and inspire knowledge. From textbooks to reference
+                materials.
               </p>
 
               {/* Header-style navigation icons */}
@@ -108,7 +110,10 @@ const Footer = () => {
                 >
                   <Search size={20} className="text-red-500" />
                 </button>
-                <Link to="/wishlist" className="p-2 hover:bg-white/50 rounded-full transition-all relative">
+                <Link
+                  to="/wishlist"
+                  className="p-2 hover:bg-white/50 rounded-full transition-all relative"
+                >
                   <Heart size={20} className="text-red-500" />
                   {getWishlistCount() > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
@@ -116,7 +121,10 @@ const Footer = () => {
                     </span>
                   )}
                 </Link>
-                <Link to="/cart" className="p-2 hover:bg-white/50 rounded-full transition-all relative">
+                <Link
+                  to="/cart"
+                  className="p-2 hover:bg-white/50 rounded-full transition-all relative"
+                >
                   <ShoppingCart size={20} className="text-red-500" />
                   {cartItems.length > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-bold">
@@ -170,22 +178,9 @@ const Footer = () => {
           <hr className="h-[1px] border-t-black/10 mb-6" />
           <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center mb-2">
             <p className="text-sm text-center sm:text-left text-black/60 mb-4 sm:mb-0 sm:mr-1">
-              Cremson Publications © {new Date().getFullYear()} - Quality Educational Materials
+              Cremson Publications © {new Date().getFullYear()} - Quality
+              Educational Materials
             </p>
-            <div className="flex items-center">
-              {paymentBadgesData.map((badge, _, arr) => (
-                <span
-                  key={badge.id}
-                  className={cn([
-                    arr.length !== badge.id && "mr-3",
-                    "w-[46px] h-[30px] rounded-[5px] border-[#D6DCE5] bg-white flex items-center justify-center",
-                  ])}
-                  title={badge.name}
-                >
-                  {badge.icon}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
         <LayoutSpacing />

@@ -13,8 +13,9 @@ const ClassesSection = () => {
   const { filters, toggleArrayFilter } = useFilters();
   const { products } = useProducts();
 
-  // Get unique classes from products dynamically
-  const classes = [...new Set(products.map((p: any) => p.classes).filter(Boolean))].sort();
+  // Get unique classes from products dynamically - flatten arrays
+  const allClasses = products.flatMap((p: any) => p.classes || []);
+  const classes = [...new Set(allClasses)].filter(Boolean).sort();
 
   return (
     <Accordion type="single" collapsible defaultValue="filter-classes">

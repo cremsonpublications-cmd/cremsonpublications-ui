@@ -9,33 +9,36 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useFilters } from "../../../context/FilterContext";
 import { useProducts } from "../../../context/ProductContext";
 
-const CategoriesSection = () => {
+const SubCategoriesSection = () => {
   const { filters, toggleArrayFilter } = useFilters();
   const { products } = useProducts();
 
-  // Get unique categories from products dynamically
-  const categories = [...new Set(products.map((p: any) => p.categories?.main_category_name).filter(Boolean))].sort();
+  // Get unique sub-categories from products dynamically - flatten arrays
+  const allSubCategories = products.flatMap((p: any) => p.sub_categories || []);
+  const subCategories = [...new Set(allSubCategories)].filter(Boolean).sort();
+
+  if (subCategories.length === 0) return null;
 
   return (
-    <Accordion type="single" collapsible defaultValue="categories">
-      <AccordionItem value="categories" className="border-none">
+    <Accordion type="single" collapsible defaultValue="sub-categories">
+      <AccordionItem value="sub-categories" className="border-none">
         <AccordionTrigger className="text-black font-bold text-xl hover:no-underline p-0 py-0.5">
-          Categories
+          Sub Categories
         </AccordionTrigger>
         <AccordionContent className="pt-4">
           <div className="space-y-3">
-            {categories.map((category, idx) => (
+            {subCategories.map((subCategory, idx) => (
               <div key={idx} className="flex items-center space-x-2">
                 <Checkbox
-                  id={`category-${idx}`}
-                  checked={filters.categories.includes(category)}
-                  onChange={() => toggleArrayFilter('categories', category)}
+                  id={`sub-category-${idx}`}
+                  checked={filters.sub_categories.includes(subCategory)}
+                  onChange={() => toggleArrayFilter('sub_categories', subCategory)}
                 />
                 <label
-                  htmlFor={`category-${idx}`}
+                  htmlFor={`sub-category-${idx}`}
                   className="text-sm text-black/60 cursor-pointer"
                 >
-                  {category}
+                  {subCategory}
                 </label>
               </div>
             ))}
@@ -46,4 +49,4 @@ const CategoriesSection = () => {
   );
 };
 
-export default CategoriesSection;
+export default SubCategoriesSection;

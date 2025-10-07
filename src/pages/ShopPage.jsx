@@ -38,7 +38,9 @@ export default function ShopPage() {
             <div className="flex flex-col w-full space-y-5">
               <div className="flex flex-col lg:flex-row lg:justify-between">
                 <div className="flex items-center justify-between">
-                  <h1 className="font-bold text-2xl md:text-[32px]">All Books</h1>
+                  <h1 className="font-bold text-2xl md:text-[32px]">
+                    All Books
+                  </h1>
                   <MobileFilters />
                 </div>
               </div>
@@ -89,13 +91,12 @@ export default function ShopPage() {
                   Sort by:{" "}
                   <Select
                     value={filters.sortBy}
-                    onValueChange={(value) => updateFilter('sortBy', value)}
+                    onValueChange={(value) => updateFilter("sortBy", value)}
                   >
                     <SelectTrigger className="font-medium text-sm px-1.5 sm:text-base w-fit text-black bg-transparent shadow-none border-none">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="most-popular">Most Popular</SelectItem>
                       <SelectItem value="low-price">Low Price</SelectItem>
                       <SelectItem value="high-price">High Price</SelectItem>
                       <SelectItem value="newest">Newest</SelectItem>

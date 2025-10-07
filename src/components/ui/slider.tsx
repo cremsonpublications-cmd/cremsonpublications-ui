@@ -55,15 +55,7 @@ const Slider = React.forwardRef<
           </SliderPrimitive.Track>
 
           {/* Thumb 1 with Label */}
-          <div
-            className="absolute -translate-x-1/2 -bottom-8 text-xs font-medium px-2 py-1 rounded z-10"
-            style={{
-              left: `${((values[0] - min) / (max - min)) * 100}%`,
-            }}
-          >
-            {label}
-            {values[0]}
-          </div>
+
           <SliderPrimitive.Thumb className="relative block h-4 w-4 rounded-full border border-primary/50 bg-black shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50" />
 
           {/* Thumb 2 with Label */}

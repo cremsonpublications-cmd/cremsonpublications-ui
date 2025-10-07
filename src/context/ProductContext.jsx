@@ -23,7 +23,7 @@ export const ProductProvider = ({ children }) => {
       const { data, error } = await supabase
         .from('categories')
         .select('*')
-        .order('name', { ascending: true });
+        .order('main_category_name', { ascending: true });
 
       if (error) {
         throw error;
@@ -45,7 +45,7 @@ export const ProductProvider = ({ children }) => {
           *,
           categories (
             id,
-            name
+            main_category_name
           )
         `)
         .order('created_at', { ascending: false });
@@ -71,7 +71,7 @@ export const ProductProvider = ({ children }) => {
           *,
           categories (
             id,
-            name
+            main_category_name
           )
         `)
         .eq('category_id', categoryId)
@@ -106,7 +106,7 @@ export const ProductProvider = ({ children }) => {
           *,
           categories (
             id,
-            name
+            main_category_name
           )
         `)
         .or(`name.ilike.%${searchTerm}%, description.ilike.%${searchTerm}%`)

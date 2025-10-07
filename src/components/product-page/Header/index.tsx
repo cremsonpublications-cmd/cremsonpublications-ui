@@ -24,6 +24,75 @@ const Header = ({ data }: { data: Product }) => {
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
 
+  // Calculate actual price based on discounts
+  const calculatePrice = () => {
+    const mrp = data.mrp || 0;
+    let finalPrice = mrp;
+    let discountPercentage = 0;
+
+    // Check if product has its own discount
+    if (data.has_own_discount && data.own_discount_percentage) {
+      discountPercentage = data.own_discount_percentage;
+    } 
+    // Otherwise use category discount if enabled
+    else if (data.use_category_discount && data.categories) {
+      const category = data.categories;
+      if (category.offer_type === 'percentage' && category.offer_percentage) {
+        discountPercentage = category.offer_percentage;
+      } else if (category.offer_type === 'flat_amount' && category.offer_amount) {
+        finalPrice = mrp - category.offer_amount;
+        return { finalPrice: Math.max(0, finalPrice), mrp, discountPercentage: 0 };
+      }
+    }
+
+    // Apply percentage discount
+    if (discountPercentage > 0) {
+      finalPrice = mrp - (mrp * discountPercentage / 100);
+    }
+
+    return { 
+      finalPrice: Math.round(finalPrice), 
+      mrp, 
+      discountPercentage: Math.round(discountPercentage) 
+    };
+  };
+
+  const { finalPrice, mrp, discountPercentage } = calculatePrice();
+  const hasDiscount = finalPrice < mrp;
+
+  // Get current page URL for sharing
+  const currentUrl = typeof window !== 'undefined' ? window.location.href : '';
+  const productTitle = encodeURIComponent(data.name);
+  const productDescription = encodeURIComponent(data.short_description || '');
+
+  // Share handlers
+  const handleTwitterShare = () => {
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${productTitle}&url=${encodeURIComponent(currentUrl)}`;
+    window.open(twitterUrl, '_blank', 'width=600,height=400');
+  };
+
+  const handleFacebookShare = () => {
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`;
+    window.open(facebookUrl, '_blank', 'width=600,height=400');
+  };
+
+  const handleWhatsAppShare = () => {
+    const whatsappUrl = `https://wa.me/?text=${productTitle}%20${encodeURIComponent(currentUrl)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleEmailShare = () => {
+    const subject = encodeURIComponent(`Check out: ${data.name}`);
+    const body = encodeURIComponent(`I thought you might be interested in this product:\n\n${data.name}\n${currentUrl}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(currentUrl);
+    // You can add a toast notification here if you have toast setup
+    alert('Link copied to clipboard!');
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -51,26 +120,12 @@ const Header = ({ data }: { data: Product }) => {
               {data.isbn && <span>ISBN: {data.isbn}</span>}
               {data.edition && <span>Edition: {data.edition}</span>}
               {data.classes && <span>Class: {data.classes}</span>}
-              {data.categories?.name && (
-                <span>Category: {data.categories.name}</span>
+              {data.categories?.main_category_name && (
+                <span>Category: {data.categories.main_category_name}</span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center mb-3 sm:mb-3.5">
-            <Rating
-              initialValue={data.rating && data.rating > 0 ? data.rating : 4.5}
-              allowFraction
-              SVGclassName="inline-block"
-              emptyClassName="fill-gray-50"
-              size={25}
-              readonly
-            />
-            <span className="text-black text-xs sm:text-sm ml-[11px] sm:ml-[13px] pb-0.5 sm:pb-0">
-              {data.rating && data.rating > 0 ? data.rating.toFixed(1) : "4.5"}
-              <span className="text-black/60">/5</span>
-            </span>
-          </div>
 
           {/* Status Badge */}
           <div className="mb-4">
@@ -87,28 +142,27 @@ const Header = ({ data }: { data: Product }) => {
 
           <div className="flex items-center space-x-2.5 sm:space-x-3 mb-5">
             <span className="font-bold text-black text-2xl sm:text-[32px]">
-              ₹{data.price}
+              ₹{finalPrice}
             </span>
-            {data.old_price && (
+            {hasDiscount && (
               <>
                 <span className="font-bold text-black/40 line-through text-2xl sm:text-[32px]">
-                  ₹{data.old_price}
+                  ₹{mrp}
                 </span>
-                <span className="font-medium text-[10px] sm:text-xs py-1.5 px-3.5 rounded-full bg-green-100 text-green-800">
-                  -
-                  {Math.round(
-                    ((data.old_price - data.price) / data.old_price) * 100
-                  )}
-                  %
-                </span>
+                {discountPercentage > 0 && (
+                  <span className="font-medium text-[10px] sm:text-xs py-1.5 px-3.5 rounded-full bg-green-100 text-green-800">
+                    -{discountPercentage}%
+                  </span>
+                )}
               </>
             )}
           </div>
 
-          <p className="text-sm sm:text-base text-black/60 mb-5">
-            {data.description ||
-              "High-quality educational book designed for students and educators. Perfect for comprehensive learning and reference."}
-          </p>
+          {data.short_description && (
+            <p className="text-sm sm:text-base text-black/60 mb-5">
+              {data.short_description}
+            </p>
+          )}
 
           {/* Bulk Pricing */}
           {data.bulk_pricing && data.bulk_pricing.length > 0 && (
@@ -133,9 +187,9 @@ const Header = ({ data }: { data: Product }) => {
                     <div className="text-sm font-bold text-gray-900 mb-1">
                       ₹{bulk.price}.00 each
                     </div>
-                    {bulk.price < data.price && (
+                    {bulk.price < finalPrice && (
                       <div className="text-sm font-bold text-green-600">
-                        Save ₹{data.price - bulk.price}
+                        Save ₹{finalPrice - bulk.price}
                       </div>
                     )}
                   </div>
@@ -180,32 +234,75 @@ const Header = ({ data }: { data: Product }) => {
               <Share2 className="w-5 h-5 text-gray-700" />
               <span className="text-gray-700 font-medium">Share</span>
               <div className="flex items-center gap-3">
-                <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors" title="Twitter">
-                  <Twitter className="w-5 h-5 text-gray-600" />
+                <button 
+                  onClick={handleTwitterShare}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition-colors" 
+                  title="Share on Twitter"
+                >
+                  <Twitter className="w-5 h-5 text-gray-600 hover:text-blue-500" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors" title="Facebook">
-                  <Facebook className="w-5 h-5 text-gray-600" />
+                <button 
+                  onClick={handleFacebookShare}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition-colors" 
+                  title="Share on Facebook"
+                >
+                  <Facebook className="w-5 h-5 text-gray-600 hover:text-blue-600" />
                 </button>
-                <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors" title="Instagram">
-                  <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12.017 0C8.396 0 7.989.013 7.041.072 6.094.131 5.44.326 4.865.619c-.595.319-1.1.74-1.6 1.24S2.145 2.79 1.826 3.385C1.533 3.96 1.338 4.614 1.279 5.561.013 6.509 0 6.916 0 12.017s.013 5.508.072 6.456c.059.947.254 1.601.547 2.176.319.595.74 1.1 1.24 1.6s1.005.921 1.6 1.24c.575.293 1.229.488 2.176.547.948.059 1.355.072 6.456.072s5.508-.013 6.456-.072c.947-.059 1.601-.254 2.176-.547.595-.319 1.1-.74 1.6-1.24s.921-1.005 1.24-1.6c.293-.575.488-1.229.547-2.176.059-.948.072-1.355.072-6.456s-.013-5.508-.072-6.456c-.059-.947-.254-1.601-.547-2.176a4.294 4.294 0 00-1.24-1.6 4.294 4.294 0 00-1.6-1.24c-.575-.293-1.229-.488-2.176-.547C17.525.013 17.118 0 12.017 0zM12.017 2.162c4.015 0 4.49.016 6.075.071.923.042 1.425.196 1.76.326.442.172.758.378 1.089.709.331.331.537.647.709 1.089.13.335.284.837.326 1.76.055 1.585.071 2.06.071 6.075s-.016 4.49-.071 6.075c-.042.923-.196 1.425-.326 1.76a2.932 2.932 0 01-.709 1.089 2.932 2.932 0 01-1.089.709c-.335.13-.837.284-1.76.326-1.585.055-2.06.071-6.075.071s-4.49-.016-6.075-.071c-.923-.042-1.425-.196-1.76-.326a2.932 2.932 0 01-1.089-.709 2.932 2.932 0 01-.709-1.089c-.13-.335-.284-.837-.326-1.76-.055-1.585-.071-2.06-.071-6.075s.016-4.49.071-6.075c.042-.923.196-1.425.326-1.76.172-.442.378-.758.709-1.089a2.932 2.932 0 011.089-.709c.335-.13.837-.284 1.76-.326 1.585-.055 2.06-.071 6.075-.071z"/>
-                    <path d="M12.017 5.838a6.179 6.179 0 100 12.358 6.179 6.179 0 000-12.358zM12.017 16a4 4 0 110-8 4 4 0 010 8z"/>
-                    <path d="M19.846 5.594a1.44 1.44 0 11-2.88 0 1.44 1.44 0 012.88 0z"/>
-                  </svg>
-                </button>
-                <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors" title="WhatsApp">
-                  <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                <button 
+                  onClick={handleWhatsAppShare}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-green-100 transition-colors" 
+                  title="Share on WhatsApp"
+                >
+                  <svg className="w-5 h-5 text-gray-600 hover:text-green-600" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.488"/>
                   </svg>
                 </button>
-                <button className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors" title="Gmail">
-                  <Mail className="w-5 h-5 text-gray-600" />
+                <button 
+                  onClick={handleEmailShare}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-red-100 transition-colors" 
+                  title="Share via Email"
+                >
+                  <Mail className="w-5 h-5 text-gray-600 hover:text-red-600" />
+                </button>
+                <button 
+                  onClick={handleCopyLink}
+                  className="p-2 rounded-full bg-gray-100 hover:bg-purple-100 transition-colors" 
+                  title="Copy Link"
+                >
+                  <Share2 className="w-5 h-5 text-gray-600 hover:text-purple-600" />
                 </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Full Description Section */}
+      {data.description && (
+        <div className="mt-8 bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Description</h2>
+          <div className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line">
+            {data.description}
+          </div>
+        </div>
+      )}
+
+      {/* Tags Section */}
+      {data.tags && data.tags.length > 0 && (
+        <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Tags</h2>
+          <div className="flex flex-wrap gap-2">
+            {data.tags.map((tag: string, index: number) => (
+              <span
+                key={index}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full text-sm font-medium transition-colors cursor-pointer"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Delivery & Return Modal */}
       {showDeliveryModal && (
@@ -223,26 +320,26 @@ const Header = ({ data }: { data: Product }) => {
               </button>
             </div>
             <div className="p-6 space-y-6">
-              {data.delivery_info && (
+              {data.delivery_information && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">
                     Delivery Information
                   </h3>
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <p className="text-blue-800 text-sm whitespace-pre-line">
-                      {data.delivery_info}
+                      {data.delivery_information}
                     </p>
                   </div>
                 </div>
               )}
-              {data.returns_info && (
+              {data.returns_information && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-3">
                     Returns & Exchanges
                   </h3>
                   <div className="bg-green-50 p-4 rounded-lg">
                     <p className="text-green-800 text-sm whitespace-pre-line">
-                      {data.returns_info}
+                      {data.returns_information}
                     </p>
                   </div>
                 </div>

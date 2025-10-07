@@ -190,9 +190,9 @@ const SearchDropdown = ({ className = "", onResultClick }) => {
                       {product.author && (
                         <span>by {highlightText(product.author, searchTerm)}</span>
                       )}
-                      {product.author && product.categories?.name && ' • '}
-                      {product.categories?.name && (
-                        <span>{highlightText(product.categories.name, searchTerm)}</span>
+                      {product.author && product.categories?.main_category_name && ' • '}
+                      {product.categories?.main_category_name && (
+                        <span>{highlightText(product.categories.main_category_name, searchTerm)}</span>
                       )}
                     </p>
                     <div className="flex items-center space-x-2 mt-1">

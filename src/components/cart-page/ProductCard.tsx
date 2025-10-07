@@ -56,11 +56,11 @@ const ProductCard = ({ data }: ProductCardProps) => {
           </div>
         )}
 
-        {data.categories?.name && (
+        {data.categories?.main_category_name && (
           <div className="mb-auto -mt-1.5">
             <span className="text-black text-xs md:text-sm mr-1">Category:</span>
             <span className="text-black/60 text-xs md:text-sm">
-              {data.categories.name}
+              {data.categories.main_category_name}
             </span>
           </div>
         )}
