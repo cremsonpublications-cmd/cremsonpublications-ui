@@ -27,28 +27,110 @@ export const sendOrderConfirmationEmail = async (orderData) => {
   }
 };
 
-// Alternative method using direct fetch (if supabase.functions.invoke doesn't work)
+// Direct Brevo API method (bypassing Supabase function)
 export const sendOrderConfirmationEmailDirect = async (orderData) => {
   try {
-    const response = await fetch(
-      'https://onszmectsaddhcqhrpnt.supabase.co/functions/v1/send-email',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9uc3ptZWN0c2FkZGhjcWhycG50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkxNTE5MzcsImV4cCI6MjA3NDcyNzkzN30.8oON_0Z71U1tA_JUmMvvT-zF2-J-acrPtj0mEd4PnMU',
+    // Brevo API key
+    const BREVO_API_KEY = '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';
+    
+    // Create HTML email template
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Order Confirmation</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .order-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; }
+          .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+          .total { font-weight: bold; font-size: 18px; color: #667eea; }
+          .address { background: #e8f2ff; padding: 15px; border-radius: 8px; margin: 15px 0; }
+          .footer { text-align: center; margin-top: 30px; color: #666; }
+          .logo { font-size: 24px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="logo">📚 CREMSON PUBLICATIONS</div>
+            <h1>Order Confirmation</h1>
+            <p>Thank you for your order, ${orderData.customerName}!</p>
+          </div>
+          
+          <div class="content">
+            <h2>Order Details</h2>
+            <div class="order-details">
+              <p><strong>Order ID:</strong> ${orderData.orderId}</p>
+              <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+              
+              <h3>Items Ordered:</h3>
+              ${orderData.items.map(item => `
+                <div class="item">
+                  <span>${item.name} (Qty: ${item.quantity})</span>
+                  <span>₹${item.price * item.quantity}</span>
+                </div>
+              `).join('')}
+              
+              <div class="item total">
+                <span>Total Amount:</span>
+                <span>₹${orderData.totalAmount}</span>
+              </div>
+            </div>
+            
+            <h3>Shipping Address:</h3>
+            <div class="address">
+              <strong>${orderData.shippingAddress.name}</strong><br>
+              ${orderData.shippingAddress.address}<br>
+              ${orderData.shippingAddress.city}, ${orderData.shippingAddress.state} - ${orderData.shippingAddress.pincode}<br>
+              Phone: ${orderData.shippingAddress.phone}
+            </div>
+            
+            <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin: 20px 0;">
+              <h3 style="color: #155724; margin: 0;">What's Next?</h3>
+              <p style="margin: 10px 0 0 0; color: #155724;">
+                • We'll process your order within 1-2 business days<br>
+                • You'll receive a shipping confirmation with tracking details<br>
+                • Expected delivery: 3-5 business days
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p><strong>Contact Us:</strong></p>
+              <p>📞 011-4578594 | 📱 +91 79826 45175</p>
+              <p>📧 info@cremsonpublications.com</p>
+              <p>📍 4578/15 (Basement), Aggarwal Road, Opp. Happy School, Darya Ganj, New Delhi – 110002</p>
+              <p style="margin-top: 20px; color: #999;">
+                Thank you for choosing Cremson Publications for your educational needs!
+              </p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        sender: { 
+          name: "Cremson Publications", 
+          email: "arjunanofficial21@gmail.com" 
         },
-        body: JSON.stringify({
-          to: orderData.customerEmail,
-          subject: `Order Confirmation #${orderData.orderId} - Cremson Publications`,
-          customerName: orderData.customerName,
-          orderId: orderData.orderId,
-          orderItems: orderData.items,
-          totalAmount: orderData.totalAmount,
-          shippingAddress: orderData.shippingAddress
-        })
-      }
-    );
+        to: [{ email: orderData.customerEmail, name: orderData.customerName }],
+        subject: `Order Confirmation #${orderData.orderId} - Cremson Publications`,
+        htmlContent: htmlContent,
+      }),
+    });
 
     const data = await response.json();
 

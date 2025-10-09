@@ -25,6 +25,17 @@ interface EmailPayload {
 console.info('Email service started');
 
 Deno.serve(async (req: Request) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    });
+  }
+
   try {
     const {
       to,
@@ -36,12 +47,21 @@ Deno.serve(async (req: Request) => {
       shippingAddress
     }: EmailPayload = await req.json();
 
-    const BREVO_API_KEY = Deno.env.get("BREVO_API_KEY");
+    // Brevo API key
+    const BREVO_API_KEY = "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";
 
-    if (!BREVO_API_KEY) {
+    if (!BREVO_API_KEY || BREVO_API_KEY.includes('replace_this')) {
       return new Response(
-        JSON.stringify({ error: "Brevo API key not configured" }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Brevo API key not configured properly" }),
+        { 
+          status: 500, 
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+          } 
+        }
       );
     }
 
@@ -155,7 +175,12 @@ Deno.serve(async (req: Request) => {
           data 
         }),
         {
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+          },
         }
       );
     } else {
@@ -167,7 +192,12 @@ Deno.serve(async (req: Request) => {
         }),
         {
           status: 400,
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+          },
         }
       );
     }
@@ -182,7 +212,12 @@ Deno.serve(async (req: Request) => {
       }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "POST, OPTIONS",
+          "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+        },
       }
     );
   }
