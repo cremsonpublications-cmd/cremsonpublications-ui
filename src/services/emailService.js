@@ -30,8 +30,10 @@ export const sendOrderConfirmationEmail = async (orderData) => {
 // Direct Brevo API method (bypassing Supabase function)
 export const sendOrderConfirmationEmailDirect = async (orderData) => {
   try {
-    // Brevo API key
-    const BREVO_API_KEY = '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';
+    // Brevo API key & sender from Vite env
+    const BREVO_API_KEY = import.meta.env.VITE_BREVO_API_KEY;
+    const SENDER_EMAIL = import.meta.env.VITE_BREVO_SENDER_EMAIL || 'info@cremsonpublications.com';
+    const SENDER_NAME = import.meta.env.VITE_BREVO_SENDER_NAME || 'Cremson Publications';
     
     // Create HTML email template
     const htmlContent = `
@@ -123,8 +125,8 @@ export const sendOrderConfirmationEmailDirect = async (orderData) => {
       },
       body: JSON.stringify({
         sender: { 
-          name: "Cremson Publications", 
-          email: "arjunanofficial21@gmail.com" 
+          name: SENDER_NAME, 
+          email: SENDER_EMAIL 
         },
         to: [{ email: orderData.customerEmail, name: orderData.customerName }],
         subject: `Order Confirmation #${orderData.orderId} - Cremson Publications`,

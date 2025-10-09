@@ -1,6 +1,13 @@
+/* eslint-env node */
+/* global process */
+import 'dotenv/config';
 // Check email delivery status in Brevo
 const checkEmailStatus = async () => {
-  const BREVO_API_KEY = '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';
+  const BREVO_API_KEY = process.env.BREVO_API_KEY;
+  if (!BREVO_API_KEY) {
+    console.error('BREVO_API_KEY not found. Create a .env file with BREVO_API_KEY=...');
+    return;
+  }
   const messageId = '202510090340.10463531267@smtp-relay.mailin.fr'; // Your message ID
   
   try {

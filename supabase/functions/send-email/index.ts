@@ -47,8 +47,10 @@ Deno.serve(async (req: Request) => {
       shippingAddress
     }: EmailPayload = await req.json();
 
-    // Brevo API key
-    const BREVO_API_KEY = "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";
+    // Brevo API key and sender from environment variables
+    const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') || Deno.env.get('VITE_BREVO_API_KEY');
+    const SENDER_EMAIL = Deno.env.get('BREVO_SENDER_EMAIL') || 'info@cremsonpublications.com';
+    const SENDER_NAME = Deno.env.get('BREVO_SENDER_NAME') || 'Cremson Publications';
 
     if (!BREVO_API_KEY || BREVO_API_KEY.includes('replace_this')) {
       return new Response(
@@ -156,8 +158,8 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         sender: { 
-          name: "Cremson Publications", 
-          email: "info@cremsonpublications.com" 
+          name: SENDER_NAME, 
+          email: SENDER_EMAIL 
         },
         to: [{ email: to, name: customerName }],
         subject: subject,
