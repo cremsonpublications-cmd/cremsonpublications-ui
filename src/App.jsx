@@ -30,6 +30,7 @@ import ShippingPolicy from "./pages/ShippingPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CancellationRefund from "./pages/CancellationRefund";
+import ContactPage from "./pages/ContactPage";
 
 import "./styles/globals.css";
 
@@ -81,6 +82,7 @@ function App() {
                           <Route path="/terms-conditions" element={<TermsConditions />} />
                           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                           <Route path="/cancellation-refund" element={<CancellationRefund />} />
+                          <Route path="/contact-us" element={<ContactPage />} />
                         </Routes>
                       </div>
                       <Footer />

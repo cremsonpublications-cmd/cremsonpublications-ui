@@ -12,9 +12,15 @@ type ProductCardProps = {
 const ProductCard = ({ data }: ProductCardProps) => {
   const { removeFromCart, incrementQuantity, decrementQuantity } = useCart();
 
+  // Debug: Log the data to see what's available
+  console.log('Cart item data:', data);
+
+  // Get price from available fields
+  const itemPrice = data.price || data.mrp || 0;
+  
   // Calculate discount percentage if old_price exists
   const discountPercentage = data.old_price ?
-    Math.round(((data.old_price - data.price) / data.old_price) * 100) : 0;
+    Math.round(((data.old_price - itemPrice) / data.old_price) * 100) : 0;
 
   return (
     <div className="flex items-start space-x-4">
@@ -68,7 +74,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
         <div className="flex items-center flex-wrap justify-between">
           <div className="flex items-center space-x-[5px] xl:space-x-2.5">
             <span className="font-bold text-black text-xl xl:text-2xl">
-              ₹{data.price}
+              ₹{itemPrice}
             </span>
             {data.old_price && (
               <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">

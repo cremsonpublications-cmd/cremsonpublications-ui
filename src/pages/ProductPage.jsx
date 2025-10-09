@@ -3,6 +3,8 @@ import ProductListSec from "../components/common/ProductListSec";
 import BreadcrumbProduct from "../components/product-page/BreadcrumbProduct";
 import Header from "../components/product-page/Header";
 import Tabs from "../components/product-page/Tabs";
+import ProductReviews from "../components/product-page/ProductReviews";
+import BoughtTogether from "../components/product-page/BoughtTogether";
 import { useProducts } from "../context/ProductContext";
 import ProductPageSkeleton from "../components/product-page/ProductPageSkeleton";
 
@@ -148,14 +150,14 @@ export default function ProductPage() {
     return <Navigate to="/shop" replace />;
   }
 
-  // Get related products from same category
-  const relatedProducts = products
-    .filter(
-      (product) =>
-        product.category_id === productData.category_id &&
-        product.id !== productData.id
-    )
-    .slice(0, 4);
+  // Get 4 random products (excluding current product)
+  const getRandomProducts = () => {
+    const availableProducts = products.filter(product => product.id !== productData.id);
+    const shuffled = [...availableProducts].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 4);
+  };
+
+  const randomProducts = getRandomProducts();
 
   return (
     <main>
@@ -165,13 +167,21 @@ export default function ProductPage() {
         <section className="mb-11">
           <Header data={productData} />
         </section>
+
+        {/* Bought Together Section */}
+        <section className="mb-11">
+          <BoughtTogether currentProduct={productData} />
+        </section>
+
+        {/* Reviews Section */}
+        <section className="mb-11">
+          <ProductReviews productId={productData.id} />
+        </section>
       </div>
       <div className="mb-[50px] sm:mb-20">
         <ProductListSec
           title="You might also like"
-          data={
-            relatedProducts.length > 0 ? relatedProducts : products.slice(0, 4)
-          }
+          data={randomProducts}
         />
       </div>
     </main>

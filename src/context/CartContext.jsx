@@ -137,7 +137,11 @@ export const CartProvider = ({ children }) => {
 
   // Get total price
   const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cartItems.reduce((total, item) => {
+      const price = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      return total + (price * quantity);
+    }, 0);
   };
 
   // Get cart subtotal (before any discounts)
