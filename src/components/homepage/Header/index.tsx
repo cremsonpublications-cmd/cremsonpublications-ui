@@ -42,23 +42,16 @@ const Header = () => {
   };
 
   return (
-    <header className="header relative overflow-hidden h-[500px]" id="home">
-      {/* Background crossfade banner images */}
-      {bannerImages.map((img, index) => (
-        <div
-          key={index}
-          className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
-          style={{
-            opacity: currentImage === index ? 1 : 0,
-          }}
-        >
-          <img
-            src={img}
-            alt={`Banner ${index + 1}`}
-            className="w-full  object-contain"
-          />
-        </div>
-      ))}
+    <header className="header relative overflow-hidden h-[200px] sm:h-[500px]" id="home">
+      {/* Background banner image - single image, no heavy transitions */}
+      <div className="absolute inset-0">
+        <img
+          src={bannerImages[currentImage]}
+          alt={`Banner ${currentImage + 1}`}
+          className="w-full h-full object-contain transition-opacity duration-300 ease-in-out"
+          style={{ willChange: 'opacity' }}
+        />
+      </div>
 
       {/* Carousel indicators - progress lines */}
       {bannerImages.length > 1 && (

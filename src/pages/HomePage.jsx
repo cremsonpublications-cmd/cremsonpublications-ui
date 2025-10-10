@@ -83,7 +83,7 @@ export default function HomePage() {
     return (
       <>
         <Header />
-        <main className="my-[50px] sm:my-[72px]">
+        <main className="my-4 sm:my-[72px]">
           <ProductListSecSkeleton title="Best Selling Books" />
           {/* Don't show reviews section during loading */}
         </main>
@@ -102,7 +102,7 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <main className="my-[50px] sm:my-[72px]">
+      <main className="my-4 sm:my-[72px]">
         <ProductListSec
           title="Best Selling Books"
           data={products.slice(0, 4)} // Show first 4 products
