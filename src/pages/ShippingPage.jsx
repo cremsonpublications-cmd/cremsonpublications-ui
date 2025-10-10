@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import { useRazorpay } from "react-razorpay";
+import { useUser } from "@clerk/clerk-react";
+import useRazorpay from "react-razorpay";
+import Confetti from "react-confetti";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
 import { sendOrderConfirmationEmailDirect } from "../services/emailService";
@@ -41,11 +42,12 @@ const ShippingPage = () => {
     clearCart,
     clearCheckoutData,
   } = useCart();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   // Get data from navigation state
   const navigationData = location.state;
   const displayCustomerInfo = navigationData?.customerInfo || customerInfo;
+  const shippingDetails = navigationData?.shippingDetails; // Only exists if different delivery address
 
   // Order summary state
   const [orderSummary, setOrderSummary] = useState({
@@ -57,6 +59,9 @@ const ShippingPage = () => {
 
   // Payment processing state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  
+  // Confetti celebration state
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Shipping methods
   const shippingMethods = [
@@ -101,28 +106,51 @@ const ShippingPage = () => {
       const orderId = generateOrderId();
       const currentDate = new Date().toISOString().split("T")[0];
 
+      // Determine which address to use for delivery
+      const deliveryAddress = shippingDetails ? {
+        // Use shipping address if different delivery address was selected
+        street: shippingDetails.streetAddress,
+        apartment: shippingDetails.apartment,
+        city: shippingDetails.city,
+        state: shippingDetails.state,
+        pincode: shippingDetails.pincode,
+        country: shippingDetails.country,
+      } : {
+        // Use billing address if same as billing
+        street: displayCustomerInfo.address.street,
+        apartment: displayCustomerInfo.address.apartment,
+        city: displayCustomerInfo.address.city,
+        state: displayCustomerInfo.address.state,
+        pincode: displayCustomerInfo.address.pincode,
+        country: displayCustomerInfo.address.country,
+      };
+
       // Prepare order data according to database schema
       const orderData = {
         order_id: orderId,
         user_info: {
           userId: user?.id || "guest",
-          name:
-            displayCustomerInfo.firstName && displayCustomerInfo.lastName
-              ? `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`
-              : user?.name || "Guest User",
-          email:
-            displayCustomerInfo.email || user?.email || "guest@example.com",
-          phone: displayCustomerInfo.phone || "+91-9876543210",
-          address: {
-            street:
-              displayCustomerInfo.address.street || "54 Green First Parkway",
-            apartment: displayCustomerInfo.address.apartment || "",
-            city: displayCustomerInfo.address.city || "Tirunelveli",
-            state: displayCustomerInfo.address.state || "Tamil Nadu",
-            pincode: displayCustomerInfo.address.pincode || "627426",
-            country: displayCustomerInfo.address.country || "India",
-          },
+          name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
+          email: displayCustomerInfo.email,
+          phone: displayCustomerInfo.phone,
+          address: deliveryAddress,
         },
+        // Add billing address separately if different from delivery
+        ...(shippingDetails && {
+          billing_info: {
+            name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
+            email: displayCustomerInfo.email,
+            phone: displayCustomerInfo.phone,
+            address: {
+              street: displayCustomerInfo.address.street,
+              apartment: displayCustomerInfo.address.apartment,
+              city: displayCustomerInfo.address.city,
+              state: displayCustomerInfo.address.state,
+              pincode: displayCustomerInfo.address.pincode,
+              country: displayCustomerInfo.address.country,
+            }
+          }
+        }),
         items: cartItems.map((item) => ({
           productId: item.id,
           name: item.name,
@@ -147,15 +175,7 @@ const ShippingPage = () => {
           amount: total,
         },
         delivery: {
-          status: "Processing",
-          deliveryType:
-            shippingInfo.method === "free"
-              ? "Free Shipping"
-              : "Standard Delivery",
-          expectedDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0], // 7 days from now
-          trackingId: `TRK${Date.now()}`,
+          status: "Order Placed",
           notes: shippingInfo.notes || "",
         },
         order_status: "Confirmed",
@@ -182,7 +202,13 @@ const ShippingPage = () => {
   };
 
   const handleContinueToPayment = () => {
+    console.log("Payment button clicked");
+    console.log("useRazorpay error:", error);
+    console.log("Razorpay from hook:", Razorpay);
+    console.log("window.Razorpay:", window.Razorpay);
+
     if (error) {
+      console.error("useRazorpay error:", error);
       toast.error("Razorpay failed to load. Please refresh and try again.");
       return;
     }
@@ -250,8 +276,14 @@ const ShippingPage = () => {
           clearCart();
           clearCheckoutData();
 
-          // Navigate to my orders page
-          navigate("/my-orders");
+          // Trigger confetti celebration
+          setShowConfetti(true);
+          setTimeout(() => setShowConfetti(false), 4000); // Show for 4 seconds
+
+          // Navigate to my orders page after a short delay to show confetti
+          setTimeout(() => {
+            navigate("/my-orders");
+          }, 1500);
 
           toast.success("Payment successful! Order placed. 🎉");
         } catch (error) {
@@ -287,16 +319,34 @@ const ShippingPage = () => {
       },
     };
 
-    const razorpayInstance = new Razorpay(options);
-    razorpayInstance.on("payment.failed", (response) => {
-      console.error("Payment Failed:", response.error);
-      toast.error(
-        `Payment failed: ${response.error.description || "Unknown error"}`
-      );
+    // Check if Razorpay is available
+    if (!window.Razorpay) {
+      console.error("Razorpay script not loaded");
+      toast.error("Payment system not loaded. Please refresh the page and try again.");
       setIsProcessingPayment(false);
-    });
+      return;
+    }
 
-    razorpayInstance.open();
+    console.log("Creating Razorpay instance with options:", options);
+
+    try {
+      const razorpayInstance = new window.Razorpay(options);
+      
+      razorpayInstance.on("payment.failed", (response) => {
+        console.error("Payment Failed:", response.error);
+        toast.error(
+          `Payment failed: ${response.error.description || "Unknown error"}`
+        );
+        setIsProcessingPayment(false);
+      });
+
+      console.log("Opening Razorpay checkout...");
+      razorpayInstance.open();
+    } catch (error) {
+      console.error("Error creating Razorpay instance:", error);
+      toast.error("Failed to initialize payment. Please try again.");
+      setIsProcessingPayment(false);
+    }
   };
 
   const handleChangeContact = () => {
@@ -339,6 +389,107 @@ const ShippingPage = () => {
 
   return (
     <div className="max-w-frame mx-auto px-4 py-8">
+      {/* Confetti Effect for Order Success - Left to Right Burst Wave */}
+      {showConfetti && (
+        <>
+          {/* Far Left Burst */}
+          <Confetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={120}
+            gravity={0.2}
+            friction={0.97}
+            wind={0.03}
+            initialVelocityX={{ min: 8, max: 35 }}
+            initialVelocityY={{ min: -35, max: -8 }}
+            confettiSource={{
+              x: window.innerWidth * 0.05,
+              y: window.innerHeight * 0.35,
+              w: 8,
+              h: 8
+            }}
+            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+          />
+          {/* Left-Center Burst */}
+          <Confetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={140}
+            gravity={0.2}
+            friction={0.97}
+            wind={0.03}
+            initialVelocityX={{ min: 5, max: 40 }}
+            initialVelocityY={{ min: -40, max: -10 }}
+            confettiSource={{
+              x: window.innerWidth * 0.25,
+              y: window.innerHeight * 0.25,
+              w: 8,
+              h: 8
+            }}
+            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+          />
+          {/* Center Burst */}
+          <Confetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={160}
+            gravity={0.2}
+            friction={0.97}
+            wind={0.03}
+            initialVelocityX={{ min: 0, max: 45 }}
+            initialVelocityY={{ min: -45, max: -12 }}
+            confettiSource={{
+              x: window.innerWidth * 0.5,
+              y: window.innerHeight * 0.2,
+              w: 8,
+              h: 8
+            }}
+            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+          />
+          {/* Right-Center Burst */}
+          <Confetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={140}
+            gravity={0.2}
+            friction={0.97}
+            wind={0.03}
+            initialVelocityX={{ min: -5, max: 40 }}
+            initialVelocityY={{ min: -40, max: -10 }}
+            confettiSource={{
+              x: window.innerWidth * 0.75,
+              y: window.innerHeight * 0.25,
+              w: 8,
+              h: 8
+            }}
+            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+          />
+          {/* Far Right Burst */}
+          <Confetti
+            width={window.innerWidth}
+            height={window.innerHeight}
+            recycle={false}
+            numberOfPieces={120}
+            gravity={0.2}
+            friction={0.97}
+            wind={0.03}
+            initialVelocityX={{ min: -10, max: 35 }}
+            initialVelocityY={{ min: -35, max: -8 }}
+            confettiSource={{
+              x: window.innerWidth * 0.95,
+              y: window.innerHeight * 0.35,
+              w: 8,
+              h: 8
+            }}
+            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+          />
+        </>
+      )}
+      
       {/* Checkout Breadcrumb */}
       <Breadcrumb className="mb-8">
         <BreadcrumbList>

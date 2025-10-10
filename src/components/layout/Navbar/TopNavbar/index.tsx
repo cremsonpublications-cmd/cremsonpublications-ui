@@ -15,8 +15,7 @@ import InputGroup from "@/components/ui/input-group";
 import ResTopNavbar from "./ResTopNavbar";
 import CartBtn from "./CartBtn";
 import SearchDropdown from "@/components/ui/SearchDropdown";
-import SignInModal from "../../../auth/SignInModal";
-import { useAuth } from "../../../../context/AuthContext";
+import { useUser, useClerk } from "@clerk/clerk-react";
 
 const data: NavMenu = [
   {
@@ -53,9 +52,9 @@ const TopNavbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { getWishlistCount } = useWishlist();
-  const { user, signOut, isSignedIn } = useAuth();
+  const { user, isSignedIn } = useUser();
+  const { signOut } = useClerk();
   const [showMobileSearch, setShowMobileSearch] = React.useState(false);
-  const [showSignInModal, setShowSignInModal] = React.useState(false);
 
   const handleSignOut = () => {
     signOut();
@@ -130,21 +129,21 @@ const TopNavbar = () => {
             )}
           </Link>
           <CartBtn />
-          {isSignedIn() ? (
+          {isSignedIn ? (
             <div className="relative group">
               <button className="p-1 flex items-center gap-2">
-                {user?.name ? (
+                {user?.fullName ? (
                   <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center border border-gray-300">
                     <span className="text-white text-xs font-bold">
-                      {user.name.charAt(0).toUpperCase()}
+                      {user.fullName.charAt(0).toUpperCase()}
                     </span>
                   </div>
                 ) : (
                   <User size={22} className="text-red-500" />
                 )}
-                {user?.given_name && (
+                {user?.firstName && (
                   <span className="hidden sm:block text-sm text-gray-700">
-                    {user.given_name}
+                    {user.firstName}
                   </span>
                 )}
               </button>
@@ -153,8 +152,8 @@ const TopNavbar = () => {
               <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                 <div className="py-2">
                   <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user?.name}</p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
+                    <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
+                    <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
                   </div>
                   <Link
                     to="/my-orders"
@@ -173,7 +172,7 @@ const TopNavbar = () => {
             </div>
           ) : (
             <button
-              onClick={() => setShowSignInModal(true)}
+              onClick={() => navigate('/signin')}
               className="p-1"
             >
               <User size={22} className="text-red-500" />
@@ -209,11 +208,6 @@ const TopNavbar = () => {
         </div>
       )}
 
-      {/* Sign In Modal */}
-      <SignInModal
-        isOpen={showSignInModal}
-        onClose={() => setShowSignInModal(false)}
-      />
     </nav>
   );
 };

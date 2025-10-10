@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
+import Confetti from "react-confetti";
 import BreadcrumbCart from "../components/cart-page/BreadcrumbCart";
 import ProductCard from "../components/cart-page/ProductCard";
 import { Button } from "../components/ui/button";
@@ -10,44 +12,54 @@ import { FaArrowRight } from "react-icons/fa6";
 import { MdOutlineLocalOffer } from "react-icons/md";
 import { TbBasketExclamation } from "react-icons/tb";
 import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import { getCoupons, validateCoupon } from "../services/couponService";
+import { useCoupons } from "../context/CouponContext";
 import { Tag, Check, X, Percent, ChevronDown, ChevronUp } from "lucide-react";
-import SignInModal from "../components/auth/SignInModal";
+import confetti from 'canvas-confetti';
 
 export default function CartPage() {
   const { cartItems, getTotalPrice, getTotalItems, appliedCoupon, applyCoupon, removeCoupon, getCouponDiscount, getFinalTotal } = useCart();
-  const { isSignedIn } = useAuth();
+  const { validateCouponCode, selectedCoupons, loading: couponsLoading, fetchCoupons } = useCoupons();
+  const { isSignedIn } = useUser();
   const navigate = useNavigate();
 
   // Coupon state
-  const [availableCoupons, setAvailableCoupons] = useState([]);
-  const [couponCode, setCouponCode] = useState('');
-  const [couponMessage, setCouponMessage] = useState('');
+  const [couponCode, setCouponCode] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
   const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [showCoupons, setShowCoupons] = useState(false);
 
-  // Sign-in modal state
-  const [showSignInModal, setShowSignInModal] = useState(false);
+  // Confetti function for coupon success
+  const triggerCouponConfetti = () => {
+    // Left to right burst effect
+    confetti({
+      particleCount: 50,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0.6 },
+      colors: ['#f43f5e', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
+    });
+    confetti({
+      particleCount: 50,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0.6 },
+      colors: ['#f43f5e', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
+    });
+  };
 
   const totalPrice = getTotalPrice();
   const totalItems = getTotalItems();
   const couponDiscount = getCouponDiscount();
   const finalTotal = getFinalTotal();
 
-  // Load coupons on component mount
+  // Ensure coupons are loaded when CartPage is accessed
   useEffect(() => {
-    const loadCoupons = async () => {
-      try {
-        const coupons = await getCoupons();
-        setAvailableCoupons(coupons);
-      } catch (error) {
-        console.error('Failed to load coupons:', error);
-      }
-    };
-
-    loadCoupons();
-  }, []);
+    if (selectedCoupons.length === 0 && !couponsLoading) {
+      console.log('CartPage: Loading coupons...');
+      fetchCoupons();
+    }
+    console.log('CartPage: selectedCoupons:', selectedCoupons);
+  }, [selectedCoupons, couponsLoading, fetchCoupons]);
 
   // Apply coupon
   const handleApplyCoupon = async () => {
@@ -57,13 +69,16 @@ export default function CartPage() {
     setCouponMessage('');
 
     try {
-      const result = await validateCoupon(couponCode, totalPrice);
+      const result = await validateCouponCode(couponCode, totalPrice);
 
       if (result.valid) {
         applyCoupon(result.coupon);
         setCouponMessage(result.message);
         setCouponCode('');
         setShowCoupons(false);
+        
+        // Trigger confetti celebration
+        triggerCouponConfetti();
       } else {
         setCouponMessage(result.message);
         removeCoupon();
@@ -88,12 +103,15 @@ export default function CartPage() {
     setCouponMessage('');
 
     try {
-      const result = await validateCoupon(coupon.code, totalPrice);
+      const result = await validateCouponCode(coupon.code, totalPrice);
 
       if (result.valid) {
         applyCoupon(result.coupon);
         setCouponMessage(result.message);
         setShowCoupons(false);
+        
+        // Trigger confetti celebration
+        triggerCouponConfetti();
       } else {
         setCouponMessage(result.message);
       }
@@ -106,25 +124,12 @@ export default function CartPage() {
 
   // Handle checkout button click
   const handleCheckoutClick = () => {
-    if (!isSignedIn()) {
-      setShowSignInModal(true);
+    if (!isSignedIn) {
+      navigate('/signin');
     } else {
       navigate('/checkout');
     }
   };
-
-  // Handle sign-in modal close
-  const handleSignInModalClose = () => {
-    setShowSignInModal(false);
-  };
-
-  // Auto-navigate to checkout after successful sign-in
-  useEffect(() => {
-    if (isSignedIn() && showSignInModal) {
-      setShowSignInModal(false);
-      navigate('/checkout');
-    }
-  }, [isSignedIn, showSignInModal, navigate]);
 
   return (
     <main className="pb-20">
@@ -185,6 +190,11 @@ export default function CartPage() {
                       </div>
                       <span className="text-xl md:text-2xl font-bold text-green-600">
                         -₹{couponDiscount}
+                        {appliedCoupon?.discount_type === 'percentage' && (
+                          <span className="text-sm font-normal text-gray-600 ml-1">
+                            ({appliedCoupon.discount_value}%)
+                          </span>
+                        )}
                       </span>
                     </div>
                   )}
@@ -261,7 +271,7 @@ export default function CartPage() {
                       >
                         <span className="flex items-center gap-2">
                           <Tag size={16} />
-                          Available Coupons ({availableCoupons.length})
+                          Available Coupons ({selectedCoupons.length})
                         </span>
                         {showCoupons ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                       </button>
@@ -269,8 +279,9 @@ export default function CartPage() {
                       {/* Available Coupons List */}
                       {showCoupons && (
                         <div className="mt-3 space-y-2">
-                          {availableCoupons.length > 0 ? (
-                            availableCoupons.map((coupon) => (
+                          {console.log('Rendering coupons, selectedCoupons:', selectedCoupons)}
+                          {selectedCoupons.length > 0 ? (
+                            selectedCoupons.map((coupon) => (
                               <div
                                 key={coupon.id}
                                 className="border border-gray-200 rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -284,7 +295,9 @@ export default function CartPage() {
                                     </span>
                                   </div>
                                   <span className="text-sm font-medium text-gray-900">
-                                    ₹{coupon.discount_value} OFF
+                                    {coupon.discount_type === 'percentage' 
+                                      ? `${coupon.discount_value}% OFF` 
+                                      : `₹${coupon.discount_value} OFF`}
                                   </span>
                                 </div>
                                 <p className="text-xs text-gray-600 mt-1">{coupon.description}</p>
@@ -325,11 +338,6 @@ export default function CartPage() {
         )}
       </div>
 
-      {/* Sign In Modal */}
-      <SignInModal
-        isOpen={showSignInModal}
-        onClose={handleSignInModalClose}
-      />
     </main>
   );
 }

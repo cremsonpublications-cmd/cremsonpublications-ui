@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext';
+import { useUser } from '@clerk/clerk-react';
 import { toast } from "sonner";
 import {
   MapPin,
@@ -10,7 +10,6 @@ import {
   ShoppingBag
 } from 'lucide-react';
 import SearchableSelect from '../components/ui/SearchableSelect';
-import SignInModal from '../components/auth/SignInModal';
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -44,7 +43,7 @@ const CheckoutPage = () => {
     updateCustomerInfo,
     updateCustomerAddress
   } = useCart();
-  const { user, isSignedIn } = useAuth();
+  const { user, isSignedIn } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -63,28 +62,20 @@ const CheckoutPage = () => {
   }, [location.state, updateCustomerInfo, updateCustomerAddress]);
 
 
-  // Check if user is logged in, show sign-in modal if not
+  // Check if user is logged in, redirect to signin if not
   useEffect(() => {
-    if (!isSignedIn()) {
-      setShowSignInModal(true);
-    } else {
-      setShowSignInModal(false);
+    if (!isSignedIn) {
+      navigate('/signin');
     }
-  }, [isSignedIn]);
-
-  // Handle sign-in modal close
-  const handleSignInModalClose = () => {
-    setShowSignInModal(false);
-    navigate('/cart'); // Redirect to cart if user closes modal without signing in
-  };
+  }, [isSignedIn, navigate]);
 
   // Initialize customer info with user data if available
   useEffect(() => {
     if (user && !customerInfo.email) {
       updateCustomerInfo({
-        email: user.email || '',
-        firstName: user.name?.split(' ')[0] || '',
-        lastName: user.name?.split(' ')[1] || ''
+        email: user.primaryEmailAddress?.emailAddress || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || ''
       });
     }
   }, [user, customerInfo.email, updateCustomerInfo]);
@@ -92,7 +83,6 @@ const CheckoutPage = () => {
   const [deliverToDifferentAddress, setDeliverToDifferentAddress] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [showValidation, setShowValidation] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
   const [shippingDetails, setShippingDetails] = useState({
     firstName: '',
     lastName: '',
@@ -161,6 +151,7 @@ const CheckoutPage = () => {
   const validateCustomerInfo = () => {
     const errors = [];
 
+    // Validate billing/customer information
     if (!customerInfo.email?.trim()) {
       errors.push('Email is required');
     }
@@ -171,19 +162,44 @@ const CheckoutPage = () => {
       errors.push('Last name is required');
     }
     if (!customerInfo.address?.street?.trim()) {
-      errors.push('Street address is required');
+      errors.push('Billing street address is required');
     }
     if (!customerInfo.address?.city?.trim()) {
-      errors.push('City is required');
+      errors.push('Billing city is required');
     }
     if (!customerInfo.address?.state?.trim()) {
-      errors.push('State is required');
+      errors.push('Billing state is required');
     }
     if (!customerInfo.address?.pincode?.trim()) {
-      errors.push('Pincode is required');
+      errors.push('Billing pincode is required');
     }
     if (!customerInfo.phone?.trim()) {
       errors.push('Phone number is required');
+    }
+
+    // Validate shipping address if different delivery address is selected
+    if (deliverToDifferentAddress) {
+      if (!shippingDetails.firstName?.trim()) {
+        errors.push('Shipping first name is required');
+      }
+      if (!shippingDetails.lastName?.trim()) {
+        errors.push('Shipping last name is required');
+      }
+      if (!shippingDetails.streetAddress?.trim()) {
+        errors.push('Shipping street address is required');
+      }
+      if (!shippingDetails.city?.trim()) {
+        errors.push('Shipping city is required');
+      }
+      if (!shippingDetails.state?.trim()) {
+        errors.push('Shipping state is required');
+      }
+      if (!shippingDetails.pincode?.trim()) {
+        errors.push('Shipping pincode is required');
+      }
+      if (!shippingDetails.country?.trim()) {
+        errors.push('Shipping country is required');
+      }
     }
 
     return errors;
@@ -230,7 +246,7 @@ const CheckoutPage = () => {
   };
 
   // If user is not signed in, show only the sign-in modal (no checkout content)
-  if (!isSignedIn()) {
+  if (!isSignedIn) {
     return (
       <div className="max-w-frame mx-auto px-4 py-8">
         <div className="text-center">
@@ -245,11 +261,6 @@ const CheckoutPage = () => {
           </button>
         </div>
 
-        {/* Sign In Modal */}
-        <SignInModal
-          isOpen={showSignInModal}
-          onClose={handleSignInModalClose}
-        />
       </div>
     );
   }

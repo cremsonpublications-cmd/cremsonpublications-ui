@@ -5,7 +5,7 @@ import { PaymentBadge, SocialNetworks } from "./footer.types";
 import { FaFacebookF, FaGithub, FaInstagram, FaTwitter } from "react-icons/fa";
 import { SiGooglepay, SiPaytm, SiPhonepe } from "react-icons/si";
 import { MdPayment } from "react-icons/md";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, Heart, User, ShoppingCart } from "lucide-react";
 import LinksSection from "./LinksSection";
 import NewsLetterSection from "./NewsLetterSection";
@@ -14,8 +14,7 @@ import websiteLogo from "../../../assets/CP-Logo.png";
 import { useCart } from "../../../context/CartContext";
 import { useWishlist } from "../../../context/WishlistContext";
 import SearchDropdown from "../../ui/SearchDropdown";
-import SignInModal from "../../auth/SignInModal";
-import { useAuth } from "../../../context/AuthContext";
+import { useUser } from "@clerk/clerk-react";
 import { MapPin, Phone, Smartphone, Mail, Clock } from "lucide-react";
 
 const socialsData: SocialNetworks[] = [
@@ -72,9 +71,9 @@ const paymentBadgesData = [
 const Footer = () => {
   const { cartItems } = useCart();
   const { getWishlistCount } = useWishlist();
-  const { user, isSignedIn } = useAuth();
+  const { user, isSignedIn } = useUser();
+  const navigate = useNavigate();
   const [showSearchModal, setShowSearchModal] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
 
   return (
     <footer className="mt-10">
@@ -248,12 +247,12 @@ const Footer = () => {
                     </span>
                   )}
                 </Link>
-                {isSignedIn() ? (
+                {isSignedIn ? (
                   <div className="p-2">
-                    {user?.name ? (
+                    {user?.fullName ? (
                       <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center border border-gray-300">
                         <span className="text-white text-xs font-bold">
-                          {user.name.charAt(0).toUpperCase()}
+                          {user.fullName.charAt(0).toUpperCase()}
                         </span>
                       </div>
                     ) : (
@@ -262,7 +261,7 @@ const Footer = () => {
                   </div>
                 ) : (
                   <button
-                    onClick={() => setShowSignInModal(true)}
+                    onClick={() => navigate('/signin')}
                     className="p-2 hover:bg-white/50 rounded-full transition-all"
                   >
                     <User size={20} className="text-red-500" />
@@ -329,11 +328,6 @@ const Footer = () => {
         </div>
       )}
 
-      {/* Sign In Modal */}
-      <SignInModal
-        isOpen={showSignInModal}
-        onClose={() => setShowSignInModal(false)}
-      />
     </footer>
   );
 };

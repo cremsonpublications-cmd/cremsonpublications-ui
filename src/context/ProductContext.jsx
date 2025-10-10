@@ -16,9 +16,20 @@ export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastFetched, setLastFetched] = useState(null);
 
-  // Fetch categories from Supabase
-  const fetchCategories = async () => {
+  // Cache duration: 10 minutes for products, 30 minutes for categories
+  const PRODUCT_CACHE_DURATION = 10 * 60 * 1000;
+  const CATEGORY_CACHE_DURATION = 30 * 60 * 1000;
+
+  // Fetch categories from Supabase with caching
+  const fetchCategories = async (forceRefresh = false) => {
+    // Check cache validity for categories
+    if (!forceRefresh && lastFetched && categories.length > 0 && 
+        (Date.now() - lastFetched) < CATEGORY_CACHE_DURATION) {
+      return categories;
+    }
+
     try {
       const { data, error } = await supabase
         .from('categories')
@@ -30,14 +41,22 @@ export const ProductProvider = ({ children }) => {
       }
 
       setCategories(data || []);
+      return data || [];
     } catch (err) {
       setError(err.message);
       console.error('Error fetching categories:', err);
+      return [];
     }
   };
 
-  // Fetch products from Supabase
-  const fetchProducts = async () => {
+  // Fetch products from Supabase with caching
+  const fetchProducts = async (forceRefresh = false) => {
+    // Check cache validity for products
+    if (!forceRefresh && lastFetched && products.length > 0 && 
+        (Date.now() - lastFetched) < PRODUCT_CACHE_DURATION) {
+      return products;
+    }
+
     try {
       const { data, error } = await supabase
         .from('products')
@@ -55,9 +74,12 @@ export const ProductProvider = ({ children }) => {
       }
 
       setProducts(data || []);
+      setLastFetched(Date.now());
+      return data || [];
     } catch (err) {
       setError(err.message);
       console.error('Error fetching products:', err);
+      return [];
     }
   };
 
@@ -137,16 +159,42 @@ export const ProductProvider = ({ children }) => {
     fetchInitialData();
   }, []);
 
+  // Refresh methods
+  const refreshProducts = () => fetchProducts(true);
+  const refreshCategories = () => fetchCategories(true);
+  const refreshAll = async () => {
+    setLoading(true);
+    await Promise.all([refreshCategories(), refreshProducts()]);
+    setLoading(false);
+  };
+
+  // Get cached data info
+  const getCacheInfo = () => ({
+    lastFetched,
+    productsCount: products.length,
+    categoriesCount: categories.length,
+    isProductsCacheValid: lastFetched && (Date.now() - lastFetched) < PRODUCT_CACHE_DURATION,
+    isCategoriesCacheValid: lastFetched && (Date.now() - lastFetched) < CATEGORY_CACHE_DURATION
+  });
+
   const value = {
+    // Data
     categories,
     products,
     loading,
     error,
+    lastFetched,
+    
+    // Methods
     fetchCategories,
     fetchProducts,
     fetchProductsByCategory,
     getProductById,
     searchProducts,
+    refreshProducts,
+    refreshCategories,
+    refreshAll,
+    getCacheInfo,
     setError,
   };
 

@@ -3,13 +3,17 @@ import ProductListSec from "../components/common/ProductListSec";
 import ProductListSecSkeleton from "../components/common/ProductListSecSkeleton";
 import Header from "../components/homepage/Header";
 import Reviews from "../components/homepage/Reviews";
+import CouponPopup from "../components/CouponPopup";
 import { useProducts } from "../context/ProductContext";
+import { useCoupons } from "../context/CouponContext";
 import { reviewsApi } from "../services/reviewApi";
 
 export default function HomePage() {
   const { products, loading, error } = useProducts();
+  const { hasAvailableCoupons } = useCoupons();
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [showCouponPopup, setShowCouponPopup] = useState(false);
 
   // Function to transform database reviews to UI format
   const transformReviewsForUI = (dbReviews) => {
@@ -44,6 +48,33 @@ export default function HomePage() {
     fetchReviews();
   }, []);
 
+  // Show coupon popup after 4 seconds, but only once per day and only if coupons are available
+  useEffect(() => {
+    const checkAndShowPopup = () => {
+      const lastShown = localStorage.getItem('couponPopupLastShown');
+      const now = new Date().getTime();
+      const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+      // Check if popup was never shown or if 24 hours have passed
+      if (!lastShown || (now - parseInt(lastShown)) > oneDayInMs) {
+        // Check if there are any available coupons before showing popup
+        if (hasAvailableCoupons()) {
+          const timer = setTimeout(() => {
+            setShowCouponPopup(true);
+            // Mark popup as shown with current timestamp
+            localStorage.setItem('couponPopupLastShown', now.toString());
+          }, 4000); // Show after 4 seconds
+
+          return () => clearTimeout(timer);
+        } else {
+          console.log('No coupons available, skipping popup');
+        }
+      }
+    };
+
+    checkAndShowPopup();
+  }, [hasAvailableCoupons]);
+
   if (loading) {
     return (
       <>
@@ -74,6 +105,17 @@ export default function HomePage() {
           viewAllLink="/shop"
         />
       </main>
+      
+      {/* Coupon Popup */}
+      <CouponPopup 
+        isOpen={showCouponPopup} 
+        onClose={() => {
+          setShowCouponPopup(false);
+          // Update timestamp when manually closed to prevent showing again today
+          const now = new Date().getTime();
+          localStorage.setItem('couponPopupLastShown', now.toString());
+        }} 
+      />
     </>
   );
 }

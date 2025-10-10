@@ -1,16 +1,29 @@
 import { supabase } from '../lib/supabase';
 
-// Get all available coupons
-export const getCoupons = async () => {
+// Get all coupons - fetch ALL data, let frontend handle filtering
+export const getCoupons = async (showOnlySelected = true) => {
   try {
+    // Fetch ALL coupons data (like your curl request)
     const { data, error } = await supabase
       .from('coupons')
       .select('*')
-      .gte('valid_until', new Date().toISOString())
       .order('discount_value', { ascending: false });
 
     if (error) throw error;
-    return data;
+    
+    // If showOnlySelected is false, return all data
+    if (!showOnlySelected) {
+      return data || [];
+    }
+    
+    // Filter for UI display (active, valid, and show_in_ui = true)
+    const filteredData = (data || []).filter(coupon => 
+      coupon.is_active && 
+      coupon.show_in_ui && 
+      new Date(coupon.valid_until) > new Date()
+    );
+    
+    return filteredData;
   } catch (error) {
     console.error('Error fetching coupons:', error);
     throw error;
@@ -42,11 +55,24 @@ export const validateCoupon = async (couponCode, orderAmount) => {
       };
     }
 
+    // Calculate discount based on type
+    let discountAmount = 0;
+    let discountDisplay = '';
+
+    if (data.discount_type === 'percentage') {
+      discountAmount = Math.min((orderAmount * data.discount_value) / 100, data.max_discount_amount || Infinity);
+      discountDisplay = `${data.discount_value}% (₹${discountAmount.toFixed(2)})`;
+    } else {
+      discountAmount = data.discount_value;
+      discountDisplay = `₹${discountAmount}`;
+    }
+
     return {
       valid: true,
       coupon: data,
-      discount: data.discount_value,
-      message: `Coupon applied! You saved ₹${data.discount_value}`
+      discount: discountAmount,
+      discountDisplay: discountDisplay,
+      message: `Coupon applied! You saved ${discountDisplay}`
     };
   } catch (error) {
     console.error('Error validating coupon:', error);
