@@ -1,39 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { X, Copy, Check, Gift, Percent, Tag } from 'lucide-react';
-import { getCoupons } from '../services/couponService';
+import { useCoupons } from '../context/CouponContext';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 
 const CouponPopup = ({ isOpen, onClose }) => {
+  const { selectedCoupons, loading: contextLoading } = useCoupons();
+  const navigate = useNavigate();
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [copiedCoupon, setCopiedCoupon] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isOpen) {
-      loadCoupons();
+    if (isOpen && !contextLoading) {
+      setAvailableCoupons(selectedCoupons.slice(0, 3)); // Show max 3 coupons
     }
-  }, [isOpen]);
-
-  const loadCoupons = async () => {
-    try {
-      setLoading(true);
-      const coupons = await getCoupons(true); // Only show selected coupons
-      setAvailableCoupons(coupons.slice(0, 3)); // Show max 3 coupons
-    } catch (error) {
-      console.error('Failed to load coupons:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [isOpen, contextLoading, selectedCoupons]);
 
   const handleCopyCoupon = async (couponCode) => {
     try {
       await navigator.clipboard.writeText(couponCode);
       setCopiedCoupon(couponCode);
+
+      // Trigger confetti effect
+      confetti({
+        particleCount: 100,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e']
+      });
+
       toast.success(`Coupon "${couponCode}" copied to clipboard!`);
-      
-      // Reset copied state after 2 seconds
-      setTimeout(() => setCopiedCoupon(null), 2000);
+
+      // Close modal after 1 second
+      setTimeout(() => {
+        onClose();
+        setCopiedCoupon(null);
+      }, 1000);
     } catch (error) {
       console.error('Failed to copy coupon:', error);
       toast.error('Failed to copy coupon code');
@@ -42,17 +45,31 @@ const CouponPopup = ({ isOpen, onClose }) => {
 
   const getBestOffer = () => {
     if (availableCoupons.length === 0) return '0%';
-    
-    const maxDiscount = Math.max(...availableCoupons.map(coupon => {
-      if (coupon.discount_type === 'percentage') {
-        return coupon.discount_value;
-      } else {
-        // For fixed amount, assume it's equivalent to ~10% for display
-        return Math.min(coupon.discount_value / 10, 50);
-      }
-    }));
-    
-    return `${Math.round(maxDiscount)}%`;
+
+    // Find the best coupon to display
+    const bestCoupon = availableCoupons.reduce((best, coupon) => {
+      if (!best) return coupon;
+
+      // Compare discount values directly
+      const currentValue = coupon.discount_type === 'percentage'
+        ? coupon.discount_value
+        : coupon.discount_value;
+
+      const bestValue = best.discount_type === 'percentage'
+        ? best.discount_value
+        : best.discount_value;
+
+      return currentValue > bestValue ? coupon : best;
+    }, null);
+
+    if (!bestCoupon) return '0%';
+
+    // Return appropriate display based on discount type
+    if (bestCoupon.discount_type === 'percentage') {
+      return `${Math.round(bestCoupon.discount_value)}%`;
+    } else {
+      return `₹${bestCoupon.discount_value}`;
+    }
   };
 
   if (!isOpen) return null;
@@ -100,12 +117,7 @@ const CouponPopup = ({ isOpen, onClose }) => {
 
         {/* Coupons Section */}
         <div className="p-6 bg-white">
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading amazing offers...</p>
-            </div>
-          ) : availableCoupons.length > 0 ? (
+          {availableCoupons.length > 0 ? (
             <div className="space-y-3">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 text-center">
                 Available Coupons
@@ -175,7 +187,10 @@ const CouponPopup = ({ isOpen, onClose }) => {
           <div className="mt-6 space-y-3">
             {availableCoupons.length > 0 && (
               <button
-                onClick={onClose}
+                onClick={() => {
+                  onClose();
+                  navigate('/shop');
+                }}
                 className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
               >
                 START SHOPPING

@@ -149,6 +149,29 @@ const ProductCard = ({ data }: ProductCardProps) => {
         </strong>
       </div>
 
+      {/* Rating Section - Always show for debugging */}
+      {true && (
+        <div className="flex items-end gap-2 mb-2">
+          <div className="flex items-end gap-1">
+            <Rating
+              initialValue={data.rating || 0}
+              allowFraction
+              SVGclassName="inline-block"
+              emptyClassName="fill-gray-200"
+              fillClassName="fill-yellow-400"
+              size={14}
+              readonly
+            />
+            <span className="text-sm font-medium text-gray-700">
+              {data.rating ? data.rating.toFixed(1) : '0.0'}
+            </span>
+          </div>
+          <span className="text-xs text-gray-500">
+            ({data.review_count || 0} review{(data.review_count || 0) !== 1 ? 's' : ''})
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between w-full mt-auto">
         <div className="flex items-center space-x-[5px] xl:space-x-2.5">
           <span className="font-bold text-black text-xl xl:text-2xl">

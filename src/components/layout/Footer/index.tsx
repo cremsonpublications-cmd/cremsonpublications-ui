@@ -33,40 +33,9 @@ const socialsData: SocialNetworks[] = [
     icon: <FaInstagram />,
     url: "https://instagram.com",
   },
-  {
-    id: 4,
-    icon: <FaGithub />,
-    url: "https://github.com/mohammadoftadeh",
-  },
 ];
 
-const paymentBadgesData = [
-  {
-    id: 1,
-    name: "Google Pay",
-    icon: <SiGooglepay className="text-2xl" />,
-  },
-  {
-    id: 2,
-    name: "Paytm",
-    icon: <SiPaytm className="text-2xl text-blue-600" />,
-  },
-  {
-    id: 3,
-    name: "PhonePe",
-    icon: <SiPhonepe className="text-2xl text-purple-600" />,
-  },
-  {
-    id: 4,
-    name: "UPI",
-    icon: <MdPayment className="text-2xl text-orange-500" />,
-  },
-  {
-    id: 5,
-    name: "Cashfree",
-    icon: <MdPayment className="text-2xl text-green-500" />,
-  },
-];
+
 
 const Footer = () => {
   const { cartItems } = useCart();
@@ -261,7 +230,7 @@ const Footer = () => {
                   </div>
                 ) : (
                   <button
-                    onClick={() => navigate('/signin')}
+                    onClick={() => navigate("/signin")}
                     className="p-2 hover:bg-white/50 rounded-full transition-all"
                   >
                     <User size={20} className="text-red-500" />
@@ -327,7 +296,6 @@ const Footer = () => {
           </div>
         </div>
       )}
-
     </footer>
   );
 };

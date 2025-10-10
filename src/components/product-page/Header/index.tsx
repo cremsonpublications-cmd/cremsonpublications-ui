@@ -141,11 +141,11 @@ const Header = ({ data }: { data: Product }) => {
             </div>
           </div>
 
-          {/* Rating & Reviews */}
-          {((data.rating && data.rating > 0) || (data as any)?.review_count > 0) && (
+          {/* Rating & Reviews - Always show for debugging */}
+          {true && (
             <div className="flex items-end mb-4">
               <Rating
-                initialValue={data.rating && data.rating > 0 ? data.rating : 0}
+                initialValue={data.rating > 0 ? data.rating : 0}
                 allowFraction
                 SVGclassName="inline-block"
                 emptyClassName="fill-gray-50"
@@ -153,10 +153,10 @@ const Header = ({ data }: { data: Product }) => {
                 readonly
               />
               <span className="text-black text-xs ml-[11px] pb-0.5">
-                {data.rating && data.rating > 0 ? data.rating.toFixed(1) : "0.0"}
+                {data.rating > 0 ? data.rating.toFixed(1) : "0.0"}
                 <span className="text-black/60">/5</span>
-                {(data as any)?.review_count > 0 && (
-                  <span className="text-black/60 ml-1">({(data as any).review_count})</span>
+                {data.review_count && data.review_count > 0 && (
+                  <span className="text-black/60 ml-1">({data.review_count} review{data.review_count !== 1 ? 's' : ''})</span>
                 )}
               </span>
             </div>

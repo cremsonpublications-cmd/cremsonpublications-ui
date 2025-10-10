@@ -10,10 +10,14 @@ import { reviewsApi } from "../services/reviewApi";
 
 export default function HomePage() {
   const { products, loading, error } = useProducts();
-  const { hasAvailableCoupons } = useCoupons();
+  const { hasAvailableCoupons, selectedCoupons } = useCoupons();
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [showCouponPopup, setShowCouponPopup] = useState(false);
+
+  // Debug: Add console logs to check coupon data
+  console.log('HomePage - selectedCoupons:', selectedCoupons);
+  console.log('HomePage - hasAvailableCoupons():', hasAvailableCoupons());
 
   // Function to transform database reviews to UI format
   const transformReviewsForUI = (dbReviews) => {
@@ -53,10 +57,10 @@ export default function HomePage() {
     const checkAndShowPopup = () => {
       const lastShown = localStorage.getItem('couponPopupLastShown');
       const now = new Date().getTime();
-      const oneDayInMs = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+      const twoHoursInMs = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 
-      // Check if popup was never shown or if 24 hours have passed
-      if (!lastShown || (now - parseInt(lastShown)) > oneDayInMs) {
+      // Check if popup was never shown or if 2 hours have passed
+      if (!lastShown || (now - parseInt(lastShown)) > twoHoursInMs) {
         // Check if there are any available coupons before showing popup
         if (hasAvailableCoupons()) {
           const timer = setTimeout(() => {

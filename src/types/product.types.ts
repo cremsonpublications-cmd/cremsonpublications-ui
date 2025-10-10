@@ -27,6 +27,7 @@ export type Product = {
   weight?: number | null;
   year?: number | null;
   rating: number;
+  review_count?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;

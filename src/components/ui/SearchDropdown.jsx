@@ -7,7 +7,6 @@ const SearchDropdown = ({ className = "", onResultClick }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { products } = useProducts();
   const searchRef = useRef(null);
@@ -57,28 +56,77 @@ const SearchDropdown = ({ className = "", onResultClick }) => {
     };
   }, []);
 
-  // Search products
+  // Calculate product price with discounts (same as ProductCard)
+  const calculatePrice = (product) => {
+    const mrp = product.mrp || 0;
+    let finalPrice = mrp;
+    let discountPercentage = 0;
+
+    // Check if product has its own discount
+    if (product.has_own_discount && product.own_discount_percentage) {
+      discountPercentage = product.own_discount_percentage;
+    }
+    // Otherwise use category discount if enabled
+    else if (product.use_category_discount && product.categories) {
+      const category = product.categories;
+      if (category.offer_type === "percentage" && category.offer_percentage) {
+        discountPercentage = category.offer_percentage;
+      } else if (
+        category.offer_type === "flat_amount" &&
+        category.offer_amount
+      ) {
+        finalPrice = mrp - category.offer_amount;
+        return {
+          finalPrice: Math.max(0, finalPrice),
+          mrp,
+          discountPercentage: 0,
+        };
+      }
+    }
+
+    // Apply percentage discount
+    if (discountPercentage > 0) {
+      finalPrice = mrp - (mrp * discountPercentage) / 100;
+    }
+
+    return {
+      finalPrice: Math.round(finalPrice),
+      mrp,
+      discountPercentage: Math.round(discountPercentage),
+    };
+  };
+
+  // Search products - comprehensive search across all fields (instant, no debounce)
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setSearchResults([]);
-      setIsSearching(false);
       return;
     }
 
-    setIsSearching(true);
-    const timer = setTimeout(() => {
-      const filtered = products.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      ).slice(0, 8); // Limit to 8 results
+    const searchTermLower = searchTerm.toLowerCase();
+    const filtered = products.filter(product => {
+      // Search in all relevant fields
+      const searchFields = [
+        product.name,
+        product.author,
+        product.description,
+        product.isbn,
+        product.publisher,
+        product.categories?.main_category_name,
+        product.categories?.sub_category_name,
+        // Convert numbers to strings for search
+        product.mrp?.toString(),
+        product.pages?.toString(),
+        product.year?.toString(),
+      ].filter(Boolean); // Remove null/undefined values
 
-      setSearchResults(filtered);
-      setIsSearching(false);
-      setSelectedIndex(-1);
-    }, 300); // Debounce search
+      return searchFields.some(field =>
+        field.toLowerCase().includes(searchTermLower)
+      );
+    }).slice(0, 8); // Limit to 8 results
 
-    return () => clearTimeout(timer);
+    setSearchResults(filtered);
+    setSelectedIndex(-1);
   }, [searchTerm, products]);
 
   const handleInputFocus = () => {
@@ -146,14 +194,7 @@ const SearchDropdown = ({ className = "", onResultClick }) => {
       {/* Search Dropdown */}
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-          {isSearching ? (
-            <div className="p-4 text-center">
-              <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
-                <span className="text-gray-500">Searching...</span>
-              </div>
-            </div>
-          ) : searchTerm.trim() === '' ? (
+          {searchTerm.trim() === '' ? (
             <div className="p-4 text-center text-gray-500">
               Start typing to search for books...
             </div>
@@ -168,49 +209,63 @@ const SearchDropdown = ({ className = "", onResultClick }) => {
                   {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
                 </span>
               </div>
-              {searchResults.map((product, index) => (
-                <Link
-                  key={product.id}
-                  to={`/shop/product/${product.id}`}
-                  onClick={handleResultClick}
-                  className={`flex items-center space-x-3 px-3 py-3 transition-colors ${
-                    index === selectedIndex ? 'bg-blue-50 border-l-2 border-blue-500' : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <img
-                    src={product.main_image}
-                    alt={product.name}
-                    className="w-12 h-12 object-cover rounded-md bg-gray-100"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium text-gray-900 truncate">
-                      {highlightText(product.name, searchTerm)}
-                    </h4>
-                    <p className="text-sm text-gray-500 truncate">
-                      {product.author && (
-                        <span>by {highlightText(product.author, searchTerm)}</span>
-                      )}
-                      {product.author && product.categories?.main_category_name && ' • '}
-                      {product.categories?.main_category_name && (
-                        <span>{highlightText(product.categories.main_category_name, searchTerm)}</span>
-                      )}
-                    </p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <span className="text-sm font-bold text-black">₹{product.price}</span>
-                      {product.old_price && (
-                        <span className="text-xs text-gray-400 line-through">₹{product.old_price}</span>
-                      )}
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        product.status === 'In Stock'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.status}
-                      </span>
+              {searchResults.map((product, index) => {
+                const { finalPrice, mrp, discountPercentage } = calculatePrice(product);
+                const hasDiscount = finalPrice < mrp;
+
+                return (
+                  <Link
+                    key={product.id}
+                    to={`/shop/product/${product.id}`}
+                    onClick={handleResultClick}
+                    className={`flex items-center space-x-3 px-3 py-3 transition-colors ${
+                      index === selectedIndex ? 'bg-blue-50 border-l-2 border-blue-500' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <img
+                      src={product.main_image}
+                      alt={product.name}
+                      className="w-12 h-12 object-cover rounded-md bg-gray-100"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                        {highlightText(product.name, searchTerm)}
+                      </h4>
+                      <p className="text-sm text-gray-500 truncate">
+                        {product.author && (
+                          <span>by {highlightText(product.author, searchTerm)}</span>
+                        )}
+                        {product.author && product.categories?.main_category_name && ' • '}
+                        {product.categories?.main_category_name && (
+                          <span>{highlightText(product.categories.main_category_name, searchTerm)}</span>
+                        )}
+                      </p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-sm font-bold text-black">
+                          ₹{finalPrice}
+                        </span>
+                        {hasDiscount && (
+                          <span className="text-xs text-gray-400 line-through">
+                            ₹{mrp}
+                          </span>
+                        )}
+                        {discountPercentage > 0 && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                            -{discountPercentage}%
+                          </span>
+                        )}
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          product.status === 'In Stock'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {product.status}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
               {searchResults.length >= 8 && (
                 <div className="px-3 py-2 border-t border-gray-100">
                   <Link

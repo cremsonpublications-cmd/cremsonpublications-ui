@@ -17,10 +17,10 @@ export const getCoupons = async (showOnlySelected = true) => {
     }
     
     // Filter for UI display (active, valid, and show_in_ui = true)
-    const filteredData = (data || []).filter(coupon => 
-      coupon.is_active && 
-      coupon.show_in_ui && 
-      new Date(coupon.valid_until) > new Date()
+    const filteredData = (data || []).filter(coupon =>
+      coupon.is_active &&
+      coupon.show_in_ui &&
+      (!coupon.valid_until || new Date(coupon.valid_until) > new Date())
     );
     
     return filteredData;

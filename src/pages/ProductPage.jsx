@@ -128,7 +128,7 @@ const relatedProductData = [
 const data = [...newArrivalsData, ...topSellingData, ...relatedProductData];
 
 export default function ProductPage() {
-  const { id } = useParams();
+  const { productId } = useParams();
   const { products, loading, error, getProductById } = useProducts();
 
   if (loading) {
@@ -144,7 +144,7 @@ export default function ProductPage() {
   }
 
   // Find product from Supabase data
-  const productData = products.find((product) => product.id === Number(id));
+  const productData = products.find((product) => product.id === Number(productId));
 
   if (!productData?.name) {
     return <Navigate to="/shop" replace />;

@@ -1,6 +1,7 @@
 import React from "react";
 import { FooterLinks } from "./footer.types";
 import { Link } from "react-router-dom";
+import { useProducts } from "../../../context/ProductContext";
 
 const footerLinksData: FooterLinks[] = [
   {
@@ -24,32 +25,7 @@ const footerLinksData: FooterLinks[] = [
       },
     ],
   },
-  {
-    id: 2,
-    title: "categories",
-    children: [
-      {
-        id: 21,
-        label: "science",
-        url: "/shop?category=science",
-      },
-      {
-        id: 22,
-        label: "mathematics",
-        url: "/shop?category=mathematics",
-      },
-      {
-        id: 23,
-        label: "english",
-        url: "/shop?category=english",
-      },
-      {
-        id: 24,
-        label: "sociology",
-        url: "/shop?category=sociology",
-      },
-    ],
-  },
+  // Categories section is now dynamic
   {
     id: 3,
     title: "company",
@@ -100,9 +76,29 @@ const footerLinksData: FooterLinks[] = [
 ];
 
 const LinksSection = () => {
+  const { categories } = useProducts();
+
+  // Create dynamic categories section
+  const dynamicCategoriesSection = {
+    id: 2,
+    title: "categories",
+    children: categories.slice(0, 6).map((category, index) => ({
+      id: 20 + index,
+      label: category.main_category_name.toLowerCase(),
+      url: "/shop"
+    }))
+  };
+
+  // Insert dynamic categories section at position 2 (after shop section)
+  const dynamicFooterLinksData = [
+    footerLinksData[0], // shop section
+    dynamicCategoriesSection, // dynamic categories
+    ...footerLinksData.slice(1) // company and policies sections
+  ];
+
   return (
     <>
-      {footerLinksData.map((item) => (
+      {dynamicFooterLinksData.map((item) => (
         <section className="flex flex-col mt-5" key={item.id}>
           <h3 className="font-medium text-sm md:text-base uppercase tracking-widest mb-6">
             {item.title}
@@ -111,6 +107,7 @@ const LinksSection = () => {
             <Link
               to={link.url}
               key={link.id}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="text-black/60 text-sm md:text-base mb-4 w-fit capitalize hover:text-black transition-colors"
             >
               {link.label}
