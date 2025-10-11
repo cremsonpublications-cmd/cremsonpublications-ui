@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PhotoSection from "./PhotoSection";
 import { Product } from "@/types/product.types";
 import { integralCF } from "@/styles/fonts";
@@ -7,6 +7,7 @@ import Rating from "@/components/ui/Rating";
 import ColorSelection from "./ColorSelection";
 import SizeSelection from "./SizeSelection";
 import AddToCardSection from "./AddToCardSection";
+import { useCart } from "../../../context/CartContext";
 import {
   Truck,
   HelpCircle,
@@ -23,6 +24,27 @@ import {
 const Header = ({ data }: { data: Product }) => {
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
+  const [viewingCount, setViewingCount] = useState(Math.floor(Math.random() * 20) + 1);
+  const { addToCart } = useCart();
+
+  // Update viewing count every 4 seconds with gradual change
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setViewingCount(prevCount => {
+        // Random change between -3 to +3
+        const change = Math.floor(Math.random() * 7) - 3; // -3, -2, -1, 0, 1, 2, 3
+        let newCount = prevCount + change;
+
+        // Keep within bounds 1-20
+        if (newCount < 1) newCount = 1;
+        if (newCount > 20) newCount = 20;
+
+        return newCount;
+      });
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Calculate actual price based on discounts
   const calculatePrice = () => {
@@ -66,6 +88,7 @@ const Header = ({ data }: { data: Product }) => {
 
   const { finalPrice, mrp, discountPercentage } = calculatePrice();
   const hasDiscount = finalPrice < mrp;
+  const isOutOfStock = data.status === "Out of Stock";
 
   // Get current page URL for sharing
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
@@ -106,6 +129,48 @@ const Header = ({ data }: { data: Product }) => {
     navigator.clipboard.writeText(currentUrl);
     // You can add a toast notification here if you have toast setup
     alert("Link copied to clipboard!");
+  };
+
+  // Function to get bulk price based on quantity
+  const getBulkPrice = (quantity: number) => {
+    if (!data.bulk_pricing || data.bulk_pricing.length === 0) {
+      return finalPrice;
+    }
+
+    // Sort bulk pricing by quantity (ascending)
+    const sortedBulkPricing = [...data.bulk_pricing].sort((a, b) => a.quantity - b.quantity);
+
+    // Find the highest tier that the quantity qualifies for
+    let applicablePrice = finalPrice;
+    for (const bulk of sortedBulkPricing) {
+      if (quantity >= bulk.quantity) {
+        applicablePrice = bulk.price;
+      }
+    }
+
+    return applicablePrice;
+  };
+
+  const handleBulkPurchase = (quantity: number, price: number) => {
+    if (isOutOfStock) {
+      alert("This product is currently out of stock.");
+      return;
+    }
+
+    const productForCart = {
+      id: data.id,
+      name: data.name,
+      price: price,
+      main_image: data.main_image,
+      author: data.author,
+      isbn: data.isbn,
+      status: data.status,
+      bulk_pricing: data.bulk_pricing, // Include bulk pricing data
+      mrp: data.mrp,
+      finalPrice: finalPrice
+    };
+
+    addToCart(productForCart, quantity);
   };
 
   return (
@@ -227,22 +292,33 @@ const Header = ({ data }: { data: Product }) => {
                 {data.bulk_pricing.map((bulk: any, index: number) => (
                   <div
                     key={index}
-                    className="border border-blue-200 rounded-md p-2 text-center bg-blue-50 hover:bg-blue-200 hover:shadow-md transition-all duration-200 cursor-pointer"
+                    onClick={isOutOfStock ? undefined : () => handleBulkPurchase(bulk.quantity, bulk.price)}
+                    className={`border rounded-md p-2 text-center transition-all duration-200 ${
+                      isOutOfStock
+                        ? "border-gray-300 bg-gray-100 cursor-not-allowed opacity-60"
+                        : "border-blue-200 bg-blue-50 hover:bg-blue-200 hover:shadow-md cursor-pointer"
+                    }`}
                     style={{ width: "150px" }}
                   >
-                    <div className="text-xs font-medium text-gray-700 mb-0.5">
+                    <div className={`text-xs font-medium mb-0.5 ${
+                      isOutOfStock ? "text-gray-500" : "text-gray-700"
+                    }`}>
                       BUY {bulk.quantity}
                       {bulk.quantity ===
                       data.bulk_pricing[data.bulk_pricing.length - 1].quantity
                         ? "+"
                         : ""}
                     </div>
-                    <div className="text-sm font-bold text-gray-900 mb-1">
+                    <div className={`text-sm font-bold mb-1 ${
+                      isOutOfStock ? "text-gray-600" : "text-gray-900"
+                    }`}>
                       ₹{bulk.price}.00 each
                     </div>
                     {bulk.price < finalPrice && (
-                      <div className="text-sm font-bold text-green-600">
-                        Save ₹{finalPrice - bulk.price}
+                      <div className={`text-sm font-bold ${
+                        isOutOfStock ? "text-gray-500" : "text-green-600"
+                      }`}>
+                        Save ₹{(finalPrice - bulk.price) * bulk.quantity}
                       </div>
                     )}
                   </div>
@@ -278,7 +354,7 @@ const Header = ({ data }: { data: Product }) => {
             <div className="flex items-center gap-2 text-gray-600">
               <Smile className="w-5 h-5" />
               <span className="text-sm">
-                16 people are viewing this right now
+                {viewingCount} people are viewing this right now
               </span>
             </div>
 

@@ -11,20 +11,23 @@ const BoughtTogether = ({ currentProduct }) => {
 
   useEffect(() => {
     if (currentProduct && products.length > 0) {
-      // Find products with same class or subcategories
+      // Find products with same class or subcategories, excluding sold out products
       const related = products.filter(product => {
         if (product.id === currentProduct.id) return false;
-        
+
+        // Exclude sold out products
+        if (product.status === "Out of Stock") return false;
+
         // Check if same class
-        const sameClass = currentProduct.classes && product.classes && 
+        const sameClass = currentProduct.classes && product.classes &&
           currentProduct.classes === product.classes;
-        
+
         // Check if same subcategories
         const sameSubCategory = currentProduct.sub_categories && product.sub_categories &&
-          currentProduct.sub_categories.some(subCat => 
+          currentProduct.sub_categories.some(subCat =>
             product.sub_categories.includes(subCat)
           );
-        
+
         return sameClass || sameSubCategory;
       }).slice(0, 3); // Limit to 3 related products
 
@@ -93,6 +96,9 @@ const BoughtTogether = ({ currentProduct }) => {
       addToCart(productForCart, 1);
     });
   };
+
+  // Don't show "Bought Together" if current product is out of stock
+  if (currentProduct?.status === "Out of Stock") return null;
 
   if (relatedProducts.length === 0) return null;
 

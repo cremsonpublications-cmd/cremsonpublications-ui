@@ -35,6 +35,9 @@ const ProductCard = ({ data }: ProductCardProps) => {
       author: data.author,
       isbn: data.isbn,
       status: data.status,
+      bulk_pricing: data.bulk_pricing,
+      mrp: data.mrp,
+      finalPrice: finalPrice
     };
     addToCart(productForCart, 1);
   };
@@ -188,7 +191,32 @@ const ProductCard = ({ data }: ProductCardProps) => {
 
         {/* Add to Cart Button - inline with price */}
         <div className="flex justify-end">
-          {cartQuantity === 0 ? (
+          {isOutOfStock ? (
+            cartQuantity === 0 ? (
+              <button
+                disabled
+                className="h-10 bg-gray-400 text-white font-semibold px-4 rounded-full text-sm whitespace-nowrap cursor-not-allowed"
+              >
+                Sold Out
+              </button>
+            ) : (
+              <div className="flex items-center justify-between bg-gray-400 text-white rounded-full px-3 h-10 min-w-[100px]">
+                <button
+                  disabled
+                  className="rounded-full p-1 cursor-not-allowed opacity-50"
+                >
+                  <Minus size={12} />
+                </button>
+                <span className="text-sm font-semibold">{cartQuantity}</span>
+                <button
+                  disabled
+                  className="rounded-full p-1 cursor-not-allowed opacity-50"
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+            )
+          ) : cartQuantity === 0 ? (
             <button
               onClick={handleAddToCart}
               className="h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 rounded-full transition-all duration-150 text-sm whitespace-nowrap"

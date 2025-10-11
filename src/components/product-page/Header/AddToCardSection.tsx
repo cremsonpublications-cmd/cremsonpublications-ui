@@ -59,6 +59,7 @@ const AddToCardSection = ({ data }: { data: Product }) => {
   const { finalPrice } = calculatePrice();
   const cartQuantity = getItemQuantity(data.id);
   const isProductInCart = isInCart(data.id);
+  const isOutOfStock = data.status === "Out of Stock";
 
   const handleBuyNow = () => {
     // If product is not in cart, add it first
@@ -70,7 +71,10 @@ const AddToCardSection = ({ data }: { data: Product }) => {
         main_image: data.main_image,
         author: data.author,
         isbn: data.isbn,
-        status: data.status
+        status: data.status,
+        bulk_pricing: data.bulk_pricing,
+        mrp: data.mrp,
+        finalPrice: finalPrice
       };
       addToCart(productForCart, 1);
     }
@@ -86,7 +90,10 @@ const AddToCardSection = ({ data }: { data: Product }) => {
       main_image: data.main_image,
       author: data.author,
       isbn: data.isbn,
-      status: data.status
+      status: data.status,
+      bulk_pricing: data.bulk_pricing,
+      mrp: data.mrp,
+      finalPrice: finalPrice
     };
     addToCart(productForCart, 1);
   };
@@ -106,13 +113,43 @@ const AddToCardSection = ({ data }: { data: Product }) => {
         <button
           type="button"
           onClick={handleBuyNow}
-          className="bg-black flex-1 rounded-full h-11 md:h-[52px] text-sm sm:text-base text-white hover:bg-gray-800 transition-all"
+          disabled={isOutOfStock}
+          className={`flex-1 rounded-full h-11 md:h-[52px] text-sm sm:text-base transition-all ${
+            isOutOfStock
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : "bg-black text-white hover:bg-gray-800"
+          }`}
         >
-          Buy Now
+          {isOutOfStock ? "Sold Out" : "Buy Now"}
         </button>
 
         {/* Add to Cart / Quantity Controls */}
-        {cartQuantity === 0 ? (
+        {isOutOfStock ? (
+          cartQuantity === 0 ? (
+            <button
+              disabled
+              className="bg-gray-400 text-white font-semibold px-6 rounded-full h-11 md:h-[52px] text-sm sm:text-base cursor-not-allowed whitespace-nowrap"
+            >
+              Sold Out
+            </button>
+          ) : (
+            <div className="flex items-center justify-between bg-gray-400 text-white rounded-full px-4 h-11 md:h-[52px] min-w-[120px]">
+              <button
+                disabled
+                className="rounded-full p-1 cursor-not-allowed opacity-50"
+              >
+                <Minus size={16} />
+              </button>
+              <span className="text-sm sm:text-base font-semibold mx-3">{cartQuantity}</span>
+              <button
+                disabled
+                className="rounded-full p-1 cursor-not-allowed opacity-50"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          )
+        ) : cartQuantity === 0 ? (
           <button
             onClick={handleAddToCart}
             className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 rounded-full h-11 md:h-[52px] text-sm sm:text-base transition-all duration-200 whitespace-nowrap"

@@ -52,20 +52,45 @@ export const CartProvider = ({ children }) => {
     notes: ''
   });
 
+  // Function to calculate bulk price based on quantity
+  const getBulkPrice = (product, quantity) => {
+    if (!product.bulk_pricing || product.bulk_pricing.length === 0) {
+      return product.finalPrice || product.price;
+    }
+
+    // Sort bulk pricing by quantity (ascending)
+    const sortedBulkPricing = [...product.bulk_pricing].sort((a, b) => a.quantity - b.quantity);
+
+    // Find the highest tier that the quantity qualifies for
+    let applicablePrice = product.finalPrice || product.price;
+    for (const bulk of sortedBulkPricing) {
+      if (quantity >= bulk.quantity) {
+        applicablePrice = bulk.price;
+      }
+    }
+
+    return applicablePrice;
+  };
+
   // Add item to cart
   const addToCart = (product, quantity = 1) => {
+    const numQuantity = parseInt(quantity) || 1;
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
-        // Update quantity if item already exists
+        // Update quantity and recalculate price based on new total quantity
+        const currentQuantity = parseInt(existingItem.quantity) || 0;
+        const newQuantity = currentQuantity + numQuantity;
+        const newPrice = getBulkPrice(product, newQuantity);
         return prevItems.map(item =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQuantity, price: newPrice }
             : item
         );
       }
-      // Add new item
-      return [...prevItems, { ...product, quantity }];
+      // Add new item with bulk price
+      const bulkPrice = getBulkPrice(product, numQuantity);
+      return [...prevItems, { ...product, quantity: numQuantity, price: bulkPrice }];
     });
   };
 
@@ -78,39 +103,51 @@ export const CartProvider = ({ children }) => {
 
   // Update item quantity
   const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
+    const numQuantity = parseInt(quantity) || 0;
+    if (numQuantity <= 0) {
       removeFromCart(productId);
       return;
     }
 
     setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === productId
-          ? { ...item, quantity }
-          : item
-      )
+      prevItems.map(item => {
+        if (item.id === productId) {
+          const newPrice = getBulkPrice(item, numQuantity);
+          return { ...item, quantity: numQuantity, price: newPrice };
+        }
+        return item;
+      })
     );
   };
 
   // Increment item quantity
   const incrementQuantity = (productId) => {
     setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === productId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      )
+      prevItems.map(item => {
+        if (item.id === productId) {
+          const currentQuantity = parseInt(item.quantity) || 0;
+          const newQuantity = currentQuantity + 1;
+          const newPrice = getBulkPrice(item, newQuantity);
+          return { ...item, quantity: newQuantity, price: newPrice };
+        }
+        return item;
+      })
     );
   };
 
   // Decrement item quantity
   const decrementQuantity = (productId) => {
     setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === productId
-          ? { ...item, quantity: Math.max(0, item.quantity - 1) }
-          : item
-      ).filter(item => item.quantity > 0)
+      prevItems.map(item => {
+        if (item.id === productId) {
+          const currentQuantity = parseInt(item.quantity) || 0;
+          const newQuantity = Math.max(0, currentQuantity - 1);
+          if (newQuantity === 0) return null; // Will be filtered out
+          const newPrice = getBulkPrice(item, newQuantity);
+          return { ...item, quantity: newQuantity, price: newPrice };
+        }
+        return item;
+      }).filter(item => item !== null && item.quantity > 0)
     );
   };
 

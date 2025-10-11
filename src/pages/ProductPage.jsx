@@ -150,19 +150,21 @@ export default function ProductPage() {
     return <Navigate to="/shop" replace />;
   }
 
-  // Get 4 random products (including current product if needed)
+  // Get 4 random products (excluding sold out products)
   const getRandomProducts = () => {
-    const otherProducts = products.filter(product => product.id !== productData.id);
+    // Filter out sold out products and current product
+    const availableProducts = products.filter(product =>
+      product.id !== productData.id && product.status !== "Out of Stock"
+    );
 
-    if (otherProducts.length >= 4) {
-      // If we have enough other products, use them
-      const shuffled = [...otherProducts].sort(() => 0.5 - Math.random());
+    if (availableProducts.length >= 4) {
+      // If we have enough available products, use them
+      const shuffled = [...availableProducts].sort(() => 0.5 - Math.random());
       return shuffled.slice(0, 4);
     } else {
-      // If not enough other products, include current product and all available products
-      const allAvailable = [...otherProducts, productData];
-      const shuffled = [...allAvailable].sort(() => 0.5 - Math.random());
-      return shuffled.slice(0, 4);
+      // If not enough available products, use all available products
+      const shuffled = [...availableProducts].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, Math.min(4, availableProducts.length));
     }
   };
 
