@@ -8,6 +8,7 @@ import ColorSelection from "./ColorSelection";
 import SizeSelection from "./SizeSelection";
 import AddToCardSection from "./AddToCardSection";
 import { useCart } from "../../../context/CartContext";
+import { useGlobalSettings } from "../../../context/GlobalSettingsContext";
 import {
   Truck,
   HelpCircle,
@@ -19,6 +20,7 @@ import {
   MessageCircle,
   Mail,
   Camera,
+  RotateCcw,
 } from "lucide-react";
 
 const Header = ({ data }: { data: Product }) => {
@@ -26,6 +28,7 @@ const Header = ({ data }: { data: Product }) => {
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [viewingCount, setViewingCount] = useState(Math.floor(Math.random() * 20) + 1);
   const { addToCart } = useCart();
+  const { getDeliveryInfo, getReturnsInfo, formatText } = useGlobalSettings();
 
   // Update viewing count every 4 seconds with gradual change
   useEffect(() => {
@@ -45,6 +48,20 @@ const Header = ({ data }: { data: Product }) => {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (showDeliveryModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showDeliveryModal]);
 
   // Calculate actual price based on discounts
   const calculatePrice = () => {
@@ -439,8 +456,14 @@ const Header = ({ data }: { data: Product }) => {
 
       {/* Delivery & Return Modal */}
       {showDeliveryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 bg-gray-500 bg-opacity-30 flex items-center justify-center z-[200] p-4"
+          onClick={() => setShowDeliveryModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg max-w-4xl w-full max-h-[80vh] overflow-y-auto shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between p-6 border-b">
               <h2 className="text-xl font-semibold">
                 Delivery & Return Information
@@ -452,31 +475,30 @@ const Header = ({ data }: { data: Product }) => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-6 space-y-6">
-              {data.delivery_information && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                    Delivery Information
-                  </h3>
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <p className="text-blue-800 text-sm whitespace-pre-line">
-                      {data.delivery_information}
-                    </p>
+            <div className="p-6 space-y-8">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <Truck className="w-5 h-5 mr-2 text-gray-600" />
+                  Delivery Information
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="text-gray-700 text-sm leading-relaxed">
+                    {formatText(getDeliveryInfo(data.delivery_information))}
                   </div>
                 </div>
-              )}
-              {data.returns_information && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                    Returns & Exchanges
-                  </h3>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-green-800 text-sm whitespace-pre-line">
-                      {data.returns_information}
-                    </p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <RotateCcw className="w-5 h-5 mr-2 text-gray-600" />
+                  Returns & Exchanges
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="text-gray-700 text-sm leading-relaxed">
+                    {formatText(getReturnsInfo(data.returns_information))}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

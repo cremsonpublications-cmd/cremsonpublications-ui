@@ -17,10 +17,14 @@ const tabBtnData: TabBtn[] = [
   },
   {
     id: 2,
-    label: "Rating & Reviews",
+    label: "Delivery & Returns",
   },
   {
     id: 3,
+    label: "Rating & Reviews",
+  },
+  {
+    id: 4,
     label: "FAQs",
   },
 ];

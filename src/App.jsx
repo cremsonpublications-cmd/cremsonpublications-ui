@@ -13,6 +13,7 @@ import { WishlistProvider } from "./context/WishlistContext";
 import { CartProvider } from "./context/CartContext";
 import { CouponProvider } from "./context/CouponContext";
 import { OrderProvider } from "./context/OrderContext";
+import { GlobalSettingsProvider } from "./context/GlobalSettingsContext";
 import ClerkProvider from "./providers/ClerkProvider";
 import TopNavbar from "./components/layout/Navbar/TopNavbar";
 import Footer from "./components/layout/Footer";
@@ -63,11 +64,12 @@ function App() {
       >
         <ClerkProvider>
           <ProductProvider>
-            <CouponProvider>
-              <OrderProvider>
-                <FilterProvider>
-                  <WishlistProvider>
-                    <CartProvider>
+            <GlobalSettingsProvider>
+              <CouponProvider>
+                <OrderProvider>
+                  <FilterProvider>
+                    <WishlistProvider>
+                      <CartProvider>
                   <Router>
                     <ScrollToTop />
                     <div className={cn([satoshi.className, "antialiased"])}>
@@ -105,6 +107,7 @@ function App() {
             </FilterProvider>
             </OrderProvider>
             </CouponProvider>
+            </GlobalSettingsProvider>
           </ProductProvider>
         </ClerkProvider>
       </PersistGate>

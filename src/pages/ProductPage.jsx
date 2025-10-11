@@ -192,6 +192,7 @@ export default function ProductPage() {
           <BoughtTogether currentProduct={productData} />
         </section>
 
+
         {/* Reviews Section */}
         <section className="mb-11">
           <ProductReviews productId={productData.id} />
