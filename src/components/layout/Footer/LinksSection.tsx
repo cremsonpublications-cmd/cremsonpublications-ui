@@ -47,16 +47,6 @@ const footerLinksData: FooterLinks[] = [
     title: "policies",
     children: [
       {
-        id: 41,
-        label: "pricing policy",
-        url: "/pricing-policy",
-      },
-      {
-        id: 42,
-        label: "shipping policy",
-        url: "/shipping-policy",
-      },
-      {
         id: 43,
         label: "terms & conditions",
         url: "/terms-conditions",
@@ -65,11 +55,6 @@ const footerLinksData: FooterLinks[] = [
         id: 44,
         label: "privacy policy",
         url: "/privacy-policy",
-      },
-      {
-        id: 45,
-        label: "cancellation & refund",
-        url: "/cancellation-refund",
       },
     ],
   },

@@ -1,264 +1,159 @@
 import React from 'react';
-import { FileText, Users, Shield, AlertTriangle } from 'lucide-react';
 
 const TermsConditions = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
-      {/* Header */}
       <div className="text-center mb-12">
-        <div className="flex justify-center mb-4">
-          <FileText className="w-12 h-12 text-purple-600" />
-        </div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Terms and Conditions</h1>
-        <p className="text-xl text-gray-600">
-          Please read these terms carefully before using our services
+        <h1 className="text-4xl font-bold text-black mb-4">Terms and Conditions</h1>
+        <p className="text-black">
+          Welcome to Creamson Publications!
         </p>
-        <p className="text-sm text-gray-500 mt-2">Last updated: January 2025</p>
       </div>
 
-      {/* Content */}
-      <div className="prose prose-lg max-w-none">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-8">
-          <h2 className="text-xl font-semibold text-purple-900 mb-2">Agreement to Terms</h2>
-          <p className="text-purple-800">
-            By accessing and using Cremson Publications website, you accept and agree to be bound by
-            the terms and provision of this agreement.
-          </p>
-        </div>
+      <div className="prose prose-lg max-w-none text-black">
+        <p className="mb-6">
+          These terms and conditions outline the rules and regulations for the use of Creamson Publications's Website, located at https://cremsonpublications.com/.
+        </p>
 
-        {/* Definitions */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Definitions</h2>
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <ul className="space-y-3 text-gray-600">
-              <li><strong>"Company"</strong> refers to Cremson Publications</li>
-              <li><strong>"Service"</strong> refers to our website, mobile applications, and educational materials</li>
-              <li><strong>"User"</strong> refers to anyone who accesses or uses our services</li>
-              <li><strong>"Content"</strong> refers to all materials, information, and resources available on our platform</li>
-              <li><strong>"Products"</strong> refers to educational books, sample papers, and study materials</li>
-            </ul>
-          </div>
-        </section>
+        <p className="mb-6">
+          By accessing this website we assume you accept these terms and conditions. Do not continue to use Creamson Publications if you do not agree to take all of the terms and conditions stated on this page.
+        </p>
 
-        {/* Use of Service */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <Users className="w-6 h-6 mr-2 text-purple-600" />
-            2. Use of Service
-          </h2>
+        <p className="mb-6">
+          The following terminology applies to these Terms and Conditions, Privacy Statement and Disclaimer Notice and all Agreements: "Client", "You" and "Your" refers to you, the person log on this website and compliant to the Company's terms and conditions. "The Company", "Ourselves", "We", "Our" and "Us", refers to our Company. "Party", "Parties", or "Us", refers to both the Client and ourselves. All terms refer to the offer, acceptance and consideration of payment necessary to undertake the process of our assistance to the Client in the most appropriate manner for the express purpose of meeting the Client's needs in respect of provision of the Company's stated services, in accordance with and subject to, prevailing law of in. Any use of the above terminology or other words in the singular, plural, capitalization and/or he/she or they, are taken as interchangeable and therefore as referring to same.
+        </p>
 
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">2.1 Eligibility</h3>
-              <p className="text-gray-600 mb-3">
-                Our services are available to users who are:
-              </p>
-              <ul className="list-disc list-inside text-gray-600 space-y-1">
-                <li>18 years or older, or minors with parental consent</li>
-                <li>Capable of forming legally binding contracts</li>
-                <li>Not prohibited from using our services under applicable law</li>
-              </ul>
-            </div>
+        <h2 className="text-2xl font-bold text-black mb-4">Cookies</h2>
+        <p className="mb-6">
+          We employ the use of cookies. By accessing Creamson Publications, you agreed to use cookies in agreement with the Creamson Publications's Privacy Policy.
+        </p>
+        <p className="mb-6">
+          Most interactive websites use cookies to let us retrieve the user's details for each visit. Cookies are used by our website to enable the functionality of certain areas to make it easier for people visiting our website. Some of our affiliate/advertising partners may also use cookies.
+        </p>
 
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">2.2 Acceptable Use</h3>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                <h4 className="font-medium text-green-900 mb-2">You agree to:</h4>
-                <ul className="list-disc list-inside text-green-800 text-sm space-y-1">
-                  <li>Use our services for lawful purposes only</li>
-                  <li>Provide accurate and truthful information</li>
-                  <li>Respect intellectual property rights</li>
-                  <li>Comply with all applicable laws and regulations</li>
-                </ul>
-              </div>
+        <h2 className="text-2xl font-bold text-black mb-4">License</h2>
+        <p className="mb-4">
+          Unless otherwise stated, Creamson Publications and/or its licensors own the intellectual property rights for all material on Creamson Publications. All intellectual property rights are reserved. You may access this from Creamson Publications for your own personal use subjected to restrictions set in these terms and conditions.
+        </p>
+        <p className="mb-4">You must not:</p>
+        <ul className="list-disc list-inside text-black space-y-2 mb-6">
+          <li>Republish material from Creamson Publications</li>
+          <li>Sell, rent or sub-license material from Creamson Publications</li>
+          <li>Reproduce, duplicate or copy material from Creamson Publications</li>
+          <li>Redistribute content from Creamson Publications</li>
+        </ul>
+        <p className="mb-6">This Agreement shall begin on the date hereof.</p>
 
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <h4 className="font-medium text-red-900 mb-2">You agree NOT to:</h4>
-                <ul className="list-disc list-inside text-red-800 text-sm space-y-1">
-                  <li>Copy, distribute, or reproduce our content without permission</li>
-                  <li>Use automated systems to access our services</li>
-                  <li>Attempt to gain unauthorized access to our systems</li>
-                  <li>Use our services to harm, threaten, or harass others</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
+        <p className="mb-6">
+          Parts of this website offer an opportunity for users to post and exchange opinions and information in certain areas of the website. Creamson Publications does not filter, edit, publish or review Comments prior to their presence on the website. Comments do not reflect the views and opinions of Creamson Publications,its agents and/or affiliates. Comments reflect the views and opinions of the person who post their views and opinions. To the extent permitted by applicable laws, Creamson Publications shall not be liable for the Comments or for any liability, damages or expenses caused and/or suffered as a result of any use of and/or posting of and/or appearance of the Comments on this website.
+        </p>
 
-        {/* Account Responsibilities */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">3. Account Responsibilities</h2>
+        <p className="mb-6">
+          Creamson Publications reserves the right to monitor all Comments and to remove any Comments which can be considered inappropriate, offensive or causes breach of these Terms and Conditions.
+        </p>
 
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">3.1 Account Security</h3>
-              <p className="text-gray-600 mb-2">You are responsible for:</p>
-              <ul className="list-disc list-inside text-gray-600 space-y-1">
-                <li>Maintaining the confidentiality of your account credentials</li>
-                <li>All activities that occur under your account</li>
-                <li>Immediately notifying us of any unauthorized use</li>
-                <li>Ensuring your contact information is current and accurate</li>
-              </ul>
-            </div>
-          </div>
-        </section>
+        <p className="mb-4">You warrant and represent that:</p>
+        <ul className="list-disc list-inside text-black space-y-2 mb-6">
+          <li>You are entitled to post the Comments on our website and have all necessary licenses and consents to do so;</li>
+          <li>The Comments do not invade any intellectual property right, including without limitation copyright, patent or trademark of any third party;</li>
+          <li>The Comments do not contain any defamatory, libelous, offensive, indecent or otherwise unlawful material which is an invasion of privacy</li>
+          <li>The Comments will not be used to solicit or promote business or custom or present commercial activities or unlawful activity.</li>
+        </ul>
 
-        {/* Intellectual Property */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <Shield className="w-6 h-6 mr-2 text-purple-600" />
-            4. Intellectual Property Rights
-          </h2>
+        <p className="mb-6">
+          You hereby grant Creamson Publications a non-exclusive license to use, reproduce, edit and authorize others to use, reproduce and edit any of your Comments in any and all forms, formats or media.
+        </p>
 
-          <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-blue-900 mb-3">4.1 Our Rights</h3>
-              <p className="text-blue-800 text-sm">
-                All content on our platform, including books, sample papers, text, images, logos, and software,
-                is owned by Cremson Publications or our licensors and is protected by copyright, trademark,
-                and other intellectual property laws.
-              </p>
-            </div>
+        <h2 className="text-2xl font-bold text-black mb-4">Hyperlinking to our Content</h2>
+        <p className="mb-4">The following organizations may link to our Website without prior written approval:</p>
+        <ul className="list-disc list-inside text-black space-y-2 mb-6">
+          <li>Government agencies;</li>
+          <li>Search engines;</li>
+          <li>News organizations;</li>
+          <li>Online directory distributors may link to our Website in the same manner as they hyperlink to the Websites of other listed businesses; and</li>
+          <li>System wide Accredited Businesses except soliciting non-profit organizations, charity shopping malls, and charity fundraising groups which may not hyperlink to our Web site.</li>
+        </ul>
 
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">4.2 Limited License</h3>
-              <p className="text-gray-600">
-                We grant you a limited, non-exclusive, non-transferable license to access and use our
-                services for personal, educational purposes only. This license does not include:
-              </p>
-              <ul className="list-disc list-inside text-gray-600 space-y-1 mt-2">
-                <li>The right to copy, modify, or distribute our content</li>
-                <li>The right to create derivative works</li>
-                <li>The right to reverse engineer our software</li>
-                <li>Any commercial use without explicit permission</li>
-              </ul>
-            </div>
-          </div>
-        </section>
+        <p className="mb-6">
+          These organizations may link to our home page, to publications or to other Website information so long as the link: (a) is not in any way deceptive; (b) does not falsely imply sponsorship, endorsement or approval of the linking party and its products and/or services; and (c) fits within the context of the linking party's site.
+        </p>
 
-        {/* Orders and Payments */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">5. Orders and Payments</h2>
+        <p className="mb-4">We may consider and approve other link requests from the following types of organizations:</p>
+        <ul className="list-disc list-inside text-black space-y-2 mb-6">
+          <li>commonly-known consumer and/or business information sources;</li>
+          <li>dot.com community sites;</li>
+          <li>associations or other groups representing charities;</li>
+          <li>online directory distributors;</li>
+          <li>internet portals;</li>
+          <li>accounting, law and consulting firms; and</li>
+          <li>educational institutions and trade associations.</li>
+        </ul>
 
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">5.1 Order Acceptance</h3>
-              <p className="text-gray-600">
-                All orders are subject to acceptance and availability. We reserve the right to refuse
-                or cancel any order for any reason, including but not limited to product availability,
-                errors in pricing, or fraud detection.
-              </p>
-            </div>
+        <p className="mb-6">
+          We will approve link requests from these organizations if we decide that: (a) the link would not make us look unfavorably to ourselves or to our accredited businesses; (b) the organization does not have any negative records with us; (c) the benefit to us from the visibility of the hyperlink compensates the absence of Creamson Publications; and (d) the link is in the context of general resource information.
+        </p>
 
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">5.2 Pricing and Payment</h3>
-              <ul className="list-disc list-inside text-gray-600 space-y-1">
-                <li>All prices are in Indian Rupees (INR) and include applicable taxes</li>
-                <li>Payment must be received in full before order processing</li>
-                <li>We accept major credit cards, debit cards, and digital payment methods</li>
-                <li>Prices are subject to change without prior notice</li>
-              </ul>
-            </div>
-          </div>
-        </section>
+        <p className="mb-6">
+          These organizations may link to our home page so long as the link: (a) is not in any way deceptive; (b) does not falsely imply sponsorship, endorsement or approval of the linking party and its products or services; and (c) fits within the context of the linking party's site.
+        </p>
 
-        {/* Disclaimer */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <AlertTriangle className="w-6 h-6 mr-2 text-yellow-600" />
-            6. Disclaimer of Warranties
-          </h2>
+        <p className="mb-6">
+          If you are one of the organizations listed in paragraph 2 above and are interested in linking to our website, you must inform us by sending an e-mail to Creamson Publications. Please include your name, your organization name, contact information as well as the URL of your site, a list of any URLs from which you intend to link to our Website, and a list of the URLs on our site to which you would like to link. Wait 2-3 weeks for a response.
+        </p>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <p className="text-yellow-800 text-sm">
-              Our services are provided "as is" and "as available" without any warranties of any kind,
-              either express or implied. We do not warrant that our services will be uninterrupted,
-              error-free, or completely secure. Your use of our services is at your own risk.
-            </p>
-          </div>
-        </section>
+        <p className="mb-4">Approved organizations may hyperlink to our Website as follows:</p>
+        <ul className="list-disc list-inside text-black space-y-2 mb-6">
+          <li>By use of our corporate name; or</li>
+          <li>By use of the uniform resource locator being linked to; or</li>
+          <li>By use of any other description of our Website being linked to that makes sense within the context and format of content on the linking party's site.</li>
+        </ul>
 
-        {/* Limitation of Liability */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Limitation of Liability</h2>
+        <p className="mb-6">
+          No use of Creamson Publications's logo or other artwork will be allowed for linking absent a trademark license agreement.
+        </p>
 
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              To the maximum extent permitted by law, Cremson Publications shall not be liable for any
-              indirect, incidental, special, consequential, or punitive damages, including but not limited to:
-            </p>
-            <ul className="list-disc list-inside text-gray-600 space-y-1">
-              <li>Loss of profits, data, or other intangible losses</li>
-              <li>Damages resulting from unauthorized access to your account</li>
-              <li>Damages resulting from any content obtained through our services</li>
-              <li>Damages resulting from service interruptions or delays</li>
-            </ul>
-          </div>
-        </section>
+        <h2 className="text-2xl font-bold text-black mb-4">iFrames</h2>
+        <p className="mb-6">
+          Without prior approval and written permission, you may not create frames around our Webpages that alter in any way the visual presentation or appearance of our Website.
+        </p>
 
-        {/* Termination */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Termination</h2>
+        <h2 className="text-2xl font-bold text-black mb-4">Content Liability</h2>
+        <p className="mb-6">
+          We shall not be hold responsible for any content that appears on your Website. You agree to protect and defend us against all claims that is rising on your Website. No link(s) should appear on any Website that may be interpreted as libelous, obscene or criminal, or which infringes, otherwise violates, or advocates the infringement or other violation of, any third party rights.
+        </p>
 
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">8.1 Termination by Us</h3>
-              <p className="text-gray-600">
-                We may terminate or suspend your account and access to our services immediately,
-                without prior notice, if you breach these terms or engage in prohibited activities.
-              </p>
-            </div>
+        <h2 className="text-2xl font-bold text-black mb-4">Reservation of Rights</h2>
+        <p className="mb-6">
+          We reserve the right to request that you remove all links or any particular link to our Website. You approve to immediately remove all links to our Website upon request. We also reserve the right to amen these terms and conditions and it's linking policy at any time. By continuously linking to our Website, you agree to be bound to and follow these linking terms and conditions.
+        </p>
 
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">8.2 Effect of Termination</h3>
-              <p className="text-gray-600">
-                Upon termination, your right to use our services will cease immediately.
-                Provisions that should survive termination will remain in effect.
-              </p>
-            </div>
-          </div>
-        </section>
+        <h2 className="text-2xl font-bold text-black mb-4">Removal of links from our website</h2>
+        <p className="mb-6">
+          If you find any link on our Website that is offensive for any reason, you are free to contact and inform us any moment. We will consider requests to remove links but we are not obligated to or so or to respond to you directly.
+        </p>
 
-        {/* Governing Law */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">9. Governing Law</h2>
+        <p className="mb-6">
+          We do not ensure that the information on this website is correct, we do not warrant its completeness or accuracy; nor do we promise to ensure that the website remains available or that the material on the website is kept up to date.
+        </p>
 
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-            <p className="text-gray-600">
-              These terms shall be governed by and construed in accordance with the laws of India.
-              Any disputes arising under these terms shall be subject to the exclusive jurisdiction
-              of the courts of Tamil Nadu, India.
-            </p>
-          </div>
-        </section>
+        <h2 className="text-2xl font-bold text-black mb-4">Disclaimer</h2>
+        <p className="mb-6">
+          To the maximum extent permitted by applicable law, we exclude all representations, warranties and conditions relating to our website and the use of this website. Nothing in this disclaimer will:
+        </p>
+        <ul className="list-disc list-inside text-black space-y-2 mb-6">
+          <li>limit or exclude our or your liability for death or personal injury;</li>
+          <li>limit or exclude our or your liability for fraud or fraudulent misrepresentation;</li>
+          <li>limit any of our or your liabilities in any way that is not permitted under applicable law; or</li>
+          <li>exclude any of our or your liabilities that may not be excluded under applicable law.</li>
+        </ul>
 
-        {/* Changes to Terms */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Changes to Terms</h2>
+        <p className="mb-6">
+          The limitations and prohibitions of liability set in this Section and elsewhere in this disclaimer: (a) are subject to the preceding paragraph; and (b) govern all liabilities arising under the disclaimer, including liabilities arising in contract, in tort and for breach of statutory duty.
+        </p>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <p className="text-blue-800">
-              We reserve the right to modify these terms at any time. Changes will be posted on this page
-              with an updated revision date. Your continued use of our services after such modifications
-              constitutes acceptance of the updated terms.
-            </p>
-          </div>
-        </section>
-
-        {/* Contact Information */}
-        <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">11. Contact Information</h2>
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
-            <p className="text-purple-800 mb-4">
-              If you have any questions about these Terms and Conditions, please contact us:
-            </p>
-            <div className="space-y-2 text-purple-700">
-              <p><strong>Email:</strong> legal@cremsonpublications.com</p>
-              <p><strong>Phone:</strong> +91-9876543210</p>
-              <p><strong>Address:</strong> Cremson Publications, Tirunelveli, Tamil Nadu, India</p>
-            </div>
-          </div>
-        </section>
+        <p className="mb-6">
+          As long as the website and the information and services on the website are provided free of charge, we will not be liable for any loss or damage of any nature.
+        </p>
       </div>
     </div>
   );

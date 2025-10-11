@@ -260,10 +260,20 @@ const Footer = () => {
           </nav>
 
           <hr className="h-[1px] border-t-black/10 mb-6" />
-          <div className="flex flex-col sm:flex-row justify-center sm:justify-between items-center mb-2">
-            <p className="text-sm text-center sm:text-left text-black/60 mb-4 sm:mb-0 sm:mr-1">
-              Cremson Publications © {new Date().getFullYear()} - Quality
-              Educational Materials
+          <div className="flex flex-col items-center text-center space-y-2 mb-2">
+            <p className="text-sm text-black/60">
+              Design and developed by{" "}
+              <a
+                href="https://www.oratechsolution.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-red-500 hover:text-red-700 hover:underline font-medium"
+              >
+                Oratech Solution
+              </a>
+            </p>
+            <p className="text-sm text-black/60">
+              © {new Date().getFullYear()} Cremson Publications. All rights reserved.
             </p>
           </div>
         </div>

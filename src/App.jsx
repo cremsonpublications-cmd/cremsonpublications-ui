@@ -18,6 +18,7 @@ import TopNavbar from "./components/layout/Navbar/TopNavbar";
 import Footer from "./components/layout/Footer";
 import SpinnerLoader from "./components/ui/SpinnerbLoader";
 import ScrollToTop from "./components/common/ScrollToTop";
+import ScrollToTopButton from "./components/common/ScrollToTopButton";
 
 import HomePage from "./pages/HomePage";
 import ShopPage from "./pages/ShopPage";
@@ -27,11 +28,8 @@ import WishlistPage from "./pages/WishlistPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import ShippingPage from "./pages/ShippingPage";
 import MyOrdersPage from "./pages/MyOrdersPage";
-import PricingPolicy from "./pages/PricingPolicy";
-import ShippingPolicy from "./pages/ShippingPolicy";
 import TermsConditions from "./pages/TermsConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import CancellationRefund from "./pages/CancellationRefund";
 import ContactPage from "./pages/ContactPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -71,6 +69,7 @@ function App() {
                   <WishlistProvider>
                     <CartProvider>
                   <Router>
+                    <ScrollToTop />
                     <div className={cn([satoshi.className, "antialiased"])}>
                       <div className="relative">
                         <TopNavbar />
@@ -89,11 +88,8 @@ function App() {
                           <Route path="/checkout" element={<CheckoutPage />} />
                           <Route path="/checkout/shipping" element={<ShippingPage />} />
                           <Route path="/my-orders" element={<MyOrdersPage />} />
-                          <Route path="/pricing-policy" element={<PricingPolicy />} />
-                          <Route path="/shipping-policy" element={<ShippingPolicy />} />
                           <Route path="/terms-conditions" element={<TermsConditions />} />
                           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                          <Route path="/cancellation-refund" element={<CancellationRefund />} />
                           <Route path="/contact-us" element={<ContactPage />} />
                           <Route path="/signin" element={<SignInPage />} />
                           <Route path="/signup" element={<SignUpPage />} />
@@ -101,6 +97,7 @@ function App() {
                       </div>
                       <ConditionalFooter />
                     </div>
+                    <ScrollToTopButton />
                     <Toaster position="top-right" richColors />
                   </Router>
                 </CartProvider>

@@ -491,6 +491,9 @@ const CheckoutPage = () => {
                     name="pincode"
                     value={customerInfo.address.pincode}
                     onChange={handleBillingDetailsChange}
+                    onInput={(e) => {
+                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black/20"
                     required
                     placeholder="PIN Code"
@@ -509,9 +512,13 @@ const CheckoutPage = () => {
                   name="phone"
                   value={customerInfo.phone}
                   onChange={handleBillingDetailsChange}
+                  onInput={(e) => {
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black/20"
                   required
                   placeholder="Phone number"
+                  maxLength="10"
                 />
               </div>
             </div>
@@ -673,6 +680,9 @@ const CheckoutPage = () => {
                       name="pincode"
                       value={shippingDetails.pincode}
                       onChange={handleShippingDetailsChange}
+                      onInput={(e) => {
+                        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black/20"
                       required
                       placeholder="PIN Code"
