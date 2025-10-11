@@ -112,15 +112,15 @@ const BoughtTogether = ({ currentProduct }) => {
   if (relatedProducts.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8">
-      <h2 className="text-3xl font-bold text-gray-900 mb-8">Bought Together</h2>
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:p-8 mb-8">
+      <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-4 sm:mb-6 lg:mb-8">Bought Together</h2>
 
       {/* Products Visual Row */}
-      <div className="flex items-center justify-center gap-6 mb-8 p-6 bg-gray-50 rounded-xl overflow-x-auto">
+      <div className="flex items-center justify-start sm:justify-center gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8 p-3 sm:p-4 lg:p-6 bg-gray-50 rounded-xl overflow-x-auto">
         {/* Current Product */}
         <div className="flex flex-col items-center flex-shrink-0">
           <div className="relative group">
-            <div className="w-32 h-40 bg-white rounded-lg shadow-md overflow-hidden border-2 border-green-500">
+            <div className="w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 bg-white rounded-lg shadow-md overflow-hidden border-2 border-green-500">
               <img
                 src={currentProduct.main_image}
                 alt={currentProduct.name}
@@ -137,19 +137,19 @@ const BoughtTogether = ({ currentProduct }) => {
               </svg>
             </div>
           </div>
-          <div className="mt-3 text-center max-w-[140px]">
-            <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
+          <div className="mt-2 sm:mt-3 text-center max-w-[100px] sm:max-w-[120px] lg:max-w-[140px]">
+            <p className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
               {currentProduct.name}
             </p>
-            <p className="text-lg font-bold text-green-600 mt-1">
+            <p className="text-sm sm:text-base lg:text-lg font-bold text-green-600 mt-1">
               ₹{calculatePrice(currentProduct)}
             </p>
           </div>
         </div>
 
         {/* Plus Icon */}
-        <div className="flex-shrink-0 bg-white rounded-full p-3 shadow-sm border border-gray-200">
-          <Plus className="w-6 h-6 text-gray-600" />
+        <div className="flex-shrink-0 bg-white rounded-full p-2 sm:p-3 shadow-sm border border-gray-200">
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-600" />
         </div>
 
         {/* Related Products */}
@@ -164,9 +164,9 @@ const BoughtTogether = ({ currentProduct }) => {
                   onClick={() => toggleProductSelection(product)}
                 >
                   <div
-                    className={`w-32 h-40 bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${
+                    className={`w-24 h-32 sm:w-28 sm:h-36 lg:w-32 lg:h-40 bg-white rounded-lg shadow-md overflow-hidden border-2 transition-all duration-200 ${
                       isSelected
-                        ? "border-blue-500 ring-4 ring-blue-100 transform scale-105"
+                        ? "border-blue-500 ring-2 sm:ring-4 ring-blue-100 transform scale-105"
                         : "border-gray-200 hover:border-blue-300 hover:shadow-lg"
                     }`}
                   >
@@ -200,19 +200,19 @@ const BoughtTogether = ({ currentProduct }) => {
                     )}
                   </div>
                 </div>
-                <div className="mt-3 text-center max-w-[140px]">
-                  <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
+                <div className="mt-2 sm:mt-3 text-center max-w-[100px] sm:max-w-[120px] lg:max-w-[140px]">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-tight">
                     {product.name}
                   </p>
-                  <p className="text-lg font-bold text-blue-600 mt-1">
+                  <p className="text-sm sm:text-base lg:text-lg font-bold text-blue-600 mt-1">
                     ₹{calculatePrice(product)}
                   </p>
                 </div>
               </div>
 
               {index < relatedProducts.length - 1 && (
-                <div className="flex-shrink-0 bg-white rounded-full p-3 shadow-sm border border-gray-200">
-                  <Plus className="w-6 h-6 text-gray-600" />
+                <div className="flex-shrink-0 bg-white rounded-full p-2 sm:p-3 shadow-sm border border-gray-200">
+                  <Plus className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-gray-600" />
                 </div>
               )}
             </React.Fragment>

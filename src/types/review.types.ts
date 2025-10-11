@@ -4,6 +4,15 @@ export type Review = {
   content: string;
   rating: number;
   date: string;
+  images?: string[];
+};
+
+export type ReviewImage = {
+  id: number;
+  review_id: number;
+  image_url: string;
+  caption?: string;
+  created_at: string;
 };
 
 export type DatabaseReview = {
@@ -18,4 +27,16 @@ export type DatabaseReview = {
   verified_purchase: boolean;
   created_at: string;
   updated_at: string;
+  images?: ReviewImage[];
+};
+
+export type ReviewFormData = {
+  product_id: number;
+  user_name: string;
+  user_email?: string;
+  rating: number;
+  title?: string;
+  comment: string;
+  verified_purchase?: boolean;
+  images?: File[];
 };
