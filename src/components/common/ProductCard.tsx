@@ -142,8 +142,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
         </button>
       </div>
       
-      {/* Fixed height container for product name */}
-      <div className="h-12 xl:h-14 mb-2 flex items-start">
+      <div className="mb-1">
         <strong className="text-black xl:text-xl line-clamp-2 leading-tight">
           {data.name}
         </strong>

@@ -34,23 +34,37 @@ const ProductListSec = ({ title, data, viewAllLink }) => {
       >
         {data && data.length > 0 ? (
           <>
-            <Carousel
-              opts={{
-                align: "start",
-              }}
-              className="w-full mb-6 md:mb-9"
-            >
-              <CarouselContent className="mx-4 xl:mx-0 space-x-4 sm:space-x-5">
+            {/* Mobile: 2 per row, Desktop: Carousel */}
+            <div className="block md:hidden">
+              <div className="grid grid-cols-2 gap-4 px-4 mb-6">
                 {data.map((product) => (
-                  <CarouselItem
-                    key={product.id}
-                    className="w-full max-w-[198px] sm:max-w-[295px] pl-0"
-                  >
+                  <div key={product.id} className="w-full">
                     <ProductCard data={product} />
-                  </CarouselItem>
+                  </div>
                 ))}
-              </CarouselContent>
-            </Carousel>
+              </div>
+            </div>
+
+            {/* Desktop: Carousel */}
+            <div className="hidden md:block">
+              <Carousel
+                opts={{
+                  align: "start",
+                }}
+                className="w-full mb-6 md:mb-9"
+              >
+                <CarouselContent className="mx-4 xl:mx-0 space-x-4 sm:space-x-5">
+                  {data.map((product) => (
+                    <CarouselItem
+                      key={product.id}
+                      className="w-full max-w-[198px] sm:max-w-[295px] pl-0"
+                    >
+                      <ProductCard data={product} />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+            </div>
             {viewAllLink && (
               <div className="w-full px-4 sm:px-0 text-center">
                 <Link
