@@ -13,17 +13,34 @@ import Filters from "../components/shop-page/filters";
 import { FiSliders } from "react-icons/fi";
 import { ChevronLeft, ChevronRight, BookOpen, Search, RefreshCw } from "lucide-react";
 import ProductCard from "../components/common/ProductCard";
+import CartPopup from "../components/common/CartPopup";
+import ChatbotTrigger from "../components/common/ChatbotTrigger";
 import { useProducts } from "../context/ProductContext";
+import { useCart } from "../context/CartContext";
 import { useFilters } from "../context/FilterContext";
 import ProductListSecSkeleton from "../components/common/ProductListSecSkeleton";
 
 export default function ShopPage() {
   const { products, loading, error } = useProducts();
+  const { showCartPopup, popupProduct, hidePopup } = useCart();
   const { getFilteredProducts, filters, updateFilter } = useFilters();
+
+  // Responsive products per page
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const productsPerPage = 8;
+  const productsPerPage = isMobile ? 8 : 9;
 
   // Get filtered products
   const filteredProducts = getFilteredProducts(products);
@@ -38,6 +55,11 @@ export default function ShopPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [filters]);
+
+  // Reset to first page when products per page changes (mobile/desktop switch)
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [productsPerPage]);
 
   // Pagination handlers
   const goToPage = (page) => {
@@ -282,6 +304,16 @@ export default function ShopPage() {
           </div>
         </div>
       </div>
+
+      {/* Cart Popup */}
+      <CartPopup
+        isOpen={showCartPopup}
+        product={popupProduct}
+        onClose={hidePopup}
+      />
+
+      {/* Chatbot */}
+      <ChatbotTrigger />
     </main>
   );
 }

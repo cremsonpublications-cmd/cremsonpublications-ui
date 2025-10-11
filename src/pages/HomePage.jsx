@@ -4,20 +4,21 @@ import ProductListSecSkeleton from "../components/common/ProductListSecSkeleton"
 import Header from "../components/homepage/Header";
 import Reviews from "../components/homepage/Reviews";
 import CouponPopup from "../components/CouponPopup";
+import CartPopup from "../components/common/CartPopup";
+import ChatbotTrigger from "../components/common/ChatbotTrigger";
 import { useProducts } from "../context/ProductContext";
 import { useCoupons } from "../context/CouponContext";
+import { useCart } from "../context/CartContext";
 import { reviewsApi } from "../services/reviewApi";
 
 export default function HomePage() {
   const { products, loading, error } = useProducts();
-  const { hasAvailableCoupons, selectedCoupons } = useCoupons();
+  const { hasAvailableCoupons } = useCoupons();
+  const { showCartPopup, popupProduct, hidePopup } = useCart();
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [showCouponPopup, setShowCouponPopup] = useState(false);
 
-  // Debug: Add console logs to check coupon data
-  console.log('HomePage - selectedCoupons:', selectedCoupons);
-  console.log('HomePage - hasAvailableCoupons():', hasAvailableCoupons());
 
   // Function to transform database reviews to UI format
   const transformReviewsForUI = (dbReviews) => {
@@ -55,23 +56,23 @@ export default function HomePage() {
   // Show coupon popup after 4 seconds, but only once per day and only if coupons are available
   useEffect(() => {
     const checkAndShowPopup = () => {
-      const lastShown = localStorage.getItem('couponPopupLastShown');
+      const lastShown = localStorage.getItem("couponPopupLastShown");
       const now = new Date().getTime();
       const twoHoursInMs = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 
       // Check if popup was never shown or if 2 hours have passed
-      if (!lastShown || (now - parseInt(lastShown)) > twoHoursInMs) {
+      if (!lastShown || now - parseInt(lastShown) > twoHoursInMs) {
         // Check if there are any available coupons before showing popup
         if (hasAvailableCoupons()) {
           const timer = setTimeout(() => {
             setShowCouponPopup(true);
             // Mark popup as shown with current timestamp
-            localStorage.setItem('couponPopupLastShown', now.toString());
+            localStorage.setItem("couponPopupLastShown", now.toString());
           }, 4000); // Show after 4 seconds
 
           return () => clearTimeout(timer);
         } else {
-          console.log('No coupons available, skipping popup');
+          console.log("No coupons available, skipping popup");
         }
       }
     };
@@ -99,27 +100,56 @@ export default function HomePage() {
     );
   }
 
+  // Get 8 products with priority for available products
+  const getBestSellingProducts = () => {
+    // First, get available products (not sold out)
+    const availableProducts = products.filter(
+      (product) => product.status !== "Out of Stock"
+    );
+
+    // Get sold out products as backup
+    const soldOutProducts = products.filter(
+      (product) => product.status === "Out of Stock"
+    );
+
+    // Combine: prioritize available products, then add sold out if needed to reach 8
+    const prioritizedProducts = [...availableProducts, ...soldOutProducts];
+
+    // Return exactly 8 products (or all available if less than 8)
+    return prioritizedProducts.slice(0, 8);
+  };
+
   return (
     <>
       <Header />
       <main className="my-4 sm:my-[72px]">
         <ProductListSec
           title="Best Selling Books"
-          data={products.slice(0, 4)} // Show first 4 products
+          data={getBestSellingProducts()}
           viewAllLink="/shop"
         />
       </main>
-      
+
       {/* Coupon Popup */}
-      <CouponPopup 
-        isOpen={showCouponPopup} 
+      <CouponPopup
+        isOpen={showCouponPopup}
         onClose={() => {
           setShowCouponPopup(false);
           // Update timestamp when manually closed to prevent showing again today
           const now = new Date().getTime();
-          localStorage.setItem('couponPopupLastShown', now.toString());
-        }} 
+          localStorage.setItem("couponPopupLastShown", now.toString());
+        }}
       />
+
+      {/* Cart Popup */}
+      <CartPopup
+        isOpen={showCartPopup}
+        product={popupProduct}
+        onClose={hidePopup}
+      />
+
+      {/* Chatbot */}
+      <ChatbotTrigger />
     </>
   );
 }

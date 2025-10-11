@@ -45,13 +45,13 @@ const ProductCard = ({ data }: ProductCardProps) => {
   const handleIncrement = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    incrementQuantity(data.id);
+    incrementQuantity(data.id, true); // Show popup with updated product
   };
 
   const handleDecrement = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    decrementQuantity(data.id);
+    decrementQuantity(data.id, true); // Show popup with updated product
   };
 
   // Calculate actual price based on discounts
@@ -101,12 +101,12 @@ const ProductCard = ({ data }: ProductCardProps) => {
   return (
     <Link
       to={`/shop/product/${data.id}`}
-      className="flex flex-col items-start aspect-auto"
+      className="flex flex-col items-start aspect-auto group"
     >
       <div className="bg-[#F0EEED] rounded-[13px] lg:rounded-[20px] w-full lg:max-w-[295px] aspect-square mb-2.5 xl:mb-4 overflow-hidden relative p-4">
         <img
           src={data.main_image}
-          className="w-full h-full object-contain hover:scale-102 transition-all duration-200"
+          className="w-full h-full object-contain hover:scale-105 transition-transform duration-300 ease-in-out"
           alt={data.name}
         />
 
@@ -132,21 +132,24 @@ const ProductCard = ({ data }: ProductCardProps) => {
         {/* Wishlist button - top right */}
         <button
           onClick={handleWishlistClick}
-          className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-150"
+          className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200"
         >
           <Heart
             size={18}
-            className={`transition-all duration-150 ${
+            className={`transition-all duration-200 ease-out group-hover:animate-bounce ${
               isInWishlist(data.id)
                 ? "text-red-500 fill-red-500"
                 : "text-gray-600 hover:text-red-500"
             }`}
+            style={{
+              filter: isInWishlist(data.id) ? 'drop-shadow(0 0 6px rgba(239, 68, 68, 0.3))' : 'none'
+            }}
           />
         </button>
       </div>
 
       <div className="mb-1">
-        <strong className="text-black xl:text-xl line-clamp-2 leading-tight">
+        <strong className="text-black xl:text-xl line-clamp-2 leading-tight hover:text-orange-500 transition-colors duration-200 cursor-pointer">
           {data.name}
         </strong>
       </div>
@@ -231,7 +234,9 @@ const ProductCard = ({ data }: ProductCardProps) => {
               >
                 <Minus size={12} />
               </button>
-              <span className="text-sm font-semibold">{cartQuantity}</span>
+              <span className="text-sm font-semibold">
+                {cartQuantity}
+              </span>
               <button
                 onClick={handleIncrement}
                 className="hover:bg-orange-600 rounded-full p-1 transition-all duration-150"

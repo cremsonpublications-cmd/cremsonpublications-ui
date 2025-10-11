@@ -169,8 +169,40 @@
   .safe-area-top {
     padding-top: env(safe-area-inset-top);
   }
-  
+
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Cart quantity slide animations */
+  .animate-increase {
+    animation: slideFromBottom 0.3s ease-out;
+  }
+
+  .animate-decrease {
+    animation: slideToBottom 0.3s ease-out;
+  }
+}
+
+/* Keyframes for cart quantity animations */
+@keyframes slideFromBottom {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideToBottom {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
   }
 }

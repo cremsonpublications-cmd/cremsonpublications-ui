@@ -2,11 +2,6 @@ import React from "react";
 import * as motion from "framer-motion/client";
 import { cn } from "@/lib/utils";
 import { integralCF } from "@/styles/fonts";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-} from "@/components/ui/carousel";
 import ProductCard from "./ProductCard";
 import { Link } from "react-router-dom";
 import { BookOpen, ArrowRight } from "lucide-react";
@@ -34,36 +29,15 @@ const ProductListSec = ({ title, data, viewAllLink }) => {
       >
         {data && data.length > 0 ? (
           <>
-            {/* Mobile: 2 per row, Desktop: Carousel */}
-            <div className="block md:hidden">
-              <div className="grid grid-cols-2 gap-4 px-4 mb-6">
+            {/* Responsive Grid Layout */}
+            <div className="px-4 xl:px-0 mb-6 md:mb-9">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5">
                 {data.map((product) => (
                   <div key={product.id} className="w-full">
                     <ProductCard data={product} />
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Desktop: Carousel */}
-            <div className="hidden md:block">
-              <Carousel
-                opts={{
-                  align: "start",
-                }}
-                className="w-full mb-6 md:mb-9"
-              >
-                <CarouselContent className="mx-4 xl:mx-0 space-x-4 sm:space-x-5">
-                  {data.map((product) => (
-                    <CarouselItem
-                      key={product.id}
-                      className="w-full max-w-[198px] sm:max-w-[295px] pl-0"
-                    >
-                      <ProductCard data={product} />
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
             </div>
             {viewAllLink && (
               <div className="w-full px-4 sm:px-0 text-center">
