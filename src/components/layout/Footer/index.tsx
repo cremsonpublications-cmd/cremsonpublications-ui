@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { integralCF } from "@/styles/fonts";
 import React, { useState } from "react";
 import { PaymentBadge, SocialNetworks } from "./footer.types";
-import { FaFacebookF, FaGithub, FaInstagram, FaTwitter } from "react-icons/fa";
+import { FaInstagram, FaYoutube } from "react-icons/fa";
 import { SiGooglepay, SiPaytm, SiPhonepe } from "react-icons/si";
 import { MdPayment } from "react-icons/md";
 import { Link, useNavigate } from "react-router-dom";
@@ -20,18 +20,13 @@ import { MapPin, Phone, Smartphone, Mail, Clock } from "lucide-react";
 const socialsData: SocialNetworks[] = [
   {
     id: 1,
-    icon: <FaTwitter />,
-    url: "https://twitter.com",
+    icon: <FaInstagram />,
+    url: "https://www.instagram.com/cremsonbooks/?igsh=MTFweXAwYnk3c2wyOQ%3D%3D",
   },
   {
     id: 2,
-    icon: <FaFacebookF />,
-    url: "https://facebook.com",
-  },
-  {
-    id: 3,
-    icon: <FaInstagram />,
-    url: "https://instagram.com",
+    icon: <FaYoutube />,
+    url: "https://www.youtube.com/@cremson_publications",
   },
 ];
 
