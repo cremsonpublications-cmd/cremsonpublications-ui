@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { MessageCircle, X } from 'lucide-react';
-import Chatbot from './Chatbot';
+import React, { useState } from "react";
+import { MessageCircle, X } from "lucide-react";
+import Chatbot from "./Chatbot";
 
 const ChatbotTrigger = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,10 +10,13 @@ const ChatbotTrigger = () => {
       {/* Floating Trigger Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-20 right-6 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 group"
-        style={{ display: isOpen ? 'none' : 'block' }}
+        className="fixed bottom-40 right-6 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 group"
+        style={{ display: isOpen ? "none" : "block" }}
       >
-        <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
+        <MessageCircle
+          size={20}
+          className="group-hover:scale-110 transition-transform"
+        />
 
         {/* Pulse animation */}
         <span className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-ping opacity-25"></span>
