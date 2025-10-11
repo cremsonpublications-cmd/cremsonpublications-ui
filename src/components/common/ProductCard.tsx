@@ -26,7 +26,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const productForCart = {
       id: data.id,
       name: data.name,
@@ -34,7 +34,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
       main_image: data.main_image,
       author: data.author,
       isbn: data.isbn,
-      status: data.status
+      status: data.status,
     };
     addToCart(productForCart, 1);
   };
@@ -141,7 +141,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
           />
         </button>
       </div>
-      
+
       <div className="mb-1">
         <strong className="text-black xl:text-xl line-clamp-2 leading-tight">
           {data.name}
@@ -162,11 +162,12 @@ const ProductCard = ({ data }: ProductCardProps) => {
               readonly
             />
             <span className="text-sm font-medium text-gray-700">
-              {data.rating ? data.rating.toFixed(1) : '0.0'}
+              {data.rating ? data.rating.toFixed(1) : "0.0"}
             </span>
           </div>
-          <span className="text-xs text-gray-500">
-            ({data.review_count || 0} review{(data.review_count || 0) !== 1 ? 's' : ''})
+          <span className="text-xs text-gray-500 pb-[2px]">
+            ({data.review_count || 0} review
+            {(data.review_count || 0) !== 1 ? "s" : ""})
           </span>
         </div>
       )}
