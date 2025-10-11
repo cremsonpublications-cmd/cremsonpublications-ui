@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import Chatbot from "./Chatbot";
 
 const ChatbotTrigger = () => {
@@ -10,13 +10,10 @@ const ChatbotTrigger = () => {
       {/* Floating Trigger Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-40 right-6 z-40 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 group"
-        style={{ display: isOpen ? "none" : "block" }}
+        className="fixed bottom-6 right-6 z-[105] bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 group"
+        style={{ display: isOpen ? "none" : "flex" }}
       >
-        <MessageCircle
-          size={20}
-          className="group-hover:scale-110 transition-transform"
-        />
+        <MessageCircle className="w-8 h-8 group-hover:scale-110 transition-transform" />
 
         {/* Pulse animation */}
         <span className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-ping opacity-25"></span>

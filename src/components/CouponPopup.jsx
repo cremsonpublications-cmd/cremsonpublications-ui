@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { X, Copy, Check, Gift, Percent, Tag } from 'lucide-react';
-import { useCoupons } from '../context/CouponContext';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import confetti from 'canvas-confetti';
+import React, { useState, useEffect } from "react";
+import { X, Copy, Check, Gift, Percent, Tag } from "lucide-react";
+import { useCoupons } from "../context/CouponContext";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import confetti from "canvas-confetti";
 
 const CouponPopup = ({ isOpen, onClose }) => {
   const { selectedCoupons, loading: contextLoading } = useCoupons();
@@ -27,7 +27,7 @@ const CouponPopup = ({ isOpen, onClose }) => {
         particleCount: 100,
         spread: 60,
         origin: { y: 0.6 },
-        colors: ['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e']
+        colors: ["#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#f43f5e"],
       });
 
       toast.success(`Coupon "${couponCode}" copied to clipboard!`);
@@ -38,34 +38,36 @@ const CouponPopup = ({ isOpen, onClose }) => {
         setCopiedCoupon(null);
       }, 1000);
     } catch (error) {
-      console.error('Failed to copy coupon:', error);
-      toast.error('Failed to copy coupon code');
+      console.error("Failed to copy coupon:", error);
+      toast.error("Failed to copy coupon code");
     }
   };
 
   const getBestOffer = () => {
-    if (availableCoupons.length === 0) return '0%';
+    if (availableCoupons.length === 0) return "0%";
 
     // Find the best coupon to display
     const bestCoupon = availableCoupons.reduce((best, coupon) => {
       if (!best) return coupon;
 
       // Compare discount values directly
-      const currentValue = coupon.discount_type === 'percentage'
-        ? coupon.discount_value
-        : coupon.discount_value;
+      const currentValue =
+        coupon.discount_type === "percentage"
+          ? coupon.discount_value
+          : coupon.discount_value;
 
-      const bestValue = best.discount_type === 'percentage'
-        ? best.discount_value
-        : best.discount_value;
+      const bestValue =
+        best.discount_type === "percentage"
+          ? best.discount_value
+          : best.discount_value;
 
       return currentValue > bestValue ? coupon : best;
     }, null);
 
-    if (!bestCoupon) return '0%';
+    if (!bestCoupon) return "0%";
 
     // Return appropriate display based on discount type
-    if (bestCoupon.discount_type === 'percentage') {
+    if (bestCoupon.discount_type === "percentage") {
       return `${Math.round(bestCoupon.discount_value)}%`;
     } else {
       return `₹${bestCoupon.discount_value}`;
@@ -75,12 +77,12 @@ const CouponPopup = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[120] p-4">
       <div className="relative bg-white rounded-2xl max-w-md w-full mx-4 overflow-hidden shadow-2xl">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white shadow-md hover:bg-gray-50 transition-colors"
+          className="absolute top-4 right-4 z-[125] p-2 rounded-full bg-white shadow-lg hover:bg-gray-50 transition-colors border border-gray-200"
         >
           <X size={20} className="text-gray-600" />
         </button>
@@ -130,7 +132,7 @@ const CouponPopup = ({ isOpen, onClose }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        {coupon.discount_type === 'percentage' ? (
+                        {coupon.discount_type === "percentage" ? (
                           <Percent size={16} className="text-purple-600" />
                         ) : (
                           <Tag size={16} className="text-green-600" />
@@ -143,20 +145,19 @@ const CouponPopup = ({ isOpen, onClose }) => {
                         {coupon.description}
                       </p>
                       <p className="text-xs text-purple-600 font-medium">
-                        {coupon.discount_type === 'percentage' 
-                          ? `${coupon.discount_value}% OFF` 
+                        {coupon.discount_type === "percentage"
+                          ? `${coupon.discount_value}% OFF`
                           : `₹${coupon.discount_value} OFF`}
-                        {coupon.minimum_order_amount && (
-                          ` • Min ₹${coupon.minimum_order_amount}`
-                        )}
+                        {coupon.minimum_order_amount &&
+                          ` • Min ₹${coupon.minimum_order_amount}`}
                       </p>
                     </div>
                     <button
                       onClick={() => handleCopyCoupon(coupon.code)}
                       className={`ml-4 px-4 py-2 rounded-lg font-medium transition-all ${
                         copiedCoupon === coupon.code
-                          ? 'bg-green-500 text-white'
-                          : 'bg-purple-600 hover:bg-purple-700 text-white'
+                          ? "bg-green-500 text-white"
+                          : "bg-purple-600 hover:bg-purple-700 text-white"
                       }`}
                     >
                       {copiedCoupon === coupon.code ? (
@@ -179,7 +180,9 @@ const CouponPopup = ({ isOpen, onClose }) => {
             <div className="text-center py-8">
               <Gift size={48} className="mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600">No coupons available right now</p>
-              <p className="text-sm text-gray-500">Check back later for amazing deals!</p>
+              <p className="text-sm text-gray-500">
+                Check back later for amazing deals!
+              </p>
             </div>
           )}
 
@@ -189,7 +192,7 @@ const CouponPopup = ({ isOpen, onClose }) => {
               <button
                 onClick={() => {
                   onClose();
-                  navigate('/shop');
+                  navigate("/shop");
                 }}
                 className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors"
               >
