@@ -107,7 +107,7 @@ const AddToCardSection = ({ data }: { data: Product }) => {
   };
 
   return (
-    <div className="fixed md:relative w-full bg-white border-t md:border-none border-black/5 bottom-0 left-0 p-4 md:p-0 z-10 flex items-center justify-between sm:justify-start md:justify-center">
+    <div className="fixed md:relative w-full bg-white border-t md:border-none border-black/5 bottom-0 left-0 right-0 p-4 pb-6 md:p-0 z-50 flex items-center justify-between sm:justify-start md:justify-center shadow-lg md:shadow-none">
       <div className="flex items-center gap-3 sm:gap-5 w-full">
         {/* Buy Now Button */}
         <button

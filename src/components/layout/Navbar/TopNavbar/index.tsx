@@ -69,7 +69,7 @@ const TopNavbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 bg-white z-50 shadow-sm">
+    <nav className="sticky top-0 bg-white z-[100] shadow-sm">
       <div className="flex relative max-w-frame mx-auto items-center justify-between py-5 md:py-6 px-4 xl:px-0">
         {/* Left Section - Logo and Mobile Menu */}
         <div className="flex items-center flex-shrink-0">
@@ -149,7 +149,7 @@ const TopNavbar = () => {
               </button>
 
               {/* Dropdown Menu */}
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[110]">
                 <div className="py-2">
                   <div className="px-4 py-2 border-b border-gray-100">
                     <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
@@ -184,7 +184,7 @@ const TopNavbar = () => {
       {/* Mobile Search Modal */}
       {showMobileSearch && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 md:hidden"
+          className="fixed inset-0 bg-black/50 z-[110] md:hidden"
           onClick={() => setShowMobileSearch(false)}
         >
           <div
