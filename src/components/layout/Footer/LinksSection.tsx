@@ -64,21 +64,30 @@ const LinksSection = () => {
   const { categories } = useProducts();
 
   // Create dynamic categories section
+  // Create dynamic categories section
   const dynamicCategoriesSection = {
     id: 2,
     title: "categories",
-    children: categories.slice(0, 6).map((category, index) => ({
-      id: 20 + index,
-      label: category.main_category_name.toLowerCase(),
-      url: "/shop"
-    }))
+    children: categories
+      // 🔹 Filter out system_global_settings
+      .filter(
+        (category) =>
+          category.main_category_name &&
+          category.main_category_name.toLowerCase() !== "system_global_settings"
+      )
+      .slice(0, 6)
+      .map((category, index) => ({
+        id: 20 + index,
+        label: category.main_category_name.toLowerCase(),
+        url: "/shop",
+      })),
   };
 
   // Insert dynamic categories section at position 2 (after shop section)
   const dynamicFooterLinksData = [
     footerLinksData[0], // shop section
     dynamicCategoriesSection, // dynamic categories
-    ...footerLinksData.slice(1) // company and policies sections
+    ...footerLinksData.slice(1), // company and policies sections
   ];
 
   return (
@@ -92,7 +101,7 @@ const LinksSection = () => {
             <Link
               to={link.url}
               key={link.id}
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
               className="text-black/60 text-sm md:text-base mb-4 w-fit capitalize hover:text-black transition-colors"
             >
               {link.label}

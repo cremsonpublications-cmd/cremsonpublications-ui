@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { NavMenu } from "../navbar.types";
 import { MenuList } from "./MenuList";
 import websiteLogo from "@/assets/CP-Logo.png";
@@ -61,7 +61,8 @@ const TopNavbar = () => {
     navigate('/');
   };
 
-  const isActiveRoute = (url) => {
+
+  const isActiveRoute = (url: string) => {
     if (url === "/") {
       return location.pathname === "/";
     }
@@ -69,7 +70,7 @@ const TopNavbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 bg-white z-[100] shadow-sm">
+    <nav className="sticky top-0 bg-white z-[100] shadow-sm border-b border-gray-200" style={{ position: 'sticky', top: 0, zIndex: 9999 }}>
       <div className="flex relative max-w-frame mx-auto items-center justify-between py-5 md:py-6 px-4 xl:px-0">
         {/* Left Section - Logo and Mobile Menu */}
         <div className="flex items-center flex-shrink-0">
@@ -80,7 +81,7 @@ const TopNavbar = () => {
             <img
               src={websiteLogo}
               alt="Cremson Publications"
-              className="max-w-[100px]"
+              className="max-w-[70px] md:max-w-[100px]"
             />
           </Link>
         </div>
@@ -95,7 +96,7 @@ const TopNavbar = () => {
                     <MenuItem
                       label={item.label}
                       url={item.url}
-                      isActive={isActiveRoute(item.url)}
+                      isActive={isActiveRoute(item.url || '')}
                     />
                   )}
                   {item.type === "MenuList" && (
@@ -120,10 +121,10 @@ const TopNavbar = () => {
           >
             <Search size={22} className="text-red-500" />
           </button>
-          <Link to="/wishlist" className="p-1 relative">
-            <Heart size={22} className="text-red-500" />
+          <Link to="/wishlist" className="p-1 relative group">
+            <Heart size={22} className="text-red-500 transition-all duration-300 group-hover:scale-110 group-hover:text-red-600" />
             {getWishlistCount() > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
                 {getWishlistCount()}
               </span>
             )}
@@ -153,7 +154,7 @@ const TopNavbar = () => {
                 <div className="py-2">
                   <div className="px-4 py-2 border-b border-gray-100">
                     <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
-                    <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress}</p>
+                    <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress || ''}</p>
                   </div>
                   <Link
                     to="/my-orders"

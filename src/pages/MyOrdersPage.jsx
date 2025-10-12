@@ -34,6 +34,17 @@ const MyOrdersPage = () => {
     }
   }, [user?.primaryEmailAddress?.emailAddress, fetchUserOrders, hasOrdersLoaded]);
 
+  // Debug: Log orders data when it changes
+  useEffect(() => {
+    if (orders && orders.length > 0) {
+      console.log('Orders data:', orders);
+      console.log('First order items:', orders[0]?.items);
+      if (orders[0]?.items && orders[0].items.length > 0) {
+        console.log('First item structure:', orders[0].items[0]);
+      }
+    }
+  }, [orders]);
+
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "confirmed":
@@ -177,7 +188,7 @@ const MyOrdersPage = () => {
                 key={index}
                 className="flex items-center justify-between text-sm"
               >
-                <span className="text-gray-900">{item.name}</span>
+                <span className="text-gray-900">{item.name || item.productName || item.title || `Product ${item.productId || 'Unknown'}`}</span>
                 <span className="text-gray-600">Qty: {item.quantity}</span>
               </div>
             ))}
@@ -192,24 +203,45 @@ const MyOrdersPage = () => {
     </div>
   );
 
-  const OrderDetailsModal = ({ order, onClose }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-            >
-              ×
-            </button>
-          </div>
-        </div>
+  const OrderDetailsModal = ({ order, onClose }) => {
+    // Disable body scroll when modal is open
+    useEffect(() => {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }, []);
 
-        <div className="p-6 space-y-6">
+    // Handle outside click to close modal
+    const handleBackdropClick = (e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    };
+
+    return (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[200] p-2 sm:p-4"
+        onClick={handleBackdropClick}
+      >
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto relative">
+          {/* Header */}
+          <div className="sticky top-0 bg-white p-4 sm:p-6 border-b border-gray-200 z-10">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg sm:text-2xl font-bold text-gray-900">Order Details</h2>
+              <button
+                onClick={onClose}
+                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                <span className="text-lg sm:text-xl font-bold">×</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Order Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
@@ -335,10 +367,10 @@ const MyOrdersPage = () => {
               {order.items?.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 border border-gray-200 rounded-lg gap-3"
                 >
                   <div className="flex-1">
-                    <h4 className="font-medium text-gray-900">{item.name}</h4>
+                    <h4 className="font-medium text-gray-900">{item.name || item.productName || item.title || `Product ${item.productId || 'Unknown'}`}</h4>
                     <p className="text-sm text-gray-600">
                       by {item.author || "Unknown Author"}
                     </p>
@@ -391,10 +423,11 @@ const MyOrdersPage = () => {
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (loading) {
     return (

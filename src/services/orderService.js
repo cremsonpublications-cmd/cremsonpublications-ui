@@ -13,7 +13,28 @@ export const getUserOrders = async (userEmail) => {
       return { success: false, error: error.message };
     }
 
-    return { success: true, orders: data || [] };
+    // Ensure items array has proper structure for backward compatibility
+    const ordersWithItems = (data || []).map(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items = order.items.map(item => {
+          // Ensure each item has a name field
+          if (!item.name && item.productName) {
+            item.name = item.productName;
+          }
+          if (!item.name && item.title) {
+            item.name = item.title;
+          }
+          // If still no name, try to use a fallback
+          if (!item.name) {
+            item.name = `Product ${item.productId || item.id || 'Unknown'}`;
+          }
+          return item;
+        });
+      }
+      return order;
+    });
+
+    return { success: true, orders: ordersWithItems };
   } catch (error) {
     console.error('Error in getUserOrders:', error);
     return { success: false, error: error.message };

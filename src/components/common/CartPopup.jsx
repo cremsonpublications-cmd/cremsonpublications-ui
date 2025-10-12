@@ -77,10 +77,10 @@ const CartPopup = ({ isOpen, product, onClose }) => {
     onClose();
   };
 
-  if (!isVisible || !product) return null;
+  if (!isVisible || !product || cartQuantity === 0) return null;
 
   return (
-    <div className={`fixed top-20 right-4 left-4 md:left-auto md:w-80 z-[110] transition-all duration-300 ease-in-out ${
+    <div className={`fixed top-20 right-4 left-4 md:left-auto md:w-80 z-[10000] transition-all duration-300 ease-in-out ${
       isAnimating
         ? 'opacity-100 translate-y-0 scale-100'
         : 'opacity-0 -translate-y-4 scale-95'

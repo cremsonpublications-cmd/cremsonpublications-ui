@@ -101,7 +101,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
   return (
     <Link
       to={`/shop/product/${data.id}`}
-      className="flex flex-col items-start aspect-auto group"
+      className="flex flex-col items-start aspect-auto group min-h-[367px] sm:min-h-0"
     >
       <div className="bg-[#F0EEED] rounded-[13px] lg:rounded-[20px] w-full lg:max-w-[295px] aspect-square mb-2.5 xl:mb-4 overflow-hidden relative p-4">
         <img
@@ -152,6 +152,20 @@ const ProductCard = ({ data }: ProductCardProps) => {
         <strong className="text-black xl:text-xl line-clamp-2 leading-tight hover:text-orange-500 transition-colors duration-200 cursor-pointer">
           {data.name}
         </strong>
+      </div>
+
+      {/* Author and Class Info */}
+      <div className="mb-2 text-left text-sm text-gray-600">
+        {data.author && (
+          <div className="mb-1">
+            <span className="font-medium">Author:</span> {data.author}
+          </div>
+        )}
+        {data.classes && (
+          <div>
+            <span className="font-medium">Class:</span> {data.classes}
+          </div>
+        )}
       </div>
 
       {/* Rating Section - Always show for debugging */}
@@ -222,7 +236,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
           ) : cartQuantity === 0 ? (
             <button
               onClick={handleAddToCart}
-              className="h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 rounded-full transition-all duration-150 text-sm whitespace-nowrap"
+              className="h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 rounded-full transition-all duration-150 text-sm whitespace-nowrap light"
             >
               Add to Cart
             </button>

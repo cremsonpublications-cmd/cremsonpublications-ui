@@ -13,12 +13,17 @@ const ClassesSection = () => {
   const { filters, toggleArrayFilter } = useFilters();
   const { products } = useProducts();
 
-  // Get unique classes from products dynamically - flatten arrays
+  // Get unique classes from products dynamically - flatten arrays and sort numerically
   const allClasses = products.flatMap((p: any) => p.classes || []);
-  const classes = [...new Set(allClasses)].filter(Boolean).sort();
+  const classes = [...new Set(allClasses)].filter(Boolean).sort((a, b) => {
+    // Extract numbers and sort numerically
+    const numA = parseInt(a as string);
+    const numB = parseInt(b as string);
+    return numA - numB;
+  });
 
   return (
-    <Accordion type="single" collapsible defaultValue="filter-classes">
+    <Accordion type="single" collapsible>
       <AccordionItem value="filter-classes" className="border-none">
         <AccordionTrigger className="text-black font-bold text-xl hover:no-underline p-0 py-0.5">
           Classes
@@ -30,7 +35,7 @@ const ClassesSection = () => {
                 <Checkbox
                   id={`class-${idx}`}
                   checked={filters.classes.includes(cls)}
-                  onChange={() => toggleArrayFilter('classes', cls)}
+                  onChange={() => toggleArrayFilter("classes", cls)}
                 />
                 <label
                   htmlFor={`class-${idx}`}

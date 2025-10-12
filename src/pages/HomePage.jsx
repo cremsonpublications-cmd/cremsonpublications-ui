@@ -122,7 +122,7 @@ export default function HomePage() {
   return (
     <>
       <Header />
-      <main className="my-4 sm:my-[72px]">
+      <main className="my-4 sm:my-[72px] p-1 ">
         <ProductListSec
           title="Best Selling Books"
           data={getBestSellingProducts()}

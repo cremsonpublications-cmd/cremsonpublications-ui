@@ -144,9 +144,17 @@ export const FilterProvider = ({ children }) => {
 
     switch (filters.sortBy) {
       case 'low-price':
-        return sortedProducts.sort((a, b) => calculateProductPrice(a) - calculateProductPrice(b));
+        return sortedProducts.sort((a, b) => {
+          const priceA = calculateProductPrice(a);
+          const priceB = calculateProductPrice(b);
+          return priceA - priceB;
+        });
       case 'high-price':
-        return sortedProducts.sort((a, b) => calculateProductPrice(b) - calculateProductPrice(a));
+        return sortedProducts.sort((a, b) => {
+          const priceA = calculateProductPrice(a);
+          const priceB = calculateProductPrice(b);
+          return priceB - priceA;
+        });
       case 'newest':
         return sortedProducts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       case 'oldest':

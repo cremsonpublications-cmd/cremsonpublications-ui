@@ -17,7 +17,7 @@ const AuthorSection = () => {
   const authors = [...new Set(products.map((p: any) => p.author).filter(Boolean))].sort();
 
   return (
-    <Accordion type="single" collapsible defaultValue="filter-author">
+    <Accordion type="single" collapsible>
       <AccordionItem value="filter-author" className="border-none">
         <AccordionTrigger className="text-black font-bold text-xl hover:no-underline p-0 py-0.5">
           Author

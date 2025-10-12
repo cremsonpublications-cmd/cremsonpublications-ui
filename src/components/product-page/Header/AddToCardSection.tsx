@@ -152,7 +152,7 @@ const AddToCardSection = ({ data }: { data: Product }) => {
         ) : cartQuantity === 0 ? (
           <button
             onClick={handleAddToCart}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 rounded-full h-11 md:h-[52px] text-sm sm:text-base transition-all duration-200 whitespace-nowrap"
+            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 rounded-full h-11 md:h-[52px] text-sm sm:text-base transition-all duration-200 whitespace-nowrap light"
           >
             Add to Cart
           </button>
