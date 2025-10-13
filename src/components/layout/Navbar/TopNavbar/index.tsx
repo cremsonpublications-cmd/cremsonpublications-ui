@@ -15,7 +15,7 @@ import InputGroup from "@/components/ui/input-group";
 import ResTopNavbar from "./ResTopNavbar";
 import CartBtn from "./CartBtn";
 import SearchDropdown from "@/components/ui/SearchDropdown";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser, useClerk } from "../../../../context/AuthContext";
 
 const data: NavMenu = [
   {
@@ -58,9 +58,8 @@ const TopNavbar = () => {
 
   const handleSignOut = () => {
     signOut();
-    navigate('/');
+    navigate("/");
   };
-
 
   const isActiveRoute = (url: string) => {
     if (url === "/") {
@@ -70,8 +69,11 @@ const TopNavbar = () => {
   };
 
   return (
-    <nav className="sticky top-0 bg-white z-[100] shadow-sm border-b border-gray-200" style={{ position: 'sticky', top: 0, zIndex: 9999 }}>
-      <div className="flex relative max-w-frame mx-auto items-center justify-between py-5 md:py-6 px-4 xl:px-0">
+    <nav
+      className="sticky top-0 bg-white z-[100] shadow-sm border-b border-gray-200"
+      style={{ position: "sticky", top: 0, zIndex: 9999 }}
+    >
+      <div className="flex relative max-w-frame mx-auto items-center justify-between py-5 md:py-6 px-4 xl:px-0 ">
         {/* Left Section - Logo and Mobile Menu */}
         <div className="flex items-center flex-shrink-0">
           <div className="block md:hidden mr-4">
@@ -96,7 +98,7 @@ const TopNavbar = () => {
                     <MenuItem
                       label={item.label}
                       url={item.url}
-                      isActive={isActiveRoute(item.url || '')}
+                      isActive={isActiveRoute(item.url || "")}
                     />
                   )}
                   {item.type === "MenuList" && (
@@ -122,7 +124,10 @@ const TopNavbar = () => {
             <Search size={22} className="text-red-500" />
           </button>
           <Link to="/wishlist" className="p-1 relative group">
-            <Heart size={22} className="text-red-500 transition-all duration-300 group-hover:scale-110 group-hover:text-red-600" />
+            <Heart
+              size={22}
+              className="text-red-500 transition-all duration-300 group-hover:scale-110 group-hover:text-red-600"
+            />
             {getWishlistCount() > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold animate-pulse">
                 {getWishlistCount()}
@@ -153,8 +158,12 @@ const TopNavbar = () => {
               <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[110]">
                 <div className="py-2">
                   <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
-                    <p className="text-xs text-gray-500">{user?.primaryEmailAddress?.emailAddress || ''}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.fullName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {user?.primaryEmailAddress?.emailAddress || ""}
+                    </p>
                   </div>
                   <Link
                     to="/my-orders"
@@ -172,10 +181,7 @@ const TopNavbar = () => {
               </div>
             </div>
           ) : (
-            <button
-              onClick={() => navigate('/signin')}
-              className="p-1"
-            >
+            <button onClick={() => navigate("/signin")} className="p-1">
               <User size={22} className="text-red-500" />
             </button>
           )}
@@ -208,7 +214,6 @@ const TopNavbar = () => {
           </div>
         </div>
       )}
-
     </nav>
   );
 };

@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
-const AuthContext = createContext();
+const AuthContext = createContext({});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -13,85 +13,215 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [isSignedIn, setIsSignedIn] = useState(false);
 
-  // Load user from localStorage on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-      } catch (error) {
-        console.error('Error parsing stored user data:', error);
-        localStorage.removeItem('user');
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Save user to localStorage whenever user state changes
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('user');
-    }
-  }, [user]);
-
-  const signInWithGoogle = (credentialResponse) => {
-    try {
-      const decoded = jwtDecode(credentialResponse.credential);
-      const userData = {
-        id: decoded.sub,
-        name: decoded.name,
-        email: decoded.email,
-        picture: decoded.picture,
-        given_name: decoded.given_name,
-        family_name: decoded.family_name,
-        signInMethod: 'google',
-        signInTime: new Date().toISOString(),
-      };
-
-      setUser(userData);
-      console.log('User signed in:', userData);
-    } catch (error) {
-      console.error('Error decoding Google credential:', error);
-    }
-  };
-
-  const signInWithEmail = (email, password) => {
-    // For demo purposes, create a mock user
-    const userData = {
-      id: `email_${Date.now()}`,
-      name: email.split('@')[0],
-      email: email,
-      picture: null,
-      signInMethod: 'email',
-      signInTime: new Date().toISOString(),
+    // Get initial session
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setIsSignedIn(!!session?.user);
+      setLoading(false);
     };
 
-    setUser(userData);
-    console.log('User signed in with email:', userData);
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setUser(session?.user ?? null);
+        setIsSignedIn(!!session?.user);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signUp = async (email, password, userData = {}) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: userData.fullName || '',
+            first_name: userData.firstName || '',
+            last_name: userData.lastName || '',
+          }
+        }
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
   };
 
-  const signOut = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    console.log('User signed out');
+  const signIn = async (email, password) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
   };
 
-  const isSignedIn = () => {
-    return user !== null;
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      setIsSignedIn(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+
+  const checkUserExists = async (email) => {
+    try {
+      // Try to sign in with an invalid password to check if user exists
+      // This will fail but tell us if the user exists
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: 'invalid_password_for_check'
+      });
+
+      // If error is about invalid credentials, user exists
+      // If error is about user not found, user doesn't exist
+      if (error) {
+        if (error.message.includes('Invalid login credentials') ||
+            error.message.includes('Wrong password') ||
+            error.message.includes('Email not confirmed')) {
+          return { exists: true }; // User exists but wrong password
+        } else if (error.message.includes('not found') ||
+                   error.message.includes('User not found')) {
+          return { exists: false }; // User doesn't exist
+        }
+      }
+
+      return { exists: true };
+    } catch (error) {
+      return { exists: false };
+    }
+  };
+
+  const sendPasswordResetOTP = async (email) => {
+    try {
+      // First check if user exists
+      const { exists } = await checkUserExists(email);
+
+      if (!exists) {
+        return {
+          error: {
+            message: "No account found with this email address. Please sign up first."
+          }
+        };
+      }
+
+      // User exists, now send the reset email
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+      if (error) {
+        throw error;
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const verifyOtpAndUpdatePassword = async (email, token, newPassword) => {
+    try {
+      // For password reset, use type: 'recovery'
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'recovery'
+      });
+
+      if (verifyError) throw verifyError;
+
+      // Now update the password using the authenticated session
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (updateError) throw updateError;
+
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const updatePassword = async (newPassword) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  const updateProfile = async (updates) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: updates
+      });
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
+  };
+
+  // Format user data to match Clerk's structure
+  const formatUser = (user) => {
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.user_metadata?.full_name || '',
+      firstName: user.user_metadata?.first_name || '',
+      lastName: user.user_metadata?.last_name || '',
+      primaryEmailAddress: {
+        emailAddress: user.email
+      },
+      user_metadata: user.user_metadata,
+      created_at: user.created_at
+    };
   };
 
   const value = {
-    user,
-    isLoading,
-    signInWithGoogle,
-    signInWithEmail,
-    signOut,
+    user: formatUser(user),
     isSignedIn,
+    loading,
+    isLoading: loading,
+    signUp,
+    signIn,
+    signInWithEmail: signIn, // Alias for compatibility
+    signOut,
+    sendPasswordResetOTP,
+    updatePassword,
+    verifyOtpAndUpdatePassword,
+    updateProfile,
+    // Clerk compatibility methods
+    isLoaded: !loading,
+    userId: user?.id,
   };
 
   return (
@@ -99,4 +229,22 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+};
+
+// Hook for Clerk compatibility
+export const useUser = () => {
+  const { user, isSignedIn, loading } = useAuth();
+  return {
+    user,
+    isSignedIn,
+    isLoaded: !loading,
+  };
+};
+
+// Hook for Clerk compatibility
+export const useClerk = () => {
+  const { signOut } = useAuth();
+  return {
+    signOut,
+  };
 };

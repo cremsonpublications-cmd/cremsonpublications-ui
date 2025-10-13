@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { cartStorage } from "../utils/localStorage";
+import { useShipping } from "./ShippingContext";
 
 const CartContext = createContext();
 
@@ -18,6 +19,7 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
+  const { calculateShippingCharge, getShippingInfo } = useShipping();
   const [cartItems, setCartItems] = useState(() => {
     // Initialize with data from localStorage
     return cartStorage.get();
@@ -320,11 +322,40 @@ export const CartProvider = ({ children }) => {
     return appliedCoupon ? appliedCoupon.discount_value : 0;
   };
 
+  // Get shipping charge for current cart total
+  const getShippingCharge = () => {
+    // Check if applied coupon provides free delivery
+    if (appliedCoupon && appliedCoupon.free_delivery) {
+      return 0;
+    }
+
+    const cartTotal = getTotalPrice() - getCouponDiscount();
+    return calculateShippingCharge ? calculateShippingCharge(cartTotal) : 0;
+  };
+
+  // Get shipping information with details
+  const getCartShippingInfo = () => {
+    const cartTotal = getTotalPrice() - getCouponDiscount();
+    return getShippingInfo ? getShippingInfo(cartTotal) : {
+      shippingCharge: 0,
+      infoText: 'Free delivery',
+      isFreeDelivery: true,
+      amountForFreeDelivery: 0
+    };
+  };
+
   // Get final total (after coupon discount)
   const getFinalTotal = () => {
     const subtotal = getTotalPrice();
     const couponDiscount = getCouponDiscount();
     return subtotal - couponDiscount;
+  };
+
+  // Get final total including shipping
+  const getFinalTotalWithShipping = () => {
+    const finalTotal = getFinalTotal();
+    const shippingCharge = getShippingCharge();
+    return finalTotal + shippingCharge;
   };
 
   // Customer info functions
@@ -397,6 +428,9 @@ export const CartProvider = ({ children }) => {
     removeCoupon,
     getCouponDiscount,
     getFinalTotal,
+    getShippingCharge,
+    getCartShippingInfo,
+    getFinalTotalWithShipping,
     updateCustomerInfo,
     updateCustomerAddress,
     updateShippingInfo,

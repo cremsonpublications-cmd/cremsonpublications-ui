@@ -21,7 +21,7 @@ import { useOrders } from "../../context/OrderContext";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useCoupons } from "../../context/CouponContext";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "../../context/AuthContext";
 
 const ProductCard = ({ product }) => (
   <Link

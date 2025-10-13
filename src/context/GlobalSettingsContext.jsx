@@ -82,6 +82,7 @@ export const GlobalSettingsProvider = ({ children }) => {
     ));
   };
 
+
   const value = {
     globalSettings,
     getDeliveryInfo,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Star, Upload, X, Loader2 } from "lucide-react";
 import { reviewsApi } from "../../services/reviewApi";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const ReviewForm = ({ productId, onReviewSubmitted, onClose }) => {

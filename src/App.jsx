@@ -14,7 +14,8 @@ import { CartProvider } from "./context/CartContext";
 import { CouponProvider } from "./context/CouponContext";
 import { OrderProvider } from "./context/OrderContext";
 import { GlobalSettingsProvider } from "./context/GlobalSettingsContext";
-import ClerkProvider from "./providers/ClerkProvider";
+import { ShippingProvider } from "./context/ShippingContext";
+import { AuthProvider } from "./context/AuthContext";
 import TopNavbar from "./components/layout/Navbar/TopNavbar";
 import Footer from "./components/layout/Footer";
 import SpinnerLoader from "./components/ui/SpinnerbLoader";
@@ -34,6 +35,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ContactPage from "./pages/ContactPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 
 import "./styles/globals.css";
 
@@ -62,14 +64,15 @@ function App() {
         }
         persistor={persistor}
       >
-        <ClerkProvider>
+        <AuthProvider>
           <ProductProvider>
             <GlobalSettingsProvider>
-              <CouponProvider>
-                <OrderProvider>
-                  <FilterProvider>
-                    <WishlistProvider>
-                      <CartProvider>
+              <ShippingProvider>
+                <CouponProvider>
+                  <OrderProvider>
+                    <FilterProvider>
+                      <WishlistProvider>
+                        <CartProvider>
                   <Router>
                     <ScrollToTop />
                     <div className={cn([satoshi.className, "antialiased"])}>
@@ -95,6 +98,7 @@ function App() {
                           <Route path="/contact-us" element={<ContactPage />} />
                           <Route path="/signin" element={<SignInPage />} />
                           <Route path="/signup" element={<SignUpPage />} />
+                          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                         </Routes>
                       </div>
                       <ConditionalFooter />
@@ -102,14 +106,15 @@ function App() {
                     <ScrollToTopButton />
                     <Toaster position="top-right" richColors />
                   </Router>
-                </CartProvider>
-              </WishlistProvider>
-            </FilterProvider>
-            </OrderProvider>
-            </CouponProvider>
+                        </CartProvider>
+                      </WishlistProvider>
+                    </FilterProvider>
+                  </OrderProvider>
+                </CouponProvider>
+              </ShippingProvider>
             </GlobalSettingsProvider>
           </ProductProvider>
-        </ClerkProvider>
+        </AuthProvider>
       </PersistGate>
     </Provider>
   );

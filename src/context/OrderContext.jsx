@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { getUserOrders } from '../services/orderService';
-import { useUser } from '@clerk/clerk-react';
+import { useUser } from './AuthContext';
 
 const OrderContext = createContext();
 

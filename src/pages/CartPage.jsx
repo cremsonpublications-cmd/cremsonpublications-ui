@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "../context/AuthContext";
 import Confetti from "react-confetti";
 import BreadcrumbCart from "../components/cart-page/BreadcrumbCart";
 import ProductCard from "../components/cart-page/ProductCard";
@@ -17,7 +17,19 @@ import { Tag, Check, X, Percent, ChevronDown, ChevronUp } from "lucide-react";
 import confetti from 'canvas-confetti';
 
 export default function CartPage() {
-  const { cartItems, getTotalPrice, getTotalItems, appliedCoupon, applyCoupon, removeCoupon, getCouponDiscount, getFinalTotal } = useCart();
+  const {
+    cartItems,
+    getTotalPrice,
+    getTotalItems,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
+    getCouponDiscount,
+    getFinalTotal,
+    getShippingCharge,
+    getCartShippingInfo,
+    getFinalTotalWithShipping
+  } = useCart();
   const { validateCouponCode, selectedCoupons, loading: couponsLoading, fetchCoupons } = useCoupons();
   const { isSignedIn } = useUser();
   const navigate = useNavigate();
@@ -51,6 +63,9 @@ export default function CartPage() {
   const totalItems = getTotalItems();
   const couponDiscount = getCouponDiscount();
   const finalTotal = getFinalTotal();
+  const shippingCharge = getShippingCharge();
+  const shippingInfo = getCartShippingInfo();
+  const finalTotalWithShipping = getFinalTotalWithShipping();
 
   // Ensure coupons are loaded when CartPage is accessed
   useEffect(() => {
@@ -199,11 +214,37 @@ export default function CartPage() {
                     </div>
                   )}
 
+                  {/* Shipping Charge */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="md:text-xl text-black/60">Shipping</span>
+                      {shippingInfo.isFreeDelivery && (
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                          FREE
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xl md:text-2xl font-bold">
+                      {shippingInfo.isFreeDelivery ? (
+                        <span className="text-green-600">₹0</span>
+                      ) : (
+                        `₹${shippingCharge}`
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Shipping Info Message */}
+                  {shippingInfo.infoText && (
+                    <div className="text-sm text-gray-600 bg-blue-50 p-2 rounded">
+                      {shippingInfo.infoText}
+                    </div>
+                  )}
+
                   {/* Final Total */}
                   <div className="flex items-center justify-between pt-2 border-t border-black/10">
-                    <span className="md:text-xl text-black font-semibold">Total</span>
+                    <span className="md:text-xl text-black font-semibold">Final Total</span>
                     <span className="text-xl md:text-2xl font-bold">
-                      ₹{finalTotal}
+                      ₹{finalTotalWithShipping}
                     </span>
                   </div>
                 </div>

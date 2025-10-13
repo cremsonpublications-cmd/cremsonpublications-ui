@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { useUser } from '@clerk/clerk-react';
+import { useUser } from '../context/AuthContext';
 import { toast } from "sonner";
 import {
   MapPin,

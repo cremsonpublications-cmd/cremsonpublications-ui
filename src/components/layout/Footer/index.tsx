@@ -14,7 +14,7 @@ import websiteLogo from "../../../assets/CP-Logo.png";
 import { useCart } from "../../../context/CartContext";
 import { useWishlist } from "../../../context/WishlistContext";
 import SearchDropdown from "../../ui/SearchDropdown";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "../../../context/AuthContext";
 import { MapPin, Phone, Smartphone, Mail, Clock } from "lucide-react";
 
 const socialsData: SocialNetworks[] = [
