@@ -9,6 +9,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     redirectTo: 'https://www.gyanexpert.com/auth/callback',
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    site: 'https://www.gyanexpert.com'
   }
 });
