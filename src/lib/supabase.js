@@ -6,11 +6,11 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // Create Supabase client with custom redirect URLs for authentication
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    redirectTo: 'https://www.gyanexpert.com/auth/callback',
+    redirectTo: "https://www.cremsonpublications.com/auth/callback",
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
-    site: 'https://www.gyanexpert.com'
-  }
+    flowType: "pkce",
+    site: "https://www.cremsonpublications.com",
+  },
 });
