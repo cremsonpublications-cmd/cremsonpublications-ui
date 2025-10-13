@@ -59,7 +59,7 @@ const ShippingPage = () => {
 
   // Payment processing state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  
+
   // Confetti celebration state
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -78,7 +78,7 @@ const ShippingPage = () => {
   useEffect(() => {
     const subtotal = getTotalPrice();
     const couponDiscount = getCouponDiscount();
-    const deliveryCharge = getShippingCharge(); // Use calculated shipping charge
+    const deliveryCharge = 0; // Use calculated shipping charge
     const total = subtotal - couponDiscount + deliveryCharge;
 
     setOrderSummary({
@@ -87,12 +87,12 @@ const ShippingPage = () => {
       deliveryCharge,
       total: Math.max(0, total),
     });
-  }, [cartItems, getTotalPrice, getCouponDiscount, getShippingCharge, shippingInfo.method]);
+  }, [cartItems, getTotalPrice, getCouponDiscount, shippingInfo.method]);
 
   // Calculate final order values
   const subtotal = getTotalPrice();
   const couponDiscount = getCouponDiscount();
-  const deliveryCharge = getShippingCharge(); // Use calculated shipping charge
+  const deliveryCharge = 0; // Use calculated shipping charge
   const total = subtotal - couponDiscount + deliveryCharge;
 
   const generateOrderId = () => {
@@ -107,23 +107,25 @@ const ShippingPage = () => {
       const currentDate = new Date().toISOString().split("T")[0];
 
       // Determine which address to use for delivery
-      const deliveryAddress = shippingDetails ? {
-        // Use shipping address if different delivery address was selected
-        street: shippingDetails.streetAddress,
-        apartment: shippingDetails.apartment,
-        city: shippingDetails.city,
-        state: shippingDetails.state,
-        pincode: shippingDetails.pincode,
-        country: shippingDetails.country,
-      } : {
-        // Use billing address if same as billing
-        street: displayCustomerInfo.address.street,
-        apartment: displayCustomerInfo.address.apartment,
-        city: displayCustomerInfo.address.city,
-        state: displayCustomerInfo.address.state,
-        pincode: displayCustomerInfo.address.pincode,
-        country: displayCustomerInfo.address.country,
-      };
+      const deliveryAddress = shippingDetails
+        ? {
+            // Use shipping address if different delivery address was selected
+            street: shippingDetails.streetAddress,
+            apartment: shippingDetails.apartment,
+            city: shippingDetails.city,
+            state: shippingDetails.state,
+            pincode: shippingDetails.pincode,
+            country: shippingDetails.country,
+          }
+        : {
+            // Use billing address if same as billing
+            street: displayCustomerInfo.address.street,
+            apartment: displayCustomerInfo.address.apartment,
+            city: displayCustomerInfo.address.city,
+            state: displayCustomerInfo.address.state,
+            pincode: displayCustomerInfo.address.pincode,
+            country: displayCustomerInfo.address.country,
+          };
 
       // Prepare order data according to database schema
       const orderData = {
@@ -148,8 +150,8 @@ const ShippingPage = () => {
               state: displayCustomerInfo.address.state,
               pincode: displayCustomerInfo.address.pincode,
               country: displayCustomerInfo.address.country,
-            }
-          }
+            },
+          },
         }),
         items: cartItems.map((item) => ({
           productId: item.id,
@@ -238,30 +240,38 @@ const ShippingPage = () => {
               customerEmail: orderData.user_info.email,
               customerName: orderData.user_info.name,
               orderId: orderId,
-              items: orderData.items.map(item => ({
+              items: orderData.items.map((item) => ({
                 name: item.name,
                 quantity: item.quantity,
-                price: item.currentPrice
+                price: item.currentPrice,
               })),
               totalAmount: orderData.order_summary.grandTotal,
               shippingAddress: {
                 name: orderData.user_info.name,
                 phone: orderData.user_info.phone,
-                address: orderData.user_info.address.street + (orderData.user_info.address.apartment ? ', ' + orderData.user_info.address.apartment : ''),
+                address:
+                  orderData.user_info.address.street +
+                  (orderData.user_info.address.apartment
+                    ? ", " + orderData.user_info.address.apartment
+                    : ""),
                 city: orderData.user_info.address.city,
                 state: orderData.user_info.address.state,
-                pincode: orderData.user_info.address.pincode
-              }
+                pincode: orderData.user_info.address.pincode,
+              },
             };
 
             // Use direct Brevo API method (bypassing Supabase function to avoid CORS)
             console.log("Sending email via direct Brevo API...");
-            const directEmailResult = await sendOrderConfirmationEmailDirect(emailData);
-            
+            const directEmailResult = await sendOrderConfirmationEmailDirect(
+              emailData
+            );
+
             if (!directEmailResult.success) {
               console.error("Email sending failed:", directEmailResult.error);
               // Don't fail the order, just log the email failure
-              toast.warning("Order placed successfully, but confirmation email failed to send.");
+              toast.warning(
+                "Order placed successfully, but confirmation email failed to send."
+              );
             } else {
               console.log("Email sent successfully via direct Brevo API");
               toast.success("Order confirmation email sent!");
@@ -269,7 +279,9 @@ const ShippingPage = () => {
           } catch (emailError) {
             console.error("Email service error:", emailError);
             // Don't fail the order, just log the email failure
-            toast.warning("Order placed successfully, but confirmation email failed to send.");
+            toast.warning(
+              "Order placed successfully, but confirmation email failed to send."
+            );
           }
 
           // Clear cart and checkout data
@@ -322,7 +334,9 @@ const ShippingPage = () => {
     // Check if Razorpay is available
     if (!window.Razorpay) {
       console.error("Razorpay script not loaded");
-      toast.error("Payment system not loaded. Please refresh the page and try again.");
+      toast.error(
+        "Payment system not loaded. Please refresh the page and try again."
+      );
       setIsProcessingPayment(false);
       return;
     }
@@ -331,7 +345,7 @@ const ShippingPage = () => {
 
     try {
       const razorpayInstance = new window.Razorpay(options);
-      
+
       razorpayInstance.on("payment.failed", (response) => {
         console.error("Payment Failed:", response.error);
         toast.error(
@@ -407,9 +421,16 @@ const ShippingPage = () => {
               x: window.innerWidth * 0.05,
               y: window.innerHeight * 0.35,
               w: 8,
-              h: 8
+              h: 8,
             }}
-            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+            colors={[
+              "#10b981",
+              "#f59e0b",
+              "#8b5cf6",
+              "#06b6d4",
+              "#f43f5e",
+              "#84cc16",
+            ]}
           />
           {/* Left-Center Burst */}
           <Confetti
@@ -426,9 +447,16 @@ const ShippingPage = () => {
               x: window.innerWidth * 0.25,
               y: window.innerHeight * 0.25,
               w: 8,
-              h: 8
+              h: 8,
             }}
-            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+            colors={[
+              "#10b981",
+              "#f59e0b",
+              "#8b5cf6",
+              "#06b6d4",
+              "#f43f5e",
+              "#84cc16",
+            ]}
           />
           {/* Center Burst */}
           <Confetti
@@ -445,9 +473,16 @@ const ShippingPage = () => {
               x: window.innerWidth * 0.5,
               y: window.innerHeight * 0.2,
               w: 8,
-              h: 8
+              h: 8,
             }}
-            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+            colors={[
+              "#10b981",
+              "#f59e0b",
+              "#8b5cf6",
+              "#06b6d4",
+              "#f43f5e",
+              "#84cc16",
+            ]}
           />
           {/* Right-Center Burst */}
           <Confetti
@@ -464,9 +499,16 @@ const ShippingPage = () => {
               x: window.innerWidth * 0.75,
               y: window.innerHeight * 0.25,
               w: 8,
-              h: 8
+              h: 8,
             }}
-            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+            colors={[
+              "#10b981",
+              "#f59e0b",
+              "#8b5cf6",
+              "#06b6d4",
+              "#f43f5e",
+              "#84cc16",
+            ]}
           />
           {/* Far Right Burst */}
           <Confetti
@@ -483,13 +525,20 @@ const ShippingPage = () => {
               x: window.innerWidth * 0.95,
               y: window.innerHeight * 0.35,
               w: 8,
-              h: 8
+              h: 8,
             }}
-            colors={['#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#f43f5e', '#84cc16']}
+            colors={[
+              "#10b981",
+              "#f59e0b",
+              "#8b5cf6",
+              "#06b6d4",
+              "#f43f5e",
+              "#84cc16",
+            ]}
           />
         </>
       )}
-      
+
       {/* Checkout Breadcrumb */}
       <Breadcrumb className="mb-8">
         <BreadcrumbList>
