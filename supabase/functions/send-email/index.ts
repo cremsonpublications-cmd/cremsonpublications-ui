@@ -22,16 +22,17 @@ interface EmailPayload {
   };
 }
 
-console.info('Email service started');
+console.info("Email service started");
 
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", {
       headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers":
+          "authorization, x-client-info, apikey, content-type",
       },
     });
   }
@@ -44,25 +45,29 @@ Deno.serve(async (req: Request) => {
       orderId,
       orderItems,
       totalAmount,
-      shippingAddress
+      shippingAddress,
     }: EmailPayload = await req.json();
 
     // Brevo API key and sender from environment variables
-    const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY') || Deno.env.get('VITE_BREVO_API_KEY');
-    const SENDER_EMAIL = Deno.env.get('BREVO_SENDER_EMAIL') || 'info@cremsonpublications.com';
-    const SENDER_NAME = Deno.env.get('BREVO_SENDER_NAME') || 'Cremson Publications';
+    const VITE_BREVO_API_KEY =
+      Deno.env.get("VITE_BREVO_API_KEY") || Deno.env.get("VITE_BREVO_API_KEY");
+    const SENDER_EMAIL =
+      Deno.env.get("BREVO_SENDER_EMAIL") || "info@cremsonpublications.com";
+    const SENDER_NAME =
+      Deno.env.get("BREVO_SENDER_NAME") || "Cremson Publications";
 
-    if (!BREVO_API_KEY || BREVO_API_KEY.includes('replace_this')) {
+    if (!VITE_BREVO_API_KEY || VITE_BREVO_API_KEY.includes("replace_this")) {
       return new Response(
         JSON.stringify({ error: "Brevo API key not configured properly" }),
-        { 
-          status: 500, 
-          headers: { 
+        {
+          status: 500,
+          headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
-          } 
+            "Access-Control-Allow-Headers":
+              "authorization, x-client-info, apikey, content-type",
+          },
         }
       );
     }
@@ -103,12 +108,16 @@ Deno.serve(async (req: Request) => {
               <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
               
               <h3>Items Ordered:</h3>
-              ${orderItems.map(item => `
+              ${orderItems
+                .map(
+                  (item) => `
                 <div class="item">
                   <span>${item.name} (Qty: ${item.quantity})</span>
                   <span>₹${item.price * item.quantity}</span>
                 </div>
-              `).join('')}
+              `
+                )
+                .join("")}
               
               <div class="item total">
                 <span>Total Amount:</span>
@@ -120,7 +129,9 @@ Deno.serve(async (req: Request) => {
             <div class="address">
               <strong>${shippingAddress.name}</strong><br>
               ${shippingAddress.address}<br>
-              ${shippingAddress.city}, ${shippingAddress.state} - ${shippingAddress.pincode}<br>
+              ${shippingAddress.city}, ${shippingAddress.state} - ${
+      shippingAddress.pincode
+    }<br>
               Phone: ${shippingAddress.phone}
             </div>
             
@@ -152,14 +163,14 @@ Deno.serve(async (req: Request) => {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
-        "accept": "application/json",
-        "api-key": BREVO_API_KEY,
+        accept: "application/json",
+        "api-key": VITE_BREVO_API_KEY,
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        sender: { 
-          name: SENDER_NAME, 
-          email: SENDER_EMAIL 
+        sender: {
+          name: SENDER_NAME,
+          email: SENDER_EMAIL,
         },
         to: [{ email: to, name: customerName }],
         subject: subject,
@@ -171,54 +182,56 @@ Deno.serve(async (req: Request) => {
 
     if (response.ok) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
+        JSON.stringify({
+          success: true,
           message: "Email sent successfully",
-          data 
+          data,
         }),
         {
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+            "Access-Control-Allow-Headers":
+              "authorization, x-client-info, apikey, content-type",
           },
         }
       );
     } else {
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Failed to send email", 
-          data 
+        JSON.stringify({
+          success: false,
+          error: "Failed to send email",
+          data,
         }),
         {
           status: 400,
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+            "Access-Control-Allow-Headers":
+              "authorization, x-client-info, apikey, content-type",
           },
         }
       );
     }
-
   } catch (error) {
     console.error("Error sending email:", error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: "Internal server error",
-        message: error.message 
+        message: error.message,
       }),
       {
         status: 500,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type"
+          "Access-Control-Allow-Headers":
+            "authorization, x-client-info, apikey, content-type",
         },
       }
     );
