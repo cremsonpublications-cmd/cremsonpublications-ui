@@ -131,7 +131,7 @@ const CheckoutPage = () => {
   useEffect(() => {
     const subtotal = getTotalPrice();
     const couponDiscount = getCouponDiscount();
-    const deliveryCharge = getShippingCharge(); // Use calculated shipping charge
+    const deliveryCharge = 0; // Use calculated shipping charge
     const total = subtotal - couponDiscount + deliveryCharge;
 
     setOrderSummary({
@@ -140,7 +140,7 @@ const CheckoutPage = () => {
       deliveryCharge,
       total: Math.max(0, total),
     });
-  }, [cartItems, getTotalPrice, getCouponDiscount, getShippingCharge]);
+  }, [cartItems, getTotalPrice, getCouponDiscount]);
 
   // Handle form input changes
   const handleContactInfoChange = (e) => {
