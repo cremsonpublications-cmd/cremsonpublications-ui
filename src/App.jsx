@@ -36,6 +36,7 @@ import ContactPage from "./pages/ContactPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 
 import "./styles/globals.css";
 
@@ -99,6 +100,7 @@ function App() {
                           <Route path="/signin" element={<SignInPage />} />
                           <Route path="/signup" element={<SignUpPage />} />
                           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                          <Route path="/auth/callback" element={<AuthCallbackPage />} />
                         </Routes>
                       </div>
                       <ConditionalFooter />
