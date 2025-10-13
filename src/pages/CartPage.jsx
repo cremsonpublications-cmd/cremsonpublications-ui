@@ -14,7 +14,7 @@ import { TbBasketExclamation } from "react-icons/tb";
 import { useCart } from "../context/CartContext";
 import { useCoupons } from "../context/CouponContext";
 import { Tag, Check, X, Percent, ChevronDown, ChevronUp } from "lucide-react";
-import confetti from 'canvas-confetti';
+import confetti from "canvas-confetti";
 
 export default function CartPage() {
   const {
@@ -28,9 +28,14 @@ export default function CartPage() {
     getFinalTotal,
     getShippingCharge,
     getCartShippingInfo,
-    getFinalTotalWithShipping
+    getFinalTotalWithShipping,
   } = useCart();
-  const { validateCouponCode, selectedCoupons, loading: couponsLoading, fetchCoupons } = useCoupons();
+  const {
+    validateCouponCode,
+    selectedCoupons,
+    loading: couponsLoading,
+    fetchCoupons,
+  } = useCoupons();
   const { isSignedIn } = useUser();
   const navigate = useNavigate();
 
@@ -48,14 +53,14 @@ export default function CartPage() {
       angle: 60,
       spread: 55,
       origin: { x: 0, y: 0.6 },
-      colors: ['#f43f5e', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
+      colors: ["#f43f5e", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"],
     });
     confetti({
       particleCount: 50,
       angle: 120,
       spread: 55,
       origin: { x: 1, y: 0.6 },
-      colors: ['#f43f5e', '#8b5cf6', '#06b6d4', '#10b981', '#f59e0b']
+      colors: ["#f43f5e", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"],
     });
   };
 
@@ -66,14 +71,16 @@ export default function CartPage() {
   const shippingCharge = getShippingCharge();
   const shippingInfo = getCartShippingInfo();
   const finalTotalWithShipping = getFinalTotalWithShipping();
+  
+  // Make sure shipping charges are calculated when going to checkout
 
   // Ensure coupons are loaded when CartPage is accessed
   useEffect(() => {
     if (selectedCoupons.length === 0 && !couponsLoading) {
-      console.log('CartPage: Loading coupons...');
+      console.log("CartPage: Loading coupons...");
       fetchCoupons();
     }
-    console.log('CartPage: selectedCoupons:', selectedCoupons);
+    console.log("CartPage: selectedCoupons:", selectedCoupons);
   }, [selectedCoupons, couponsLoading, fetchCoupons]);
 
   // Apply coupon
@@ -81,7 +88,7 @@ export default function CartPage() {
     if (!couponCode.trim()) return;
 
     setIsValidatingCoupon(true);
-    setCouponMessage('');
+    setCouponMessage("");
 
     try {
       const result = await validateCouponCode(couponCode, totalPrice);
@@ -89,9 +96,9 @@ export default function CartPage() {
       if (result.valid) {
         applyCoupon(result.coupon);
         setCouponMessage(result.message);
-        setCouponCode('');
+        setCouponCode("");
         setShowCoupons(false);
-        
+
         // Trigger confetti celebration
         triggerCouponConfetti();
       } else {
@@ -99,7 +106,7 @@ export default function CartPage() {
         removeCoupon();
       }
     } catch (error) {
-      setCouponMessage('Error validating coupon');
+      setCouponMessage("Error validating coupon");
       removeCoupon();
     } finally {
       setIsValidatingCoupon(false);
@@ -109,13 +116,13 @@ export default function CartPage() {
   // Remove applied coupon
   const handleRemoveCoupon = () => {
     removeCoupon();
-    setCouponMessage('');
+    setCouponMessage("");
   };
 
   // Apply coupon directly from list
   const handleSelectCoupon = async (coupon) => {
     setIsValidatingCoupon(true);
-    setCouponMessage('');
+    setCouponMessage("");
 
     try {
       const result = await validateCouponCode(coupon.code, totalPrice);
@@ -124,14 +131,14 @@ export default function CartPage() {
         applyCoupon(result.coupon);
         setCouponMessage(result.message);
         setShowCoupons(false);
-        
+
         // Trigger confetti celebration
         triggerCouponConfetti();
       } else {
         setCouponMessage(result.message);
       }
     } catch (error) {
-      setCouponMessage('Error applying coupon');
+      setCouponMessage("Error applying coupon");
     } finally {
       setIsValidatingCoupon(false);
     }
@@ -140,9 +147,9 @@ export default function CartPage() {
   // Handle checkout button click
   const handleCheckoutClick = () => {
     if (!isSignedIn) {
-      navigate('/signin');
+      navigate("/signin");
     } else {
-      navigate('/checkout');
+      navigate("/checkout");
     }
   };
 
@@ -177,11 +184,17 @@ export default function CartPage() {
                 </h6>
                 <div className="flex flex-col space-y-5">
                   <div className="flex items-center justify-between">
-                    <span className="md:text-xl text-black/60">Total Items</span>
-                    <span className="md:text-xl font-bold">{cartItems.length}</span>
+                    <span className="md:text-xl text-black/60">
+                      Total Items
+                    </span>
+                    <span className="md:text-xl font-bold">
+                      {cartItems.length}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="md:text-xl text-black/60">Total Quantity</span>
+                    <span className="md:text-xl text-black/60">
+                      Total Quantity
+                    </span>
                     <span className="md:text-xl font-bold">{totalItems}</span>
                   </div>
                   <hr className="border-t-black/10" />
@@ -198,14 +211,16 @@ export default function CartPage() {
                   {appliedCoupon && (
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="md:text-xl text-green-600">Coupon Discount</span>
+                        <span className="md:text-xl text-green-600">
+                          Coupon Discount
+                        </span>
                         <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                           {appliedCoupon.code}
                         </span>
                       </div>
                       <span className="text-xl md:text-2xl font-bold text-green-600">
                         -₹{couponDiscount}
-                        {appliedCoupon?.discount_type === 'percentage' && (
+                        {appliedCoupon?.discount_type === "percentage" && (
                           <span className="text-sm font-normal text-gray-600 ml-1">
                             ({appliedCoupon.discount_value}%)
                           </span>
@@ -217,7 +232,7 @@ export default function CartPage() {
                   {/* Shipping Charge */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="md:text-xl text-black/60">Shipping</span>
+                      <span className="md:text-xl text-black/60">Delivery Charges</span>
                       {shippingInfo.isFreeDelivery && (
                         <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
                           FREE
@@ -226,7 +241,7 @@ export default function CartPage() {
                     </div>
                     <span className="text-xl md:text-2xl font-bold">
                       {shippingInfo.isFreeDelivery ? (
-                        <span className="text-green-600">₹0</span>
+                        <span className="text-green-600">FREE</span>
                       ) : (
                         `₹${shippingCharge}`
                       )}
@@ -242,7 +257,9 @@ export default function CartPage() {
 
                   {/* Final Total */}
                   <div className="flex items-center justify-between pt-2 border-t border-black/10">
-                    <span className="md:text-xl text-black font-semibold">Final Total</span>
+                    <span className="md:text-xl text-black font-semibold">
+                      Final Total
+                    </span>
                     <span className="text-xl md:text-2xl font-bold">
                       ₹{finalTotalWithShipping}
                     </span>
@@ -266,7 +283,9 @@ export default function CartPage() {
                         <X size={16} />
                       </button>
                     </div>
-                    <p className="text-sm text-green-600 mt-1">{appliedCoupon.description}</p>
+                    <p className="text-sm text-green-600 mt-1">
+                      {appliedCoupon.description}
+                    </p>
                   </div>
                 )}
 
@@ -282,7 +301,9 @@ export default function CartPage() {
                           type="text"
                           name="code"
                           value={couponCode}
-                          onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                          onChange={(e) =>
+                            setCouponCode(e.target.value.toUpperCase())
+                          }
                           placeholder="Add promo code"
                           className="bg-transparent placeholder:text-black/40"
                         />
@@ -293,13 +314,17 @@ export default function CartPage() {
                         disabled={isValidatingCoupon || !couponCode.trim()}
                         className="bg-black rounded-full w-full max-w-[119px] h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isValidatingCoupon ? 'Checking...' : 'Apply'}
+                        {isValidatingCoupon ? "Checking..." : "Apply"}
                       </Button>
                     </div>
 
                     {/* Coupon Message */}
                     {couponMessage && (
-                      <p className={`text-sm ${appliedCoupon ? 'text-green-600' : 'text-red-600'}`}>
+                      <p
+                        className={`text-sm ${
+                          appliedCoupon ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
                         {couponMessage}
                       </p>
                     )}
@@ -314,13 +339,20 @@ export default function CartPage() {
                           <Tag size={16} />
                           Available Coupons ({selectedCoupons.length})
                         </span>
-                        {showCoupons ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        {showCoupons ? (
+                          <ChevronUp size={16} />
+                        ) : (
+                          <ChevronDown size={16} />
+                        )}
                       </button>
 
                       {/* Available Coupons List */}
                       {showCoupons && (
                         <div className="mt-3 space-y-2">
-                          {console.log('Rendering coupons, selectedCoupons:', selectedCoupons)}
+                          {console.log(
+                            "Rendering coupons, selectedCoupons:",
+                            selectedCoupons
+                          )}
                           {selectedCoupons.length > 0 ? (
                             selectedCoupons.map((coupon) => (
                               <div
@@ -330,18 +362,23 @@ export default function CartPage() {
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
-                                    <Percent size={14} className="text-blue-600" />
+                                    <Percent
+                                      size={14}
+                                      className="text-blue-600"
+                                    />
                                     <span className="font-mono text-sm font-bold text-blue-600">
                                       {coupon.code}
                                     </span>
                                   </div>
                                   <span className="text-sm font-medium text-gray-900">
-                                    {coupon.discount_type === 'percentage' 
-                                      ? `${coupon.discount_value}% OFF` 
+                                    {coupon.discount_type === "percentage"
+                                      ? `${coupon.discount_value}% OFF`
                                       : `₹${coupon.discount_value} OFF`}
                                   </span>
                                 </div>
-                                <p className="text-xs text-gray-600 mt-1">{coupon.description}</p>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  {coupon.description}
+                                </p>
                                 {coupon.minimum_order_amount && (
                                   <p className="text-xs text-gray-500 mt-1">
                                     Min. order: ₹{coupon.minimum_order_amount}
@@ -350,7 +387,9 @@ export default function CartPage() {
                               </div>
                             ))
                           ) : (
-                            <p className="text-sm text-gray-500 py-2">No coupons available</p>
+                            <p className="text-sm text-gray-500 py-2">
+                              No coupons available
+                            </p>
                           )}
                         </div>
                       )}
@@ -362,7 +401,7 @@ export default function CartPage() {
                   onClick={handleCheckoutClick}
                   className="text-sm md:text-base font-medium bg-black rounded-full w-full py-4 h-[54px] md:h-[60px] group"
                 >
-                  Go to Checkout{" "}
+                  Go to Checkout (₹{finalTotalWithShipping}){" "}
                   <FaArrowRight className="text-xl ml-2 group-hover:translate-x-1 transition-all" />
                 </Button>
               </div>
@@ -378,7 +417,6 @@ export default function CartPage() {
           </div>
         )}
       </div>
-
     </main>
   );
 }

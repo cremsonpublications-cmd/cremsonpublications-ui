@@ -78,7 +78,7 @@ const ShippingPage = () => {
   useEffect(() => {
     const subtotal = getTotalPrice();
     const couponDiscount = getCouponDiscount();
-    const deliveryCharge = 0; // Always free delivery
+    const deliveryCharge = getShippingCharge(); // Use calculated shipping charge
     const total = subtotal - couponDiscount + deliveryCharge;
 
     setOrderSummary({
@@ -87,12 +87,12 @@ const ShippingPage = () => {
       deliveryCharge,
       total: Math.max(0, total),
     });
-  }, [cartItems, getTotalPrice, getCouponDiscount, shippingInfo.method]);
+  }, [cartItems, getTotalPrice, getCouponDiscount, getShippingCharge, shippingInfo.method]);
 
   // Calculate final order values
   const subtotal = getTotalPrice();
   const couponDiscount = getCouponDiscount();
-  const deliveryCharge = 0; // Free shipping
+  const deliveryCharge = getShippingCharge(); // Use calculated shipping charge
   const total = subtotal - couponDiscount + deliveryCharge;
 
   const generateOrderId = () => {

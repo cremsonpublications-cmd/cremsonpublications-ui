@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useCart } from '../context/CartContext';
-import { useUser } from '../context/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { useUser } from "../context/AuthContext";
 import { toast } from "sonner";
-import {
-  MapPin,
-  User,
-  Mail,
-  ShoppingBag
-} from 'lucide-react';
-import SearchableSelect from '../components/ui/SearchableSelect';
+import { MapPin, User, Mail, ShoppingBag } from "lucide-react";
+import SearchableSelect from "../components/ui/SearchableSelect";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -17,19 +12,48 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '../components/ui/breadcrumb';
-import { Link } from 'react-router-dom';
+} from "../components/ui/breadcrumb";
+import { Link } from "react-router-dom";
 
-const countries = ['India'];
+const countries = ["India"];
 
 const indianStates = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram',
-  'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
-  'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-  'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
-  'Lakshadweep', 'Delhi', 'Puducherry', 'Ladakh', 'Jammu and Kashmir'
+  "Andhra Pradesh",
+  "Arunachal Pradesh",
+  "Assam",
+  "Bihar",
+  "Chhattisgarh",
+  "Goa",
+  "Gujarat",
+  "Haryana",
+  "Himachal Pradesh",
+  "Jharkhand",
+  "Karnataka",
+  "Kerala",
+  "Madhya Pradesh",
+  "Maharashtra",
+  "Manipur",
+  "Meghalaya",
+  "Mizoram",
+  "Nagaland",
+  "Odisha",
+  "Punjab",
+  "Rajasthan",
+  "Sikkim",
+  "Tamil Nadu",
+  "Telangana",
+  "Tripura",
+  "Uttar Pradesh",
+  "Uttarakhand",
+  "West Bengal",
+  "Andaman and Nicobar Islands",
+  "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu",
+  "Lakshadweep",
+  "Delhi",
+  "Puducherry",
+  "Ladakh",
+  "Jammu and Kashmir",
 ];
 
 const CheckoutPage = () => {
@@ -41,7 +65,7 @@ const CheckoutPage = () => {
     appliedCoupon,
     customerInfo,
     updateCustomerInfo,
-    updateCustomerAddress
+    updateCustomerAddress,
   } = useCart();
   const { user, isSignedIn } = useUser();
   const navigate = useNavigate();
@@ -55,17 +79,16 @@ const CheckoutPage = () => {
         email: navCustomerInfo.email,
         firstName: navCustomerInfo.firstName,
         lastName: navCustomerInfo.lastName,
-        phone: navCustomerInfo.phone
+        phone: navCustomerInfo.phone,
       });
       updateCustomerAddress(navCustomerInfo.address);
     }
   }, [location.state, updateCustomerInfo, updateCustomerAddress]);
 
-
   // Check if user is logged in, redirect to signin if not
   useEffect(() => {
     if (!isSignedIn) {
-      navigate('/signin');
+      navigate("/signin");
     }
   }, [isSignedIn, navigate]);
 
@@ -73,52 +96,51 @@ const CheckoutPage = () => {
   useEffect(() => {
     if (user && !customerInfo.email) {
       updateCustomerInfo({
-        email: user.primaryEmailAddress?.emailAddress || '',
-        firstName: user.firstName || '',
-        lastName: user.lastName || ''
+        email: user.primaryEmailAddress?.emailAddress || "",
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
       });
     }
   }, [user, customerInfo.email, updateCustomerInfo]);
 
-  const [deliverToDifferentAddress, setDeliverToDifferentAddress] = useState(false);
+  const [deliverToDifferentAddress, setDeliverToDifferentAddress] =
+    useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
   const [showValidation, setShowValidation] = useState(false);
   const [shippingDetails, setShippingDetails] = useState({
-    firstName: '',
-    lastName: '',
-    companyName: '',
-    country: 'India',
-    streetAddress: '',
-    apartment: '',
-    city: '',
-    state: '',
-    pincode: ''
+    firstName: "",
+    lastName: "",
+    companyName: "",
+    country: "India",
+    streetAddress: "",
+    apartment: "",
+    city: "",
+    state: "",
+    pincode: "",
   });
-
 
   // Order summary state
   const [orderSummary, setOrderSummary] = useState({
     subtotal: 0,
     couponDiscount: 0,
     deliveryCharge: 0,
-    total: 0
+    total: 0,
   });
-
 
   // Calculate order summary
   useEffect(() => {
     const subtotal = getTotalPrice();
     const couponDiscount = getCouponDiscount();
-    const deliveryCharge = 0; // Always free delivery
+    const deliveryCharge = getShippingCharge(); // Use calculated shipping charge
     const total = subtotal - couponDiscount + deliveryCharge;
 
     setOrderSummary({
       subtotal,
       couponDiscount,
       deliveryCharge,
-      total: Math.max(0, total)
+      total: Math.max(0, total),
     });
-  }, [cartItems, getTotalPrice, getCouponDiscount]);
+  }, [cartItems, getTotalPrice, getCouponDiscount, getShippingCharge]);
 
   // Handle form input changes
   const handleContactInfoChange = (e) => {
@@ -128,24 +150,40 @@ const CheckoutPage = () => {
 
   const handleBillingDetailsChange = (e) => {
     const { name, value } = e.target;
-    if (name.startsWith('address.') || ['streetAddress', 'apartment', 'city', 'state', 'pincode', 'country'].includes(name)) {
-      const addressField = name.replace('address.', '');
-      const mappedField = name === 'streetAddress' ? 'street' : addressField;
+    if (
+      name.startsWith("address.") ||
+      [
+        "streetAddress",
+        "apartment",
+        "city",
+        "state",
+        "pincode",
+        "country",
+      ].includes(name)
+    ) {
+      const addressField = name.replace("address.", "");
+      const mappedField = name === "streetAddress" ? "street" : addressField;
       updateCustomerAddress({ [mappedField]: value });
     } else {
-      const mappedField = name === 'firstName' ? 'firstName' : name === 'lastName' ? 'lastName' : name === 'phone' ? 'phone' : name;
+      const mappedField =
+        name === "firstName"
+          ? "firstName"
+          : name === "lastName"
+          ? "lastName"
+          : name === "phone"
+          ? "phone"
+          : name;
       updateCustomerInfo({ [mappedField]: value });
     }
   };
 
   const handleShippingDetailsChange = (e) => {
     const { name, value } = e.target;
-    setShippingDetails(prev => ({
+    setShippingDetails((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
-
 
   // Validation function
   const validateCustomerInfo = () => {
@@ -153,52 +191,52 @@ const CheckoutPage = () => {
 
     // Validate billing/customer information
     if (!customerInfo.email?.trim()) {
-      errors.push('Email is required');
+      errors.push("Email is required");
     }
     if (!customerInfo.firstName?.trim()) {
-      errors.push('First name is required');
+      errors.push("First name is required");
     }
     if (!customerInfo.lastName?.trim()) {
-      errors.push('Last name is required');
+      errors.push("Last name is required");
     }
     if (!customerInfo.address?.street?.trim()) {
-      errors.push('Billing street address is required');
+      errors.push("Billing street address is required");
     }
     if (!customerInfo.address?.city?.trim()) {
-      errors.push('Billing city is required');
+      errors.push("Billing city is required");
     }
     if (!customerInfo.address?.state?.trim()) {
-      errors.push('Billing state is required');
+      errors.push("Billing state is required");
     }
     if (!customerInfo.address?.pincode?.trim()) {
-      errors.push('Billing pincode is required');
+      errors.push("Billing pincode is required");
     }
     if (!customerInfo.phone?.trim()) {
-      errors.push('Phone number is required');
+      errors.push("Phone number is required");
     }
 
     // Validate shipping address if different delivery address is selected
     if (deliverToDifferentAddress) {
       if (!shippingDetails.firstName?.trim()) {
-        errors.push('Shipping first name is required');
+        errors.push("Shipping first name is required");
       }
       if (!shippingDetails.lastName?.trim()) {
-        errors.push('Shipping last name is required');
+        errors.push("Shipping last name is required");
       }
       if (!shippingDetails.streetAddress?.trim()) {
-        errors.push('Shipping street address is required');
+        errors.push("Shipping street address is required");
       }
       if (!shippingDetails.city?.trim()) {
-        errors.push('Shipping city is required');
+        errors.push("Shipping city is required");
       }
       if (!shippingDetails.state?.trim()) {
-        errors.push('Shipping state is required');
+        errors.push("Shipping state is required");
       }
       if (!shippingDetails.pincode?.trim()) {
-        errors.push('Shipping pincode is required');
+        errors.push("Shipping pincode is required");
       }
       if (!shippingDetails.country?.trim()) {
-        errors.push('Shipping country is required');
+        errors.push("Shipping country is required");
       }
     }
 
@@ -210,7 +248,6 @@ const CheckoutPage = () => {
     return validateCustomerInfo().length === 0;
   };
 
-
   // Handle continue to shipping (legacy function - keeping for navigation)
   const handleContinueToShipping = () => {
     const errors = validateCustomerInfo();
@@ -220,10 +257,12 @@ const CheckoutPage = () => {
       setShowValidation(true);
 
       // Scroll to top to show errors
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
 
       // Show toast for immediate feedback
-      toast.error('Please fill in all required fields to continue to shipping.');
+      toast.error(
+        "Please fill in all required fields to continue to shipping."
+      );
       return;
     }
 
@@ -231,17 +270,17 @@ const CheckoutPage = () => {
     setValidationErrors([]);
     setShowValidation(false);
 
-    console.log('Proceeding to shipping with:', {
+    console.log("Proceeding to shipping with:", {
       customer: customerInfo,
-      shipping: deliverToDifferentAddress ? shippingDetails : customerInfo
+      shipping: deliverToDifferentAddress ? shippingDetails : customerInfo,
     });
 
     // Navigate to shipping page using React Router with state
-    navigate('/checkout/shipping', {
+    navigate("/checkout/shipping", {
       state: {
         customerInfo: customerInfo,
-        shippingDetails: deliverToDifferentAddress ? shippingDetails : null
-      }
+        shippingDetails: deliverToDifferentAddress ? shippingDetails : null,
+      },
     });
   };
 
@@ -251,16 +290,19 @@ const CheckoutPage = () => {
       <div className="max-w-frame mx-auto px-4 py-8">
         <div className="text-center">
           <User size={64} className="mx-auto text-gray-400 mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Sign in required</h2>
-          <p className="text-gray-600 mb-4">Please sign in to access checkout</p>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            Sign in required
+          </h2>
+          <p className="text-gray-600 mb-4">
+            Please sign in to access checkout
+          </p>
           <button
-            onClick={() => navigate('/cart')}
+            onClick={() => navigate("/cart")}
             className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors"
           >
             Return to Cart
           </button>
         </div>
-
       </div>
     );
   }
@@ -270,9 +312,14 @@ const CheckoutPage = () => {
       <div className="max-w-frame mx-auto px-4 py-8">
         <div className="text-center">
           <ShoppingBag size={64} className="mx-auto text-gray-400 mb-4" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            Your cart is empty
+          </h2>
           <p className="text-gray-600 mb-4">Add some books to get started!</p>
-          <a href="/shop" className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors">
+          <a
+            href="/shop"
+            className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors"
+          >
             Continue Shopping
           </a>
         </div>
@@ -314,7 +361,9 @@ const CheckoutPage = () => {
       {/* Validation Errors */}
       {showValidation && validationErrors.length > 0 && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-          <h3 className="text-red-800 font-semibold mb-2">Please complete the following required fields:</h3>
+          <h3 className="text-red-800 font-semibold mb-2">
+            Please complete the following required fields:
+          </h3>
           <ul className="list-disc list-inside text-red-700 space-y-1">
             {validationErrors.map((error, index) => (
               <li key={index}>{error}</li>
@@ -413,7 +462,11 @@ const CheckoutPage = () => {
                 <SearchableSelect
                   options={countries}
                   value={customerInfo.address.country}
-                  onChange={(value) => handleBillingDetailsChange({ target: { name: 'country', value } })}
+                  onChange={(value) =>
+                    handleBillingDetailsChange({
+                      target: { name: "country", value },
+                    })
+                  }
                   placeholder="Select country..."
                   searchPlaceholder="Search countries..."
                   required
@@ -475,7 +528,11 @@ const CheckoutPage = () => {
                   <SearchableSelect
                     options={indianStates}
                     value={customerInfo.address.state}
-                    onChange={(value) => handleBillingDetailsChange({ target: { name: 'state', value } })}
+                    onChange={(value) =>
+                      handleBillingDetailsChange({
+                        target: { name: "state", value },
+                      })
+                    }
                     placeholder="Select an option…"
                     searchPlaceholder="Search states..."
                     required
@@ -492,7 +549,7 @@ const CheckoutPage = () => {
                     value={customerInfo.address.pincode}
                     onChange={handleBillingDetailsChange}
                     onInput={(e) => {
-                      e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                      e.target.value = e.target.value.replace(/[^0-9]/g, "");
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black/20"
                     required
@@ -513,7 +570,7 @@ const CheckoutPage = () => {
                   value={customerInfo.phone}
                   onChange={handleBillingDetailsChange}
                   onInput={(e) => {
-                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = e.target.value.replace(/[^0-9]/g, "");
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black/20"
                   required
@@ -534,7 +591,10 @@ const CheckoutPage = () => {
                 onChange={(e) => setDeliverToDifferentAddress(e.target.checked)}
                 className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
               />
-              <label htmlFor="differentAddress" className="ml-2 text-sm font-medium text-gray-700">
+              <label
+                htmlFor="differentAddress"
+                className="ml-2 text-sm font-medium text-gray-700"
+              >
                 Deliver to a different address?
               </label>
             </div>
@@ -602,7 +662,11 @@ const CheckoutPage = () => {
                   <SearchableSelect
                     options={countries}
                     value={shippingDetails.country}
-                    onChange={(value) => handleShippingDetailsChange({ target: { name: 'country', value } })}
+                    onChange={(value) =>
+                      handleShippingDetailsChange({
+                        target: { name: "country", value },
+                      })
+                    }
                     placeholder="Select country..."
                     searchPlaceholder="Search countries..."
                     required
@@ -664,7 +728,11 @@ const CheckoutPage = () => {
                     <SearchableSelect
                       options={indianStates}
                       value={shippingDetails.state}
-                      onChange={(value) => handleShippingDetailsChange({ target: { name: 'state', value } })}
+                      onChange={(value) =>
+                        handleShippingDetailsChange({
+                          target: { name: "state", value },
+                        })
+                      }
                       placeholder="Select an option…"
                       searchPlaceholder="Search states..."
                       required
@@ -681,7 +749,7 @@ const CheckoutPage = () => {
                       value={shippingDetails.pincode}
                       onChange={handleShippingDetailsChange}
                       onInput={(e) => {
-                        e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                        e.target.value = e.target.value.replace(/[^0-9]/g, "");
                       }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black/20"
                       required
@@ -699,7 +767,9 @@ const CheckoutPage = () => {
         <div className="space-y-6">
           {/* Cart Items */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Order Summary
+            </h2>
 
             <div className="space-y-4 mb-6">
               {cartItems.map((item) => (
@@ -713,7 +783,9 @@ const CheckoutPage = () => {
                     <h4 className="text-sm font-medium text-gray-900 truncate">
                       {item.name}
                     </h4>
-                    <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                    <p className="text-sm text-gray-500">
+                      Qty: {item.quantity}
+                    </p>
                   </div>
                   <div className="text-sm font-medium text-gray-900">
                     ₹{(item.price * item.quantity).toFixed(2)}
@@ -722,12 +794,15 @@ const CheckoutPage = () => {
               ))}
             </div>
 
-
             {/* Order Total */}
             <div className="border-t border-gray-200 pt-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotal ({getTotalItems()} items)</span>
-                <span className="text-gray-900">₹{orderSummary.subtotal.toFixed(2)}</span>
+                <span className="text-gray-600">
+                  Subtotal ({getTotalItems()} items)
+                </span>
+                <span className="text-gray-900">
+                  ₹{orderSummary.subtotal.toFixed(2)}
+                </span>
               </div>
 
               {orderSummary.couponDiscount > 0 && (
@@ -740,20 +815,26 @@ const CheckoutPage = () => {
                       </span>
                     )}
                   </div>
-                  <span className="text-green-600">-₹{orderSummary.couponDiscount.toFixed(2)}</span>
+                  <span className="text-green-600">
+                    -₹{orderSummary.couponDiscount.toFixed(2)}
+                  </span>
                 </div>
               )}
 
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Delivery Charges</span>
                 <span className="text-gray-900">
-                  {orderSummary.deliveryCharge === 0 ? 'FREE' : `₹${orderSummary.deliveryCharge.toFixed(2)}`}
+                  {orderSummary.deliveryCharge === 0
+                    ? "FREE"
+                    : `₹${orderSummary.deliveryCharge.toFixed(2)}`}
                 </span>
               </div>
 
               <div className="border-t border-gray-200 pt-2 flex justify-between text-lg font-semibold">
                 <span className="text-gray-900">Total</span>
-                <span className="text-gray-900">₹{orderSummary.total.toFixed(2)}</span>
+                <span className="text-gray-900">
+                  ₹{orderSummary.total.toFixed(2)}
+                </span>
               </div>
             </div>
 
@@ -763,8 +844,8 @@ const CheckoutPage = () => {
               disabled={!isFormValid()}
               className={`w-full mt-6 py-3 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
                 isFormValid()
-                  ? 'bg-black text-white hover:bg-gray-800'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ? "bg-black text-white hover:bg-gray-800"
+                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
               }`}
             >
               Continue to shipping →

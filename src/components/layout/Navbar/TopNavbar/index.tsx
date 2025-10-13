@@ -71,7 +71,7 @@ const TopNavbar = () => {
   return (
     <nav
       className="sticky top-0 bg-white z-[100] shadow-sm border-b border-gray-200"
-      style={{ position: "sticky", top: 0, zIndex: 9999 }}
+      style={{ position: "sticky", top: 0, zIndex: 100 }}
     >
       <div className="flex relative max-w-frame mx-auto items-center justify-between py-5 md:py-6 px-4 xl:px-0 ">
         {/* Left Section - Logo and Mobile Menu */}
