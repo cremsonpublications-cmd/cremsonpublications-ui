@@ -319,7 +319,19 @@ export const CartProvider = ({ children }) => {
 
   // Get coupon discount
   const getCouponDiscount = () => {
-    return appliedCoupon ? appliedCoupon.discount_value : 0;
+    if (!appliedCoupon) return 0;
+
+    const orderAmount = getTotalPrice();
+
+    if (appliedCoupon.discount_type === 'percentage') {
+      // Calculate percentage discount
+      const percentageDiscount = (orderAmount * appliedCoupon.discount_value) / 100;
+      // Apply max discount limit if exists
+      return Math.min(percentageDiscount, appliedCoupon.max_discount_amount || Infinity);
+    } else {
+      // Fixed amount discount
+      return appliedCoupon.discount_value;
+    }
   };
 
   // Get shipping charge for current cart total

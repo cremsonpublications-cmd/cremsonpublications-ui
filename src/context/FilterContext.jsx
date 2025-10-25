@@ -142,30 +142,92 @@ export const FilterProvider = ({ children }) => {
   const sortProducts = (products) => {
     const sortedProducts = [...products];
 
+    // Helper function to check if product is available (not sold out)
+    const isAvailable = (product) => product.status !== "Out of Stock";
+
     switch (filters.sortBy) {
       case 'low-price':
         return sortedProducts.sort((a, b) => {
+          // First sort by availability (available products first)
+          const availableA = isAvailable(a);
+          const availableB = isAvailable(b);
+          if (availableA !== availableB) {
+            return availableB - availableA; // true > false, so available first
+          }
+          // Then sort by price
           const priceA = calculateProductPrice(a);
           const priceB = calculateProductPrice(b);
           return priceA - priceB;
         });
       case 'high-price':
         return sortedProducts.sort((a, b) => {
+          // First sort by availability (available products first)
+          const availableA = isAvailable(a);
+          const availableB = isAvailable(b);
+          if (availableA !== availableB) {
+            return availableB - availableA; // true > false, so available first
+          }
+          // Then sort by price
           const priceA = calculateProductPrice(a);
           const priceB = calculateProductPrice(b);
           return priceB - priceA;
         });
       case 'newest':
-        return sortedProducts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        return sortedProducts.sort((a, b) => {
+          // First sort by availability (available products first)
+          const availableA = isAvailable(a);
+          const availableB = isAvailable(b);
+          if (availableA !== availableB) {
+            return availableB - availableA; // true > false, so available first
+          }
+          // Then sort by creation date
+          return new Date(b.created_at) - new Date(a.created_at);
+        });
       case 'oldest':
-        return sortedProducts.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        return sortedProducts.sort((a, b) => {
+          // First sort by availability (available products first)
+          const availableA = isAvailable(a);
+          const availableB = isAvailable(b);
+          if (availableA !== availableB) {
+            return availableB - availableA; // true > false, so available first
+          }
+          // Then sort by creation date
+          return new Date(a.created_at) - new Date(b.created_at);
+        });
       case 'name-asc':
-        return sortedProducts.sort((a, b) => a.name.localeCompare(b.name));
+        return sortedProducts.sort((a, b) => {
+          // First sort by availability (available products first)
+          const availableA = isAvailable(a);
+          const availableB = isAvailable(b);
+          if (availableA !== availableB) {
+            return availableB - availableA; // true > false, so available first
+          }
+          // Then sort by name
+          return a.name.localeCompare(b.name);
+        });
       case 'name-desc':
-        return sortedProducts.sort((a, b) => b.name.localeCompare(a.name));
+        return sortedProducts.sort((a, b) => {
+          // First sort by availability (available products first)
+          const availableA = isAvailable(a);
+          const availableB = isAvailable(b);
+          if (availableA !== availableB) {
+            return availableB - availableA; // true > false, so available first
+          }
+          // Then sort by name
+          return b.name.localeCompare(a.name);
+        });
       case 'most-popular':
       default:
-        return sortedProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        return sortedProducts.sort((a, b) => {
+          // First sort by availability (available products first)
+          const availableA = isAvailable(a);
+          const availableB = isAvailable(b);
+          if (availableA !== availableB) {
+            return availableB - availableA; // true > false, so available first
+          }
+          // Then sort by rating
+          return (b.rating || 0) - (a.rating || 0);
+        });
     }
   };
 

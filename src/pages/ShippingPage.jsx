@@ -6,14 +6,13 @@ import useRazorpay from "react-razorpay";
 import Confetti from "react-confetti";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
-import { sendOrderConfirmationEmailDirect } from "../services/emailService";
 import {
   CreditCard,
   MapPin,
-  Mail,
   ShoppingBag,
   Truck,
   Edit,
+  User,
 } from "lucide-react";
 import {
   Breadcrumb,
@@ -232,57 +231,8 @@ const ShippingPage = () => {
 
         try {
           // Create order in database after successful payment
-          const { orderId, orderData } = await createOrderInDatabase(response);
+          await createOrderInDatabase(response);
 
-          // Send order confirmation email
-          try {
-            const emailData = {
-              customerEmail: orderData.user_info.email,
-              customerName: orderData.user_info.name,
-              orderId: orderId,
-              items: orderData.items.map((item) => ({
-                name: item.name,
-                quantity: item.quantity,
-                price: item.currentPrice,
-              })),
-              totalAmount: orderData.order_summary.grandTotal,
-              shippingAddress: {
-                name: orderData.user_info.name,
-                phone: orderData.user_info.phone,
-                address:
-                  orderData.user_info.address.street +
-                  (orderData.user_info.address.apartment
-                    ? ", " + orderData.user_info.address.apartment
-                    : ""),
-                city: orderData.user_info.address.city,
-                state: orderData.user_info.address.state,
-                pincode: orderData.user_info.address.pincode,
-              },
-            };
-
-            // Use direct Brevo API method (bypassing Supabase function to avoid CORS)
-            console.log("Sending email via direct Brevo API...");
-            const directEmailResult = await sendOrderConfirmationEmailDirect(
-              emailData
-            );
-
-            if (!directEmailResult.success) {
-              console.error("Email sending failed:", directEmailResult.error);
-              // Don't fail the order, just log the email failure
-              toast.warning(
-                "Order placed successfully, but confirmation email failed to send."
-              );
-            } else {
-              console.log("Email sent successfully via direct Brevo API");
-              toast.success("Order confirmation email sent!");
-            }
-          } catch (emailError) {
-            console.error("Email service error:", emailError);
-            // Don't fail the order, just log the email failure
-            toast.warning(
-              "Order placed successfully, but confirmation email failed to send."
-            );
-          }
 
           // Clear cart and checkout data
           clearCart();
@@ -569,7 +519,7 @@ const ShippingPage = () => {
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Mail size={18} />
+                <User size={18} />
                 Contact
               </h2>
               <button
