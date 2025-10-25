@@ -2,9 +2,7 @@ import { cn } from "@/lib/utils";
 import { integralCF } from "@/styles/fonts";
 import React, { useState } from "react";
 import { PaymentBadge, SocialNetworks } from "./footer.types";
-import { FaInstagram, FaYoutube } from "react-icons/fa";
-import { SiGooglepay, SiPaytm, SiPhonepe } from "react-icons/si";
-import { MdPayment } from "react-icons/md";
+// Replaced react-icons with SVG components to reduce bundle size
 import { Link, useNavigate } from "react-router-dom";
 import { Search, Heart, User, ShoppingCart } from "lucide-react";
 import LinksSection from "./LinksSection";

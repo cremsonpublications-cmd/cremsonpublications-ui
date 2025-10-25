@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
@@ -22,25 +22,33 @@ import SpinnerLoader from "./components/ui/SpinnerbLoader";
 import ScrollToTop from "./components/common/ScrollToTop";
 import ScrollToTopButton from "./components/common/ScrollToTopButton";
 
-import HomePage from "./pages/HomePage";
-import ShopPage from "./pages/ShopPage";
-import ProductPage from "./pages/ProductPage";
-import CartPage from "./pages/CartPage";
-import WishlistPage from "./pages/WishlistPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import ShippingPage from "./pages/ShippingPage";
-import MyOrdersPage from "./pages/MyOrdersPage";
-import TermsConditions from "./pages/TermsConditions";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import ContactPage from "./pages/ContactPage";
-import SignInPage from "./pages/SignInPage";
-import SignUpPage from "./pages/SignUpPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import AuthCallbackPage from "./pages/AuthCallbackPage";
+// Lazy load all page components
+const HomePage = React.lazy(() => import("./pages/HomePage"));
+const ShopPage = React.lazy(() => import("./pages/ShopPage"));
+const ProductPage = React.lazy(() => import("./pages/ProductPage"));
+const CartPage = React.lazy(() => import("./pages/CartPage"));
+const WishlistPage = React.lazy(() => import("./pages/WishlistPage"));
+const CheckoutPage = React.lazy(() => import("./pages/CheckoutPage"));
+const ShippingPage = React.lazy(() => import("./pages/ShippingPage"));
+const MyOrdersPage = React.lazy(() => import("./pages/MyOrdersPage"));
+const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
+const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
+const ContactPage = React.lazy(() => import("./pages/ContactPage"));
+const SignInPage = React.lazy(() => import("./pages/SignInPage"));
+const SignUpPage = React.lazy(() => import("./pages/SignUpPage"));
+const ForgotPasswordPage = React.lazy(() => import("./pages/ForgotPasswordPage"));
+const AuthCallbackPage = React.lazy(() => import("./pages/AuthCallbackPage"));
 
 import "./styles/globals.css";
 
 const { store, persistor } = makeStore();
+
+// Loading component for lazy-loaded pages
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <SpinnerLoader />
+  </div>
+);
 
 // Always show the navbar - removed conditional hiding
 
@@ -93,29 +101,31 @@ function App() {
                     <div className={cn([satoshi.className, "antialiased"])}>
                       <div className="relative">
                         <TopNavbar />
-                        <Routes>
-                          <Route path="/" element={<HomePage />} />
-                          <Route path="/shop" element={<ShopPage />} />
-                          <Route
-                            path="/shop/product/:productId"
-                            element={<ProductPage />}
-                          />
-                          <Route path="/cart" element={<CartPage />} />
-                          <Route
-                            path="/wishlist"
-                            element={<WishlistPage />}
-                          />
-                          <Route path="/checkout" element={<CheckoutPage />} />
-                          <Route path="/checkout/shipping" element={<ShippingPage />} />
-                          <Route path="/my-orders" element={<MyOrdersPage />} />
-                          <Route path="/terms-conditions" element={<TermsConditions />} />
-                          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                          <Route path="/contact-us" element={<ContactPage />} />
-                          <Route path="/signin" element={<SignInPage />} />
-                          <Route path="/signup" element={<SignUpPage />} />
-                          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                          <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                        </Routes>
+                        <Suspense fallback={<PageLoader />}>
+                          <Routes>
+                            <Route path="/" element={<HomePage />} />
+                            <Route path="/shop" element={<ShopPage />} />
+                            <Route
+                              path="/shop/product/:productId"
+                              element={<ProductPage />}
+                            />
+                            <Route path="/cart" element={<CartPage />} />
+                            <Route
+                              path="/wishlist"
+                              element={<WishlistPage />}
+                            />
+                            <Route path="/checkout" element={<CheckoutPage />} />
+                            <Route path="/checkout/shipping" element={<ShippingPage />} />
+                            <Route path="/my-orders" element={<MyOrdersPage />} />
+                            <Route path="/terms-conditions" element={<TermsConditions />} />
+                            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                            <Route path="/contact-us" element={<ContactPage />} />
+                            <Route path="/signin" element={<SignInPage />} />
+                            <Route path="/signup" element={<SignUpPage />} />
+                            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                            <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                          </Routes>
+                        </Suspense>
                       </div>
                       <ConditionalFooter />
                     </div>

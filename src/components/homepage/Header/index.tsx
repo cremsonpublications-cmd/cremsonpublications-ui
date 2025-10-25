@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import banner1 from "@/assets/banner/banner1.jpg";
-import banner2 from "@/assets/banner/banner2.png";
-import banner3 from "@/assets/banner/banner3.jpg";
 
 const Header = () => {
   const [currentImage, setCurrentImage] = useState(0);
   const [progress, setProgress] = useState(0);
 
-  // Use local banner images
-  const bannerImages = [banner1, banner2, banner3];
+  // Banner images from Cloudinary
+  const bannerImages = [
+    "https://res.cloudinary.com/dkxxa3xt0/image/upload/v1761413114/banner-images/tddshr5skvurvfaskkju.jpg", // banner1
+    "https://res.cloudinary.com/dkxxa3xt0/image/upload/v1761413116/banner-images/joywjr6fas7scv5u4wj9.png", // banner2
+    "https://res.cloudinary.com/dkxxa3xt0/image/upload/v1761413118/banner-images/p703y2wrcpwqhbx1xkaf.jpg"  // banner3
+  ];
 
   useEffect(() => {
     setProgress(0);
