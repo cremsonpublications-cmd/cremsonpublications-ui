@@ -39,8 +39,26 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email, password, userData = {}) => {
+  const signUpWithOTP = async (email, password, userData = {}) => {
     try {
+      // First check if user already exists
+      const { exists, emailConfirmed } = await checkUserExists(email);
+
+      if (exists && emailConfirmed) {
+        return {
+          data: null,
+          error: { message: "User already exists with this email. Please sign in instead." }
+        };
+      }
+
+      if (exists && !emailConfirmed) {
+        return {
+          data: null,
+          error: { message: "User already exists but email not verified. Please check your email for the verification link or contact support." }
+        };
+      }
+
+      // Proceed with signup
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -49,7 +67,8 @@ export const AuthProvider = ({ children }) => {
             full_name: userData.fullName || '',
             first_name: userData.firstName || '',
             last_name: userData.lastName || '',
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 
@@ -57,6 +76,39 @@ export const AuthProvider = ({ children }) => {
       return { data, error: null };
     } catch (error) {
       return { data: null, error };
+    }
+  };
+
+  const signUp = async (email, password, userData = {}) => {
+    return await signUpWithOTP(email, password, userData);
+  };
+
+  const verifySignupOTP = async (email, token) => {
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'signup'
+      });
+
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  };
+
+  const resendSignupOTP = async (email) => {
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error };
     }
   };
 
@@ -88,29 +140,37 @@ export const AuthProvider = ({ children }) => {
 
   const checkUserExists = async (email) => {
     try {
-      // Try to sign in with an invalid password to check if user exists
-      // This will fail but tell us if the user exists
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email,
-        password: 'invalid_password_for_check'
+      // Use the admin API to check if user exists
+      const { data, error } = await supabase.rpc('check_user_exists', {
+        user_email: email
       });
 
-      // If error is about invalid credentials, user exists
-      // If error is about user not found, user doesn't exist
       if (error) {
-        if (error.message.includes('Invalid login credentials') ||
-            error.message.includes('Wrong password') ||
-            error.message.includes('Email not confirmed')) {
-          return { exists: true }; // User exists but wrong password
-        } else if (error.message.includes('not found') ||
-                   error.message.includes('User not found')) {
-          return { exists: false }; // User doesn't exist
+        // Fallback method - try to sign in with invalid password
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: 'invalid_password_for_check'
+        });
+
+        if (signInError) {
+          if (signInError.message.includes('Invalid login credentials') ||
+              signInError.message.includes('Wrong password') ||
+              signInError.message.includes('Email not confirmed')) {
+            return { exists: true, emailConfirmed: signInError.message.includes('Email not confirmed') ? false : true };
+          } else if (signInError.message.includes('not found') ||
+                     signInError.message.includes('User not found')) {
+            return { exists: false, emailConfirmed: false };
+          }
         }
+        return { exists: true, emailConfirmed: true };
       }
 
-      return { exists: true };
+      return {
+        exists: data?.user_exists || false,
+        emailConfirmed: data?.email_confirmed || false
+      };
     } catch (error) {
-      return { exists: false };
+      return { exists: false, emailConfirmed: false };
     }
   };
 
@@ -212,6 +272,10 @@ export const AuthProvider = ({ children }) => {
     loading,
     isLoading: loading,
     signUp,
+    signUpWithOTP,
+    verifySignupOTP,
+    resendSignupOTP,
+    checkUserExists,
     signIn,
     signInWithEmail: signIn, // Alias for compatibility
     signOut,

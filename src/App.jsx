@@ -42,15 +42,29 @@ import "./styles/globals.css";
 
 const { store, persistor } = makeStore();
 
-// Component to conditionally render Footer
-const ConditionalFooter = () => {
+// Always show the navbar - removed conditional hiding
+
+// Component to conditionally render ScrollToTopButton
+const ConditionalScrollToTopButton = () => {
   const location = useLocation();
-  const authPages = ['/signin', '/signup'];
-  
+  const authPages = ['/signin', '/signup', '/forgot-password', '/auth/callback'];
+
   if (authPages.includes(location.pathname)) {
     return null;
   }
-  
+
+  return <ScrollToTopButton />;
+};
+
+// Component to conditionally render Footer
+const ConditionalFooter = () => {
+  const location = useLocation();
+  const authPages = ['/signin', '/signup', '/forgot-password', '/auth/callback'];
+
+  if (authPages.includes(location.pathname)) {
+    return null;
+  }
+
   return <Footer />;
 };
 
@@ -105,7 +119,7 @@ function App() {
                       </div>
                       <ConditionalFooter />
                     </div>
-                    <ScrollToTopButton />
+                    <ConditionalScrollToTopButton />
                     <Toaster position="top-right" richColors />
                   </Router>
                         </CartProvider>
