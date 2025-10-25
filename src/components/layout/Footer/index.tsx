@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { PaymentBadge, SocialNetworks } from "./footer.types";
 // Replaced react-icons with SVG components to reduce bundle size
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Heart, User, ShoppingCart } from "lucide-react";
+import { Search, Heart, User, ShoppingCart, Instagram, Youtube, CreditCard } from "lucide-react";
 import LinksSection from "./LinksSection";
 import NewsLetterSection from "./NewsLetterSection";
 import LayoutSpacing from "./LayoutSpacing";
@@ -18,12 +18,12 @@ import { MapPin, Phone, Smartphone, Mail, Clock } from "lucide-react";
 const socialsData: SocialNetworks[] = [
   {
     id: 1,
-    icon: <FaInstagram />,
+    icon: <Instagram size={20} />,
     url: "https://www.instagram.com/cremsonbooks/?igsh=MTFweXAwYnk3c2wyOQ%3D%3D",
   },
   {
     id: 2,
-    icon: <FaYoutube />,
+    icon: <Youtube size={20} />,
     url: "https://www.youtube.com/@cremson_publications",
   },
 ];
