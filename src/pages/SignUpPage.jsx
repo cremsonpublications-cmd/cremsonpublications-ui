@@ -101,7 +101,7 @@ const SignUpPage = () => {
   };
 
   return (
-    <div className="h-screen pt-[100px] bg-gray-50 flex items-center justify-center py-3 px-3 sm:py-5 sm:px-4 lg:px-8">
+    <div className="md:h-screen pt-[100px] bg-gray-50 flex items-center justify-center py-3 px-3 sm:py-5 sm:px-4 lg:px-8">
       {showOTPVerification ? (
         <OTPVerification
           email={userEmail}
