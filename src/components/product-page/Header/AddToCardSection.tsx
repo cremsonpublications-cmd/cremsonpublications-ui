@@ -60,6 +60,7 @@ const AddToCardSection = ({ data }: { data: Product }) => {
   const cartQuantity = getItemQuantity(data.id);
   const isProductInCart = isInCart(data.id);
   const isOutOfStock = data.status === "Out of Stock";
+  const hasMRP = data.mrp && data.mrp > 0;
 
   const handleBuyNow = () => {
     // If product is not in cart, add it first
@@ -105,6 +106,18 @@ const AddToCardSection = ({ data }: { data: Product }) => {
   const handleDecrement = () => {
     decrementQuantity(data.id);
   };
+
+  if (!hasMRP) {
+    return (
+      <div className="fixed md:relative w-full bg-white border-t md:border-none border-black/5 bottom-0 left-0 right-0 p-4 pb-6 md:p-0 z-50 flex items-center justify-center shadow-lg md:shadow-none">
+        <div className="text-center py-4">
+          <p className="text-gray-600 text-sm">
+            Pricing information not available
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed md:relative w-full bg-white border-t md:border-none border-black/5 bottom-0 left-0 right-0 p-4 pb-6 md:p-0 z-50 flex items-center justify-between sm:justify-start md:justify-center shadow-lg md:shadow-none">

@@ -106,6 +106,7 @@ const Header = ({ data }: { data: Product }) => {
   const { finalPrice, mrp, discountPercentage } = calculatePrice();
   const hasDiscount = finalPrice < mrp;
   const isOutOfStock = data.status === "Out of Stock";
+  const hasMRP = data.mrp && data.mrp > 0;
 
   // Get current page URL for sharing
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
@@ -257,23 +258,33 @@ const Header = ({ data }: { data: Product }) => {
             </span>
           </div>
 
-          <div className="flex items-center space-x-2.5 sm:space-x-3 mb-5">
-            <span className="font-bold text-black text-2xl sm:text-[32px]">
-              ₹{finalPrice}
-            </span>
-            {hasDiscount && (
-              <>
-                <span className="font-bold text-black/40 line-through text-2xl sm:text-[32px]">
-                  ₹{mrp}
-                </span>
-                {discountPercentage > 0 && (
-                  <span className="font-medium text-[10px] sm:text-xs py-1.5 px-3.5 rounded-full bg-green-100 text-green-800">
-                    -{discountPercentage}%
+          {hasMRP && (
+            <div className="flex items-center space-x-2.5 sm:space-x-3 mb-5">
+              <span className="font-bold text-black text-2xl sm:text-[32px]">
+                ₹{finalPrice}
+              </span>
+              {hasDiscount && (
+                <>
+                  <span className="font-bold text-black/40 line-through text-2xl sm:text-[32px]">
+                    ₹{mrp}
                   </span>
-                )}
-              </>
-            )}
-          </div>
+                  {discountPercentage > 0 && (
+                    <span className="font-medium text-[10px] sm:text-xs py-1.5 px-3.5 rounded-full bg-green-100 text-green-800">
+                      -{discountPercentage}%
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {!hasMRP && (
+            <div className="mb-5">
+              <p className="text-gray-600 text-lg">
+                Pricing information not available
+              </p>
+            </div>
+          )}
 
           {data.short_description && (
             <p className="text-sm sm:text-base text-black/60 mb-5">
@@ -282,7 +293,7 @@ const Header = ({ data }: { data: Product }) => {
           )}
 
           {/* Bulk Pricing */}
-          {data.bulk_pricing && data.bulk_pricing.length > 0 && (
+          {hasMRP && data.bulk_pricing && data.bulk_pricing.length > 0 && (
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
                 <svg
