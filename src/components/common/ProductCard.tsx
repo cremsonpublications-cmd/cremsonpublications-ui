@@ -97,6 +97,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
   const { finalPrice, mrp, discountPercentage } = calculatePrice();
   const hasDiscount = finalPrice < mrp;
   const isOutOfStock = data.status === "Out of Stock";
+  const hasPricing = data.mrp && data.mrp > 0; // Check if product has valid pricing
 
   return (
     <Link
@@ -192,75 +193,87 @@ const ProductCard = ({ data }: ProductCardProps) => {
         </div>
       )}
 
-      <div className="flex items-center justify-between w-full mt-auto">
-        <div className="flex items-center space-x-[5px] xl:space-x-2.5">
-          <span className="font-bold text-black text-xl xl:text-2xl">
-            ₹{finalPrice}
-          </span>
-          {hasDiscount && (
-            <>
-              <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-                ₹{mrp}
-              </span>
-            </>
-          )}
-        </div>
+      {/* Only show price and cart section if product has valid pricing */}
+      {hasPricing && (
+        <div className="flex items-center justify-between w-full mt-auto">
+          <div className="flex items-center space-x-[5px] xl:space-x-2.5">
+            <span className="font-bold text-black text-xl xl:text-2xl">
+              ₹{finalPrice}
+            </span>
+            {hasDiscount && (
+              <>
+                <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
+                  ₹{mrp}
+                </span>
+              </>
+            )}
+          </div>
 
-        {/* Add to Cart Button - inline with price */}
-        <div className="flex justify-end">
-          {isOutOfStock ? (
-            cartQuantity === 0 ? (
-              <button
-                disabled
-                className="h-10 bg-gray-400 text-white font-semibold px-4 rounded-full text-sm whitespace-nowrap cursor-not-allowed"
-              >
-                Sold Out
-              </button>
-            ) : (
-              <div className="flex items-center justify-between bg-gray-400 text-white rounded-full px-3 h-10 min-w-[100px]">
+          {/* Add to Cart Button - inline with price */}
+          <div className="flex justify-end">
+            {isOutOfStock ? (
+              cartQuantity === 0 ? (
                 <button
                   disabled
-                  className="rounded-full p-1 cursor-not-allowed opacity-50"
+                  className="h-10 bg-gray-400 text-white font-semibold px-4 rounded-full text-sm whitespace-nowrap cursor-not-allowed"
+                >
+                  Sold Out
+                </button>
+              ) : (
+                <div className="flex items-center justify-between bg-gray-400 text-white rounded-full px-3 h-10 min-w-[100px]">
+                  <button
+                    disabled
+                    className="rounded-full p-1 cursor-not-allowed opacity-50"
+                  >
+                    <Minus size={12} />
+                  </button>
+                  <span className="text-sm font-semibold">{cartQuantity}</span>
+                  <button
+                    disabled
+                    className="rounded-full p-1 cursor-not-allowed opacity-50"
+                  >
+                    <Plus size={12} />
+                  </button>
+                </div>
+              )
+            ) : cartQuantity === 0 ? (
+              <button
+                onClick={handleAddToCart}
+                className="h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 rounded-full transition-all duration-150 text-sm whitespace-nowrap light"
+              >
+                Add to Cart
+              </button>
+            ) : (
+              <div className="flex items-center justify-between bg-orange-500 text-white rounded-full px-3 h-10 min-w-[100px]">
+                <button
+                  onClick={handleDecrement}
+                  className="hover:bg-orange-600 rounded-full p-1 transition-all duration-150"
                 >
                   <Minus size={12} />
                 </button>
-                <span className="text-sm font-semibold">{cartQuantity}</span>
+                <span className="text-sm font-semibold">
+                  {cartQuantity}
+                </span>
                 <button
-                  disabled
-                  className="rounded-full p-1 cursor-not-allowed opacity-50"
+                  onClick={handleIncrement}
+                  className="hover:bg-orange-600 rounded-full p-1 transition-all duration-150"
                 >
                   <Plus size={12} />
                 </button>
               </div>
-            )
-          ) : cartQuantity === 0 ? (
-            <button
-              onClick={handleAddToCart}
-              className="h-10 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-4 rounded-full transition-all duration-150 text-sm whitespace-nowrap light"
-            >
-              Add to Cart
-            </button>
-          ) : (
-            <div className="flex items-center justify-between bg-orange-500 text-white rounded-full px-3 h-10 min-w-[100px]">
-              <button
-                onClick={handleDecrement}
-                className="hover:bg-orange-600 rounded-full p-1 transition-all duration-150"
-              >
-                <Minus size={12} />
-              </button>
-              <span className="text-sm font-semibold">
-                {cartQuantity}
-              </span>
-              <button
-                onClick={handleIncrement}
-                className="hover:bg-orange-600 rounded-full p-1 transition-all duration-150"
-              >
-                <Plus size={12} />
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Show message when no pricing is available */}
+      {!hasPricing && (
+        <div className="flex items-center justify-center w-full mt-auto">
+          <span className="text-gray-500 text-sm font-medium">
+            Coming Soon
+          </span>
+        </div>
+      )}
     </Link>
   );
 };

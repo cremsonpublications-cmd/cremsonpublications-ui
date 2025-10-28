@@ -100,20 +100,25 @@ export default function HomePage() {
     );
   }
 
-  // Get 8 products with priority for available products
+  // Get 8 products with priority: 1) With MRP, 2) Sold out, 3) No MRP
   const getBestSellingProducts = () => {
-    // First, get available products (not sold out)
-    const availableProducts = products.filter(
-      (product) => product.status !== "Out of Stock"
+    // First priority: Products with valid MRP (pricing available) and not sold out
+    const productsWithMRP = products.filter(
+      (product) => product.mrp && product.mrp > 0 && product.status !== "Out of Stock"
     );
 
-    // Get sold out products as backup
+    // Second priority: Sold out products (regardless of MRP)
     const soldOutProducts = products.filter(
       (product) => product.status === "Out of Stock"
     );
 
-    // Combine: prioritize available products, then add sold out if needed to reach 8
-    const prioritizedProducts = [...availableProducts, ...soldOutProducts];
+    // Third priority: Products without valid MRP (no pricing)
+    const productsWithoutMRP = products.filter(
+      (product) => (!product.mrp || product.mrp <= 0) && product.status !== "Out of Stock"
+    );
+
+    // Combine in priority order: MRP products first, then sold out, then no MRP
+    const prioritizedProducts = [...productsWithMRP, ...soldOutProducts, ...productsWithoutMRP];
 
     // Return exactly 8 products (or all available if less than 8)
     return prioritizedProducts.slice(0, 8);

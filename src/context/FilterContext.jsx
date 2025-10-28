@@ -145,87 +145,98 @@ export const FilterProvider = ({ children }) => {
     // Helper function to check if product is available (not sold out)
     const isAvailable = (product) => product.status !== "Out of Stock";
 
+    // Helper function to check if product has valid pricing
+    const hasPricing = (product) => product.mrp && product.mrp > 0;
+
+    // Helper function to get product priority for sorting
+    const getProductPriority = (product) => {
+      if (hasPricing(product) && isAvailable(product)) return 1; // Highest priority: with MRP & available
+      if (product.status === "Out of Stock") return 2; // Medium priority: sold out
+      if (!hasPricing(product) && isAvailable(product)) return 3; // Lowest priority: no MRP but available
+      return 4; // Fallback
+    };
+
     switch (filters.sortBy) {
       case 'low-price':
         return sortedProducts.sort((a, b) => {
-          // First sort by availability (available products first)
-          const availableA = isAvailable(a);
-          const availableB = isAvailable(b);
-          if (availableA !== availableB) {
-            return availableB - availableA; // true > false, so available first
+          // First sort by priority: MRP products, then sold out, then no MRP
+          const priorityA = getProductPriority(a);
+          const priorityB = getProductPriority(b);
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
           }
-          // Then sort by price
+          // Then sort by price within same priority group
           const priceA = calculateProductPrice(a);
           const priceB = calculateProductPrice(b);
           return priceA - priceB;
         });
       case 'high-price':
         return sortedProducts.sort((a, b) => {
-          // First sort by availability (available products first)
-          const availableA = isAvailable(a);
-          const availableB = isAvailable(b);
-          if (availableA !== availableB) {
-            return availableB - availableA; // true > false, so available first
+          // First sort by priority: MRP products, then sold out, then no MRP
+          const priorityA = getProductPriority(a);
+          const priorityB = getProductPriority(b);
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
           }
-          // Then sort by price
+          // Then sort by price within same priority group
           const priceA = calculateProductPrice(a);
           const priceB = calculateProductPrice(b);
           return priceB - priceA;
         });
       case 'newest':
         return sortedProducts.sort((a, b) => {
-          // First sort by availability (available products first)
-          const availableA = isAvailable(a);
-          const availableB = isAvailable(b);
-          if (availableA !== availableB) {
-            return availableB - availableA; // true > false, so available first
+          // First sort by priority: MRP products, then sold out, then no MRP
+          const priorityA = getProductPriority(a);
+          const priorityB = getProductPriority(b);
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
           }
-          // Then sort by creation date
+          // Then sort by creation date within same priority group
           return new Date(b.created_at) - new Date(a.created_at);
         });
       case 'oldest':
         return sortedProducts.sort((a, b) => {
-          // First sort by availability (available products first)
-          const availableA = isAvailable(a);
-          const availableB = isAvailable(b);
-          if (availableA !== availableB) {
-            return availableB - availableA; // true > false, so available first
+          // First sort by priority: MRP products, then sold out, then no MRP
+          const priorityA = getProductPriority(a);
+          const priorityB = getProductPriority(b);
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
           }
-          // Then sort by creation date
+          // Then sort by creation date within same priority group
           return new Date(a.created_at) - new Date(b.created_at);
         });
       case 'name-asc':
         return sortedProducts.sort((a, b) => {
-          // First sort by availability (available products first)
-          const availableA = isAvailable(a);
-          const availableB = isAvailable(b);
-          if (availableA !== availableB) {
-            return availableB - availableA; // true > false, so available first
+          // First sort by priority: MRP products, then sold out, then no MRP
+          const priorityA = getProductPriority(a);
+          const priorityB = getProductPriority(b);
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
           }
-          // Then sort by name
+          // Then sort by name within same priority group
           return a.name.localeCompare(b.name);
         });
       case 'name-desc':
         return sortedProducts.sort((a, b) => {
-          // First sort by availability (available products first)
-          const availableA = isAvailable(a);
-          const availableB = isAvailable(b);
-          if (availableA !== availableB) {
-            return availableB - availableA; // true > false, so available first
+          // First sort by priority: MRP products, then sold out, then no MRP
+          const priorityA = getProductPriority(a);
+          const priorityB = getProductPriority(b);
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
           }
-          // Then sort by name
+          // Then sort by name within same priority group
           return b.name.localeCompare(a.name);
         });
       case 'most-popular':
       default:
         return sortedProducts.sort((a, b) => {
-          // First sort by availability (available products first)
-          const availableA = isAvailable(a);
-          const availableB = isAvailable(b);
-          if (availableA !== availableB) {
-            return availableB - availableA; // true > false, so available first
+          // First sort by priority: MRP products, then sold out, then no MRP
+          const priorityA = getProductPriority(a);
+          const priorityB = getProductPriority(b);
+          if (priorityA !== priorityB) {
+            return priorityA - priorityB;
           }
-          // Then sort by rating
+          // Then sort by rating within same priority group
           return (b.rating || 0) - (a.rating || 0);
         });
     }
