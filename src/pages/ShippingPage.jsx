@@ -229,7 +229,8 @@ const ShippingPage = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
             amount: total,
@@ -286,8 +287,23 @@ const ShippingPage = () => {
 
         try {
           // Create order in database after successful payment
-          await createOrderInDatabase(response);
+          const { orderData } = await createOrderInDatabase(response);
 
+          // Send order confirmation email (silent background process)
+          fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({ orderData })
+          }).then(() => {
+            console.log('Order confirmation email sent successfully');
+          }).catch((emailError) => {
+            console.error('Failed to send order confirmation email:', emailError);
+            // Silent failure - no user notification needed
+          });
 
           // Clear cart and checkout data
           clearCart();
