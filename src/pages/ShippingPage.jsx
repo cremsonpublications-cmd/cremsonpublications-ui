@@ -202,7 +202,56 @@ const ShippingPage = () => {
     }
   };
 
-  const handleContinueToPayment = () => {
+  const createRazorpayOrder = async () => {
+    try {
+      // Method 1: Using supabase.functions.invoke (preferred)
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
+        body: {
+          amount: total,
+          currency: 'INR',
+          receipt: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        }
+      });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        // Fallback to direct API call if needed
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error creating Razorpay order:', error);
+
+      // Method 2: Direct API call as fallback
+      try {
+        const response = await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/create-razorpay-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+          },
+          body: JSON.stringify({
+            amount: total,
+            currency: 'INR',
+            receipt: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data;
+      } catch (fetchError) {
+        console.error('Direct API call failed:', fetchError);
+        throw new Error('Failed to create payment order');
+      }
+    }
+  };
+
+  const handleContinueToPayment = async () => {
     console.log("Payment button clicked");
     console.log("useRazorpay error:", error);
     console.log("Razorpay from hook:", Razorpay);
@@ -220,12 +269,18 @@ const ShippingPage = () => {
 
     setIsProcessingPayment(true);
 
-    const options = {
-      key: "rzp_live_lslxYYP0RMxOyr",
-      amount: Math.round(total * 100), // Amount in paise
-      currency: "INR",
-      name: "Cremson Publications",
-      description: `Order for ${cartItems.length} books`,
+    try {
+      // Create Razorpay order first
+      const razorpayOrder = await createRazorpayOrder();
+      console.log('Razorpay order created:', razorpayOrder);
+
+      const options = {
+        key: "rzp_live_lslxYYP0RMxOyr",
+        amount: razorpayOrder.amount, // Amount from order
+        currency: razorpayOrder.currency,
+        order_id: razorpayOrder.id, // Important: Use the order ID
+        name: "Cremson Publications",
+        description: `Order for ${cartItems.length} books`,
       handler: async (response) => {
         console.log("Payment Success:", response);
 
@@ -281,19 +336,18 @@ const ShippingPage = () => {
       },
     };
 
-    // Check if Razorpay is available
-    if (!window.Razorpay) {
-      console.error("Razorpay script not loaded");
-      toast.error(
-        "Payment system not loaded. Please refresh the page and try again."
-      );
-      setIsProcessingPayment(false);
-      return;
-    }
+      // Check if Razorpay is available
+      if (!window.Razorpay) {
+        console.error("Razorpay script not loaded");
+        toast.error(
+          "Payment system not loaded. Please refresh the page and try again."
+        );
+        setIsProcessingPayment(false);
+        return;
+      }
 
-    console.log("Creating Razorpay instance with options:", options);
+      console.log("Creating Razorpay instance with options:", options);
 
-    try {
       const razorpayInstance = new window.Razorpay(options);
 
       razorpayInstance.on("payment.failed", (response) => {
@@ -306,8 +360,9 @@ const ShippingPage = () => {
 
       console.log("Opening Razorpay checkout...");
       razorpayInstance.open();
+
     } catch (error) {
-      console.error("Error creating Razorpay instance:", error);
+      console.error("Error in payment process:", error);
       toast.error("Failed to initialize payment. Please try again.");
       setIsProcessingPayment(false);
     }
