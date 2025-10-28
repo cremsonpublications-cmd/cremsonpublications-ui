@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { generateShippingLabelPDF, generatePDFFileName } from "./pdf-generator.ts"
+
+// PDF Generation Code - Embedded
+import { jsPDF } from "https://cdn.skypack.dev/jspdf@2.5.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +48,107 @@ interface OrderData {
   order_date: string;
 }
 
+// PDF Generation Functions
+const generateShippingLabelPDF = (orderData: OrderData): Uint8Array => {
+  try {
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = 210;
+
+    pdf.setFont('helvetica');
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+
+    const currentDate = new Date().toLocaleDateString('en-GB');
+    pdf.text(`DATE: ${currentDate}`, pageWidth - 60, 20);
+    pdf.text(`Order No: #${orderData.order_id}`, 20, 30);
+
+    pdf.setFontSize(14);
+    pdf.text('PRINTED BOOKS(ORDER)', 20, 45);
+    pdf.text('REGD.', pageWidth - 30, 45);
+
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('TO', 20, 65);
+
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'normal');
+
+    let yPosition = 80;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.text(orderData.user_info?.name || 'Customer Name', 30, yPosition);
+    yPosition += 10;
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Address:-', 30, yPosition);
+    yPosition += 8;
+
+    if (orderData.user_info?.address?.street) {
+      const streetText = pdf.splitTextToSize(orderData.user_info.address.street, 150);
+      pdf.text(streetText, 30, yPosition);
+      yPosition += streetText.length * 6;
+    }
+
+    const locationText = `${orderData.user_info?.address?.city || ''}, ${orderData.user_info?.address?.state || ''} - ${orderData.user_info?.address?.pincode || ''}`;
+    pdf.text(locationText, 30, yPosition);
+    yPosition += 8;
+
+    pdf.text(`Pin Code:- ${orderData.user_info?.address?.pincode || ''}`, 30, yPosition);
+    yPosition += 8;
+
+    pdf.text(`Contact No:- ${orderData.user_info?.phone || ''}`, 30, yPosition);
+    yPosition += 10;
+
+    if (orderData.items && orderData.items.length > 0) {
+      orderData.items.forEach((item) => {
+        pdf.text(`Quantity:- ${item.quantity}`, 30, yPosition);
+        yPosition += 6;
+        pdf.text(`Subject:- ${item.name}`, 30, yPosition);
+        yPosition += 8;
+      });
+    }
+
+    yPosition += 15;
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('FROM:-', 20, yPosition);
+    yPosition += 10;
+
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('CREMSON PUBLICATIONS', 20, yPosition);
+    yPosition += 8;
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('4578/15, (Basement) Aggarwal Road,', 20, yPosition);
+    yPosition += 6;
+    pdf.text('Opp. Happy School, Ansari Road', 20, yPosition);
+    yPosition += 6;
+    pdf.text('Daryaganj, New Delhi-110002', 20, yPosition);
+    yPosition += 10;
+
+    pdf.text('Email:-info@cremsonpublications.com', 20, yPosition);
+    yPosition += 6;
+    pdf.text('PH:-011-45785945', 20, yPosition);
+
+    pdf.setLineWidth(0.5);
+    pdf.rect(15, 15, pageWidth - 30, yPosition - 5);
+
+    const pdfArrayBuffer = pdf.output('arraybuffer');
+    return new Uint8Array(pdfArrayBuffer);
+
+  } catch (error) {
+    console.error('Error generating shipping label PDF:', error);
+    throw new Error(`PDF generation failed: ${error.message}`);
+  }
+};
+
+const generatePDFFileName = (orderData: OrderData): string => {
+  const currentDate = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+  return `shipping_label_${orderData.order_id}_${currentDate}.pdf`;
+};
+
+// Email HTML Generation
 const generateEmailHTML = (orderData: OrderData): string => {
   const itemsHTML = orderData.items.map(item => `
     <tr style="border-bottom: 1px solid #eee;">
@@ -160,7 +263,6 @@ const generateEmailHTML = (orderData: OrderData): string => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -168,7 +270,6 @@ serve(async (req) => {
   try {
     const { orderData } = await req.json()
 
-    // Validate input
     if (!orderData || !orderData.user_info?.email) {
       return new Response(
         JSON.stringify({ error: 'Order data and email are required' }),
@@ -179,7 +280,6 @@ serve(async (req) => {
       )
     }
 
-    // Get Brevo API key from environment
     const brevoApiKey = Deno.env.get('BREVO_API_KEY')
     if (!brevoApiKey) {
       return new Response(
@@ -197,7 +297,6 @@ serve(async (req) => {
       const pdfBuffer = generateShippingLabelPDF(orderData);
       const pdfFileName = generatePDFFileName(orderData);
 
-      // Convert Uint8Array to base64 for Brevo API
       const base64PDF = btoa(String.fromCharCode(...pdfBuffer));
 
       pdfAttachment = {
@@ -206,10 +305,9 @@ serve(async (req) => {
       };
     } catch (pdfError) {
       console.error('PDF generation failed:', pdfError);
-      // Continue with email sending even if PDF fails
     }
 
-    // Prepare email data for customer (without PDF)
+    // Customer email (without PDF)
     const customerEmailData = {
       sender: {
         name: "Cremson Publications",
@@ -223,37 +321,10 @@ serve(async (req) => {
       ],
       subject: `Order Confirmation - ${orderData.order_id} | Cremson Publications`,
       htmlContent: generateEmailHTML(orderData),
-      textContent: `
-Order Confirmation - ${orderData.order_id}
-
-Dear ${orderData.user_info.name},
-
-Thank you for your order with Cremson Publications!
-
-Order Details:
-- Order ID: ${orderData.order_id}
-- Order Date: ${new Date(orderData.order_date).toLocaleDateString('en-IN')}
-- Total Amount: ₹${orderData.order_summary.grandTotal.toFixed(2)}
-
-Items Ordered:
-${orderData.items.map(item => `- ${item.name} by ${item.author} (Qty: ${item.quantity}) - ₹${item.totalPrice.toFixed(2)}`).join('\n')}
-
-Shipping Address:
-${orderData.user_info.name}
-${orderData.user_info.address.street}${orderData.user_info.address.apartment ? ', ' + orderData.user_info.address.apartment : ''}
-${orderData.user_info.address.city}, ${orderData.user_info.address.state} ${orderData.user_info.address.pincode}
-${orderData.user_info.address.country}
-
-We'll process your order within 1-2 business days and send you tracking details.
-
-Thank you for choosing Cremson Publications!
-
-Transaction ID: ${orderData.payment.transactionId}
-      `,
       tags: ["order-confirmation"]
     }
 
-    // Prepare email data for admin (with PDF attachment)
+    // Admin email (with PDF attachment)
     const adminEmailData = {
       sender: {
         name: "Cremson Publications",
@@ -267,36 +338,11 @@ Transaction ID: ${orderData.payment.transactionId}
       ],
       subject: `New Order Received - ${orderData.order_id} | Admin Copy`,
       htmlContent: generateEmailHTML(orderData),
-      textContent: `
-New Order Received - ${orderData.order_id}
-
-Customer: ${orderData.user_info.name}
-Email: ${orderData.user_info.email}
-Phone: ${orderData.user_info.phone}
-
-Order Details:
-- Order ID: ${orderData.order_id}
-- Order Date: ${new Date(orderData.order_date).toLocaleDateString('en-IN')}
-- Total Amount: ₹${orderData.order_summary.grandTotal.toFixed(2)}
-
-Items Ordered:
-${orderData.items.map(item => `- ${item.name} by ${item.author} (Qty: ${item.quantity}) - ₹${item.totalPrice.toFixed(2)}`).join('\n')}
-
-Shipping Address:
-${orderData.user_info.name}
-${orderData.user_info.address.street}${orderData.user_info.address.apartment ? ', ' + orderData.user_info.address.apartment : ''}
-${orderData.user_info.address.city}, ${orderData.user_info.address.state} ${orderData.user_info.address.pincode}
-${orderData.user_info.address.country}
-
-Transaction ID: ${orderData.payment.transactionId}
-
-Shipping label is attached to this email.
-      `,
       tags: ["order-confirmation", "admin"],
       ...(pdfAttachment && { attachment: [pdfAttachment] })
     }
 
-    // Send customer email
+    // Send both emails
     const customerResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
@@ -307,7 +353,6 @@ Shipping label is attached to this email.
       body: JSON.stringify(customerEmailData)
     })
 
-    // Send admin email with PDF attachment
     const adminResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
@@ -318,7 +363,6 @@ Shipping label is attached to this email.
       body: JSON.stringify(adminEmailData)
     })
 
-    // Check both responses
     const customerResult = customerResponse.ok ? await customerResponse.json() : null;
     const adminResult = adminResponse.ok ? await adminResponse.json() : null;
 
@@ -332,7 +376,6 @@ Shipping label is attached to this email.
       console.error('Admin email failed:', error)
     }
 
-    // Return success if at least one email was sent
     if (customerResponse.ok || adminResponse.ok) {
       console.log('Emails sent:', {
         customer: customerResult?.messageId || 'failed',
