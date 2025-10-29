@@ -276,7 +276,7 @@ const ShippingPage = () => {
       console.log('Razorpay order created:', razorpayOrder);
 
       const options = {
-        key: "rzp_live_lslxYYP0RMxOyr",
+        key: "rzp_live_RZNaICiFgLKhW2",
         amount: razorpayOrder.amount, // Amount from order
         currency: razorpayOrder.currency,
         order_id: razorpayOrder.id, // Important: Use the order ID
