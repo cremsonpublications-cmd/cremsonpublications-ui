@@ -313,7 +313,7 @@ export default function ShopPage() {
       />
 
       {/* Chatbot */}
-      <ChatbotTrigger />
+      {/* <ChatbotTrigger /> */}
     </main>
   );
 }

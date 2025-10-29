@@ -154,7 +154,7 @@ export default function HomePage() {
       />
 
       {/* Chatbot */}
-      <ChatbotTrigger />
+      {/* <ChatbotTrigger /> */}
     </>
   );
 }

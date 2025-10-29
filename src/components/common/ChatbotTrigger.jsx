@@ -26,7 +26,7 @@ const ChatbotTrigger = () => {
       </button>
 
       {/* Chatbot Dialog */}
-      <Chatbot isOpen={isOpen} onClose={() => setIsOpen(false)} />
+      {/* <Chatbot isOpen={isOpen} onClose={() => setIsOpen(false)} /> */}
     </>
   );
 };
