@@ -232,7 +232,7 @@ const ShippingPage = () => {
       // Method 1: Using supabase.functions.invoke (preferred)
       const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
         body: {
-          amount: total,
+          amount: Math.round(total * 100), // Convert to paise
           currency: 'INR',
           receipt: `order_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
         }
@@ -258,7 +258,7 @@ const ShippingPage = () => {
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
-            amount: total,
+            amount: Math.round(total * 100), // Convert to paise
             currency: 'INR',
             receipt: `order_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
           })
@@ -278,6 +278,11 @@ const ShippingPage = () => {
   };
 
   const handleContinueToPayment = async () => {
+    console.log("=== PAYMENT BUTTON CLICKED ===");
+    console.log("Cart Items:", cartItems);
+    console.log("Total Amount:", total);
+    console.log("Customer Info:", displayCustomerInfo);
+
     if (isProcessingPayment) return;
 
     setIsProcessingPayment(true);
@@ -286,12 +291,23 @@ const ShippingPage = () => {
       // Clear any previous payment data to ensure fresh selection
       localStorage.removeItem('razorpay_customer_id');
 
+      console.log("Creating Razorpay order with amount:", total);
+
       // Create Razorpay order
       const razorpayOrder = await createRazorpayOrder();
 
+      console.log("Razorpay order response:", razorpayOrder);
+
       if (!razorpayOrder?.id) {
+        console.error("Invalid Razorpay order:", razorpayOrder);
         throw new Error('Failed to create Razorpay order');
       }
+
+      console.log("Razorpay order created successfully:", {
+        id: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency
+      });
 
       const options = {
         key: "rzp_live_RZNaICiFgLKhW2",
@@ -302,15 +318,6 @@ const ShippingPage = () => {
         description: `Order for ${cartItems.length} books`,
         remember_customer: false,
         customer_id: null,
-        config: {
-          display: {
-            language: 'en',
-            hide: {
-              email: false,
-              contact: false
-            }
-          }
-        },
         handler: async (response) => {
           try {
             setIsProcessingPayment(true);
@@ -370,16 +377,31 @@ const ShippingPage = () => {
       },
     };
 
-      // Open Razorpay
+      console.log("Razorpay options:", JSON.stringify(options, null, 2));
+
+      // Validate amount
+      if (!options.amount || options.amount <= 0) {
+        throw new Error(`Invalid amount: ${options.amount}`);
+      }
+
+      // Check if Razorpay is loaded
+      if (!window.Razorpay) {
+        throw new Error("Razorpay script not loaded");
+      }
+
+      console.log("Creating Razorpay instance...");
       const razorpayInstance = new window.Razorpay(options);
 
+      console.log("Adding payment failed listener...");
       razorpayInstance.on("payment.failed", (response) => {
         console.error("Payment Failed:", response.error);
         toast.error("Payment failed. Please try again.");
         setIsProcessingPayment(false);
       });
 
+      console.log("Opening Razorpay modal...");
       razorpayInstance.open();
+      console.log("Razorpay modal opened successfully!");
 
     } catch (error) {
       console.error("Payment Error:", error);
