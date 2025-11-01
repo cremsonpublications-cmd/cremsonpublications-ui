@@ -199,6 +199,20 @@ const ShippingPage = () => {
         throw new Error("Failed to save order to database");
       }
 
+      // Send order confirmation email immediately after order creation
+      fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ orderData })
+      }).catch(error => {
+        console.error('Email sending failed:', error);
+        // Don't block the order creation if email fails
+      });
+
       return { orderId, orderData };
     } catch (error) {
       console.error("Error in createOrderInDatabase:", error);
@@ -292,7 +306,7 @@ const ShippingPage = () => {
         description: `Books Order`,
         handler: async (response) => {
           try {
-            // Create order in database immediately
+            // Create order in database (email will be sent automatically)
             await createOrderInDatabase({
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
