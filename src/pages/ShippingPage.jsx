@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUser } from "../context/AuthContext";
@@ -60,8 +60,55 @@ const ShippingPage = () => {
   // Payment processing state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // Add payment timeout monitoring
+  // Check for successful payment on page load (for Paytm redirect case)
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const razorpayPaymentId = urlParams.get('razorpay_payment_id');
+    const razorpayOrderId = urlParams.get('razorpay_order_id');
+    const razorpaySignature = urlParams.get('razorpay_signature');
+
+    // If payment parameters are present, it means payment was successful via redirect
+    if (razorpayPaymentId && razorpayOrderId) {
+      console.log("Payment success detected via URL parameters");
+
+      // Process the successful payment
+      const processRedirectPayment = async () => {
+        try {
+          // Create order in database
+          await createOrderInDatabase({
+            razorpay_payment_id: razorpayPaymentId,
+            razorpay_order_id: razorpayOrderId,
+            razorpay_signature: razorpaySignature,
+            payment_method: 'razorpay'
+          });
+
+          // Clear cart and checkout data
+          clearCart();
+          clearCheckoutData();
+
+          // Clear temporary payment data
+          localStorage.removeItem('pendingOrder');
+          localStorage.removeItem('paymentStartTime');
+          localStorage.removeItem('currentRazorpayOrderId');
+
+          // Success message and redirect
+          toast.success("Order placed successfully!");
+
+          // Clean URL and redirect
+          window.history.replaceState({}, '', window.location.pathname);
+          navigate("/my-orders");
+
+        } catch (error) {
+          console.error("Error processing redirect payment:", error);
+          toast.error("Payment successful but order failed. Contact support.");
+        }
+      };
+
+      processRedirectPayment();
+      return; // Don't run timeout check if processing payment
+    }
+
+    // Payment timeout monitoring (only if no payment redirect detected)
     const checkPaymentTimeout = () => {
       const paymentStartTime = localStorage.getItem('paymentStartTime');
       const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
@@ -82,7 +129,7 @@ const ShippingPage = () => {
     const timeoutInterval = setInterval(checkPaymentTimeout, 30000);
 
     return () => clearInterval(timeoutInterval);
-  }, [navigate]);
+  }, [navigate, createOrderInDatabase, clearCart, clearCheckoutData]);
 
   // Confetti celebration state (removed - now handled in PaymentStatusPage)
 
@@ -121,7 +168,7 @@ const ShippingPage = () => {
 
 
 
-  const createOrderInDatabase = async (paymentDetails) => {
+  const createOrderInDatabase = useCallback(async (paymentDetails) => {
     try {
       const orderId = `BOOK${Date.now()}${Math.floor(Math.random() * 1000)}`;
       const currentDate = new Date().toISOString().split("T")[0];
@@ -218,7 +265,7 @@ const ShippingPage = () => {
       console.error("Error in createOrderInDatabase:", error);
       throw error;
     }
-  };
+  }, [user, displayCustomerInfo, shippingDetails, cartItems, subtotal, couponDiscount, deliveryCharge, total, shippingInfo.notes]);
 
   const createRazorpayOrder = async () => {
     try {
@@ -296,7 +343,7 @@ const ShippingPage = () => {
       localStorage.setItem('paymentStartTime', Date.now().toString());
       localStorage.setItem('currentRazorpayOrderId', razorpayOrder.id);
 
-      // Simple payment options - no redirect complexity
+      // Payment options supporting both modal and redirect flows
       const options = {
         key: "rzp_live_RZNaICiFgLKhW2",
         amount: razorpayOrder.amount,
@@ -304,6 +351,7 @@ const ShippingPage = () => {
         order_id: razorpayOrder.id,
         name: "Cremson Publications",
         description: `Books Order`,
+        callback_url: `${window.location.origin}/checkout/shipping`,
         handler: async (response) => {
           try {
             // Create order in database (email will be sent automatically)
