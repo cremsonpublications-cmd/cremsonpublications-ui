@@ -278,117 +278,52 @@ const ShippingPage = () => {
   };
 
   const handleContinueToPayment = async () => {
-    console.log("=== PAYMENT BUTTON CLICKED ===");
-    console.log("useRazorpay error:", error);
-    console.log("Razorpay from hook:", Razorpay);
-    console.log("window.Razorpay:", window.Razorpay);
-    console.log("isProcessingPayment:", isProcessingPayment);
-    console.log("cartItems:", cartItems);
-    console.log("customerInfo:", customerInfo);
+    if (isProcessingPayment) return;
 
-    if (error) {
-      console.error("useRazorpay error:", error);
-      toast.error("Razorpay failed to load. Please refresh and try again.");
-      return;
-    }
-
-    if (isProcessingPayment) {
-      console.log("Payment already in progress, ignoring click");
-      return;
-    }
-
-    console.log("Setting processing to true...");
     setIsProcessingPayment(true);
 
     try {
-      // Store pending order data before payment
-      const pendingOrderData = {
-        customerInfo: displayCustomerInfo,
-        shippingDetails: shippingDetails,
-        cartItems: cartItems,
-        orderSummary: orderSummary,
-        shippingNotes: shippingInfo.notes,
-        timestamp: Date.now()
-      };
+      // Clear any previous payment data to ensure fresh selection
+      localStorage.removeItem('razorpay_customer_id');
 
-      localStorage.setItem('pendingOrder', JSON.stringify(pendingOrderData));
-      localStorage.setItem('paymentInProgress', 'true');
-
-      console.log('Stored pending order data:', pendingOrderData);
-
-      // Create Razorpay order first
-      console.log("Creating Razorpay order...");
+      // Create Razorpay order
       const razorpayOrder = await createRazorpayOrder();
-      console.log('Razorpay order created successfully:', razorpayOrder);
 
-      if (!razorpayOrder || !razorpayOrder.id) {
-        throw new Error('Invalid Razorpay order response');
+      if (!razorpayOrder?.id) {
+        throw new Error('Failed to create Razorpay order');
       }
-
-      // Store Razorpay order ID for polling
-      localStorage.setItem('currentRazorpayOrderId', razorpayOrder.id);
-      localStorage.setItem('paymentStartTime', Date.now().toString());
 
       const options = {
         key: "rzp_live_RZNaICiFgLKhW2",
-        amount: razorpayOrder.amount, // Amount from order
+        amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
-        order_id: razorpayOrder.id, // Important: Use the order ID
+        order_id: razorpayOrder.id,
         name: "Cremson Publications",
         description: `Order for ${cartItems.length} books`,
-        callback_url: `${window.location.origin}/payment-callback`,
-        redirect: true,
-        remember_customer: false, // Always show payment method selection
+        remember_customer: false,
+        customer_id: null,
         config: {
           display: {
-            language: 'en'
+            language: 'en',
+            hide: {
+              email: false,
+              contact: false
+            }
           }
         },
-      handler: async (response) => {
-        console.log("Payment Success Response:", response);
-
-        try {
-          // Clear payment in progress flag
-          localStorage.removeItem('paymentInProgress');
-
-          // Validate payment response
-          if (!response || (!response.razorpay_payment_id && !response.payment_id && !response.upi_transaction_id)) {
-            console.error("Invalid payment response:", response);
-            toast.error("Payment verification failed. Please contact support.");
-            setIsProcessingPayment(false);
-            return;
-          }
-
-          // Extract payment details regardless of payment method
-          const paymentDetails = {
-            razorpay_payment_id: response.razorpay_payment_id || response.payment_id || response.upi_transaction_id || `payment_${Date.now()}`,
-            razorpay_order_id: response.razorpay_order_id || response.order_id || null,
-            razorpay_signature: response.razorpay_signature || response.signature || null,
-            payment_method: response.method || 'razorpay'
-          };
-
-          console.log("Processed payment details:", paymentDetails);
-
-          // Create the order immediately since we have payment confirmation
-          const { orderData } = await createOrderInDatabase(paymentDetails);
-          console.log("Order created successfully:", orderData);
-
-          // Clear cart and checkout data
-          clearCart();
-          clearCheckoutData();
-
-          // Store success data for payment status page
-          localStorage.setItem('orderSuccess', JSON.stringify({
-            orderData,
-            paymentDetails,
-            timestamp: Date.now()
-          }));
-
-          // Navigate to payment status page
-          navigate("/payment-status?status=success");
-
-          // Send order confirmation email (background process)
+        handler: async (response) => {
           try {
+            setIsProcessingPayment(true);
+
+            // Create order in database
+            const { orderData } = await createOrderInDatabase({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              payment_method: 'razorpay'
+            });
+
+            // Send confirmation email
             await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
               method: 'POST',
               headers: {
@@ -398,36 +333,21 @@ const ShippingPage = () => {
               },
               body: JSON.stringify({ orderData })
             });
-            console.log('Order confirmation email sent successfully');
-          } catch (emailError) {
-            console.error('Failed to send order confirmation email:', emailError);
+
+            // Clear cart and navigate to success
+            clearCart();
+            clearCheckoutData();
+
+            toast.success("Payment successful! Order placed!");
+            navigate("/my-orders");
+
+          } catch (error) {
+            console.error("Error:", error);
+            toast.error("Payment successful but order creation failed. Please contact support.");
+          } finally {
+            setIsProcessingPayment(false);
           }
-
-        } catch (error) {
-          console.error("Error processing payment:", error);
-
-          // Even if order creation fails, payment was successful
-          // Store payment details for manual order creation
-          localStorage.setItem('failedOrderCreation', JSON.stringify({
-            paymentDetails: {
-              razorpay_payment_id: response.razorpay_payment_id || response.payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-              payment_method: response.method
-            },
-            timestamp: Date.now(),
-            error: error.message
-          }));
-
-          // Clear cart since payment was successful
-          clearCart();
-          clearCheckoutData();
-
-          navigate("/payment-status?status=processing");
-        }
-
-        setIsProcessingPayment(false);
-      },
+        },
       prefill: {
         name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
         email: displayCustomerInfo.email,
@@ -440,89 +360,31 @@ const ShippingPage = () => {
           .join(", "),
       },
       theme: {
-        color: "#000000", // Black theme to match your site
+        color: "#000000",
       },
       modal: {
         ondismiss: () => {
-          console.log("Payment dismissed");
-
-          // Clear processing state
           setIsProcessingPayment(false);
-
-          // Check if payment was actually completed
-          const paymentStartTime = localStorage.getItem('paymentStartTime');
-          if (paymentStartTime) {
-            const timeDiff = Date.now() - parseInt(paymentStartTime);
-
-            // If payment was started recently (within 30 seconds), might be UPI redirection
-            if (timeDiff < 30000) {
-              console.log("Payment dismissed quickly, might be UPI redirection");
-              toast.info("If you completed payment in UPI app, please wait for confirmation");
-
-              // Start monitoring for payment completion
-              setTimeout(() => {
-                navigate("/payment-status?source=modal_dismiss");
-              }, 5000); // Give 5 seconds for potential callback
-            } else {
-              toast.info("Payment cancelled");
-              // Clean up
-              localStorage.removeItem('paymentInProgress');
-              localStorage.removeItem('currentRazorpayOrderId');
-              localStorage.removeItem('paymentStartTime');
-            }
-          } else {
-            toast.info("Payment cancelled");
-          }
+          toast.info("Payment cancelled");
         },
-        escape: false, // Prevent accidental dismissal with escape key
-        backdropclose: false, // Prevent dismissal by clicking backdrop
       },
     };
 
-      // Check if Razorpay is available
-      if (!window.Razorpay) {
-        console.error("Razorpay script not loaded");
-        toast.error(
-          "Payment system not loaded. Please refresh the page and try again."
-        );
-        setIsProcessingPayment(false);
-        return;
-      }
-
-      console.log("Creating Razorpay instance with options:", options);
-
-      if (!window.Razorpay) {
-        throw new Error("window.Razorpay is not available");
-      }
-
+      // Open Razorpay
       const razorpayInstance = new window.Razorpay(options);
-      console.log("Razorpay instance created:", razorpayInstance);
 
       razorpayInstance.on("payment.failed", (response) => {
         console.error("Payment Failed:", response.error);
-        toast.error(
-          `Payment failed: ${response.error.description || "Unknown error"}`
-        );
+        toast.error("Payment failed. Please try again.");
         setIsProcessingPayment(false);
       });
 
-      console.log("Opening Razorpay checkout modal...");
       razorpayInstance.open();
-      console.log("Razorpay modal should be open now!");
 
     } catch (error) {
-      console.error("=== PAYMENT ERROR ===");
-      console.error("Error details:", error);
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-
-      toast.error(`Payment initialization failed: ${error.message}`);
+      console.error("Payment Error:", error);
+      toast.error("Payment failed. Please try again.");
       setIsProcessingPayment(false);
-
-      // Clean up any stored data
-      localStorage.removeItem('paymentInProgress');
-      localStorage.removeItem('currentRazorpayOrderId');
-      localStorage.removeItem('paymentStartTime');
     }
   };
 
