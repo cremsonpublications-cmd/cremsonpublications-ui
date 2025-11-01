@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUser } from "../context/AuthContext";
@@ -88,6 +88,33 @@ const ShippingPage = () => {
     });
   }, [cartItems, getTotalPrice, getCouponDiscount, shippingInfo.method]);
 
+  // Handle UPI app callback
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentId = urlParams.get('razorpay_payment_id');
+    const orderId = urlParams.get('razorpay_order_id');
+    const signature = urlParams.get('razorpay_signature');
+
+    // If URL contains payment parameters, process the payment callback
+    if (paymentId) {
+      console.log("UPI callback detected with payment ID:", paymentId);
+
+      const paymentResponse = {
+        razorpay_payment_id: paymentId,
+        razorpay_order_id: orderId,
+        razorpay_signature: signature,
+        method: 'upi'
+      };
+
+      // Process the successful payment
+      handlePaymentCallback(paymentResponse);
+
+      // Clean URL parameters
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [handlePaymentCallback]);
+
   // Calculate final order values
   const subtotal = getTotalPrice();
   const couponDiscount = getCouponDiscount();
@@ -99,6 +126,76 @@ const ShippingPage = () => {
     const random = Math.floor(Math.random() * 1000);
     return `BOOK${timestamp}${random}`;
   };
+
+  // Extract payment callback handler for reuse
+  const handlePaymentCallback = useCallback(async (response) => {
+    console.log("Payment Success Response:", response);
+
+    // Validate payment response - accept any payment confirmation
+    if (!response || (!response.razorpay_payment_id && !response.payment_id && !response.upi_transaction_id)) {
+      console.error("Invalid payment response:", response);
+      toast.error("Payment verification failed. Please contact support.");
+      setIsProcessingPayment(false);
+      return;
+    }
+
+    // Extract payment details regardless of payment method
+    const paymentDetails = {
+      razorpay_payment_id: response.razorpay_payment_id || response.payment_id || response.upi_transaction_id || `payment_${Date.now()}`,
+      razorpay_order_id: response.razorpay_order_id || response.order_id || null,
+      razorpay_signature: response.razorpay_signature || response.signature || null,
+      payment_method: response.method || 'upi'
+    };
+
+    console.log("Processed payment details:", paymentDetails);
+
+    // ALWAYS show order success since payment went through
+    // Clear cart and checkout data immediately
+    clearCart();
+    clearCheckoutData();
+
+    // Trigger confetti celebration
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 4000);
+
+    // Show success message immediately
+    toast.success("Payment successful! Order placed successfully! 🎉");
+
+    // Navigate to my orders page after showing confetti
+    setTimeout(() => {
+      navigate("/my-orders");
+    }, 1500);
+
+    // Try to save order in background (silent process)
+    try {
+      const { orderData } = await createOrderInDatabase(paymentDetails);
+      console.log("Order saved to database successfully:", orderData);
+
+      // Send order confirmation email (silent background process)
+      fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ orderData })
+      }).then(() => {
+        console.log('Order confirmation email sent successfully');
+      }).catch((emailError) => {
+        console.error('Failed to send order confirmation email:', emailError);
+      });
+
+    } catch (error) {
+      // Database save failed but we already showed success to user
+      console.error("Error saving order to database (silent failure):", error);
+      console.log("Payment ID for manual processing:", paymentDetails.razorpay_payment_id);
+      // Note: User already sees success, no need to show error since payment went through
+    }
+
+    setIsProcessingPayment(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createOrderInDatabase = async (paymentDetails) => {
     try {
@@ -283,73 +380,9 @@ const ShippingPage = () => {
         order_id: razorpayOrder.id, // Important: Use the order ID
         name: "Cremson Publications",
         description: `Order for ${cartItems.length} books`,
-      handler: async (response) => {
-        console.log("Payment Success Response:", response);
-
-        // Validate payment response - accept any payment confirmation
-        if (!response || (!response.razorpay_payment_id && !response.payment_id && !response.upi_transaction_id)) {
-          console.error("Invalid payment response:", response);
-          toast.error("Payment verification failed. Please contact support.");
-          setIsProcessingPayment(false);
-          return;
-        }
-
-        // Extract payment details regardless of payment method
-        const paymentDetails = {
-          razorpay_payment_id: response.razorpay_payment_id || response.payment_id || response.upi_transaction_id || `payment_${Date.now()}`,
-          razorpay_order_id: response.razorpay_order_id || response.order_id || null,
-          razorpay_signature: response.razorpay_signature || response.signature || null,
-          payment_method: response.method || 'upi'
-        };
-
-        console.log("Processed payment details:", paymentDetails);
-
-        // ALWAYS show order success since payment went through
-        // Clear cart and checkout data immediately
-        clearCart();
-        clearCheckoutData();
-
-        // Trigger confetti celebration
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 4000);
-
-        // Show success message immediately
-        toast.success("Payment successful! Order placed successfully! 🎉");
-
-        // Navigate to my orders page after showing confetti
-        setTimeout(() => {
-          navigate("/my-orders");
-        }, 1500);
-
-        // Try to save order in background (silent process)
-        try {
-          const { orderData } = await createOrderInDatabase(paymentDetails);
-          console.log("Order saved to database successfully:", orderData);
-
-          // Send order confirmation email (silent background process)
-          fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({ orderData })
-          }).then(() => {
-            console.log('Order confirmation email sent successfully');
-          }).catch((emailError) => {
-            console.error('Failed to send order confirmation email:', emailError);
-          });
-
-        } catch (error) {
-          // Database save failed but we already showed success to user
-          console.error("Error saving order to database (silent failure):", error);
-          console.log("Payment ID for manual processing:", paymentDetails.razorpay_payment_id);
-          // Note: User already sees success, no need to show error since payment went through
-        }
-
-        setIsProcessingPayment(false);
-      },
+        callback_url: window.location.origin + "/shipping", // Add callback URL for UPI redirects
+        redirect: true, // Enable redirect for UPI apps
+      handler: handlePaymentCallback,
       prefill: {
         name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
         email: displayCustomerInfo.email,
