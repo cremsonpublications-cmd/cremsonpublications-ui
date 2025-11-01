@@ -288,9 +288,19 @@ const ShippingPage = () => {
     setIsProcessingPayment(true);
 
     try {
-      // Clear any previous payment data to ensure fresh selection
+      // Clear ALL Razorpay memory/cache for fresh selection every time
       localStorage.removeItem('razorpay_customer_id');
+      localStorage.removeItem('razorpay_saved_cards');
+      localStorage.removeItem('razorpay_payment_methods');
+      sessionStorage.removeItem('razorpay_customer_id');
+      sessionStorage.removeItem('razorpay_saved_cards');
+      sessionStorage.removeItem('razorpay_payment_methods');
 
+      // Clear any cookies that might store payment preferences
+      document.cookie = 'razorpay_customer_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'razorpay_payment_method=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+      console.log("Cleared all Razorpay cache for fresh selection");
       console.log("Creating Razorpay order with amount:", total);
 
       // Create Razorpay order
@@ -315,9 +325,25 @@ const ShippingPage = () => {
         currency: razorpayOrder.currency,
         order_id: razorpayOrder.id,
         name: "Cremson Publications",
-        description: `Order for ${cartItems.length} books`,
+        description: `Order for ${cartItems.length} books - ${Date.now()}`,
         remember_customer: false,
         customer_id: null,
+        save: false, // Don't save payment methods
+        retry: {
+          enabled: false // Disable retry to avoid caching
+        },
+        config: {
+          display: {
+            language: 'en',
+            hide: {
+              email: false,
+              contact: false
+            },
+            preferences: {
+              show_default_blocks: true // Always show all payment options
+            }
+          }
+        },
         handler: async (response) => {
           try {
             setIsProcessingPayment(true);
