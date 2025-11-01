@@ -4,7 +4,6 @@ import { useCart } from "../context/CartContext";
 import { useUser } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
-import Confetti from "react-confetti";
 import {
   CheckCircle,
   XCircle,
@@ -21,7 +20,6 @@ const PaymentStatusPage = () => {
 
   const [status, setStatus] = useState("verifying"); // verifying, success, failed, error
   const [orderData, setOrderData] = useState(null);
-  const [showConfetti, setShowConfetti] = useState(false);
   const [verificationAttempts, setVerificationAttempts] = useState(0);
 
   // Get payment details from URL params
@@ -145,11 +143,16 @@ const PaymentStatusPage = () => {
 
   const verifyPaymentAndCreateOrder = async () => {
     try {
+      console.log("Starting payment verification...");
+      console.log("Payment ID from URL:", razorpayPaymentId);
+
       // Check if we have payment details
       if (!razorpayPaymentId) {
         // Try to get from localStorage as fallback
         const storedPayment = localStorage.getItem('paymentInProgress');
+        console.log("No payment ID in URL, checking localStorage:", storedPayment);
         if (!storedPayment) {
+          console.error("No payment details found");
           setStatus("error");
           return;
         }
@@ -189,9 +192,7 @@ const PaymentStatusPage = () => {
       clearCart();
       clearCheckoutData();
 
-      // Show celebration
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 4000);
+      // Show celebration - will be added later
 
       // Send order confirmation email (background process)
       try {
@@ -283,16 +284,7 @@ const PaymentStatusPage = () => {
   if (status === "success") {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        {/* Confetti Effect */}
-        {showConfetti && (
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={200}
-            gravity={0.2}
-          />
-        )}
+        {/* Confetti Effect - Removed for now */}
 
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="mx-auto mb-4">
