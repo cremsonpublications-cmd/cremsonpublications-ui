@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { useUser } from "../context/AuthContext";
+
 import useRazorpay from "react-razorpay";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
@@ -37,10 +37,8 @@ const ShippingPage = () => {
     shippingInfo,
     updateShippingMethod,
     updateShippingNotes,
-    clearCart,
-    clearCheckoutData,
   } = useCart();
-  const { user } = useUser();
+
 
   // Get data from navigation state
   const navigationData = location.state;
@@ -117,115 +115,7 @@ const ShippingPage = () => {
   const deliveryCharge = 0; // Use calculated shipping charge
   const total = subtotal - couponDiscount + deliveryCharge;
 
-  const generateOrderId = () => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    return `BOOK${timestamp}${random}`;
-  };
 
-
-  const createOrderInDatabase = async (paymentDetails) => {
-    try {
-      const orderId = generateOrderId();
-      const currentDate = new Date().toISOString().split("T")[0];
-
-      // Determine which address to use for delivery
-      const deliveryAddress = shippingDetails
-        ? {
-            // Use shipping address if different delivery address was selected
-            street: shippingDetails.streetAddress,
-            apartment: shippingDetails.apartment,
-            city: shippingDetails.city,
-            state: shippingDetails.state,
-            pincode: shippingDetails.pincode,
-            country: shippingDetails.country,
-          }
-        : {
-            // Use billing address if same as billing
-            street: displayCustomerInfo.address.street,
-            apartment: displayCustomerInfo.address.apartment,
-            city: displayCustomerInfo.address.city,
-            state: displayCustomerInfo.address.state,
-            pincode: displayCustomerInfo.address.pincode,
-            country: displayCustomerInfo.address.country,
-          };
-
-      // Prepare order data according to database schema
-      const orderData = {
-        order_id: orderId,
-        user_info: {
-          userId: user?.id || "guest",
-          name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
-          email: displayCustomerInfo.email,
-          phone: displayCustomerInfo.phone,
-          address: deliveryAddress,
-        },
-        // Add billing address separately if different from delivery
-        ...(shippingDetails && {
-          billing_info: {
-            name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
-            email: displayCustomerInfo.email,
-            phone: displayCustomerInfo.phone,
-            address: {
-              street: displayCustomerInfo.address.street,
-              apartment: displayCustomerInfo.address.apartment,
-              city: displayCustomerInfo.address.city,
-              state: displayCustomerInfo.address.state,
-              pincode: displayCustomerInfo.address.pincode,
-              country: displayCustomerInfo.address.country,
-            },
-          },
-        }),
-        items: cartItems.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          author: item.author || "Unknown Author",
-          quantity: item.quantity,
-          currentPrice: item.price,
-          totalPrice: item.price * item.quantity,
-        })),
-        order_summary: {
-          subTotal: subtotal,
-          couponDiscount: couponDiscount,
-          discountTotal: couponDiscount,
-          deliveryCharge: deliveryCharge,
-          grandTotal: total,
-        },
-        payment: {
-          method: paymentDetails.payment_method || "Razorpay",
-          status: "Paid",
-          transactionId: paymentDetails.razorpay_payment_id,
-          razorpay_order_id: paymentDetails.razorpay_order_id || null,
-          razorpay_signature: paymentDetails.razorpay_signature || null,
-          amount: total,
-          payment_confirmed: true, // Always mark as confirmed since we got a callback
-        },
-        delivery: {
-          status: "Order Placed",
-          notes: shippingInfo.notes || "",
-        },
-        order_status: "Confirmed",
-        order_date: currentDate,
-      };
-
-      // Insert order into database
-      const { error } = await supabase
-        .from("orders")
-        .insert([orderData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error creating order:", error);
-        throw new Error("Failed to save order to database");
-      }
-
-      return { orderId, orderData };
-    } catch (error) {
-      console.error("Error in createOrderInDatabase:", error);
-      throw error;
-    }
-  };
 
   const createRazorpayOrder = async () => {
     try {
@@ -289,7 +179,21 @@ const ShippingPage = () => {
         throw new Error('Failed to create order');
       }
 
-      // Simple payment options
+      // Store pending order data for redirect-based payments
+      const pendingOrderData = {
+        customerInfo: displayCustomerInfo,
+        shippingDetails,
+        cartItems,
+        orderSummary,
+        shippingNotes: shippingInfo.notes,
+        timestamp: Date.now()
+      };
+
+      localStorage.setItem('pendingOrder', JSON.stringify(pendingOrderData));
+      localStorage.setItem('paymentStartTime', Date.now().toString());
+      localStorage.setItem('currentRazorpayOrderId', razorpayOrder.id);
+
+      // Enhanced payment options with callback_url for redirect-based payments
       const options = {
         key: "rzp_live_RZNaICiFgLKhW2",
         amount: razorpayOrder.amount,
@@ -297,36 +201,58 @@ const ShippingPage = () => {
         order_id: razorpayOrder.id,
         name: "Cremson Publications",
         description: `Books Order`,
+        callback_url: `${window.location.origin}/payment-callback`,
+        redirect: true,
         handler: async (response) => {
           try {
-            // Create order in database
-            const { orderData } = await createOrderInDatabase({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-              payment_method: 'razorpay'
-            });
+            console.log("Payment successful via modal handler:", response);
 
-            // Send email (don't wait for it)
-            fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            // Store success data for PaymentStatusPage
+            localStorage.setItem('orderSuccess', JSON.stringify({
+              orderData: null, // Will be created by PaymentStatusPage
+              paymentDetails: {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                payment_method: 'razorpay'
               },
-              body: JSON.stringify({ orderData })
-            });
+              timestamp: Date.now()
+            }));
 
-            // Success!
-            clearCart();
-            clearCheckoutData();
-            toast.success("Order placed successfully!");
-            navigate("/my-orders");
+            // Clear temporary data
+            localStorage.removeItem('pendingOrder');
+            localStorage.removeItem('paymentStartTime');
+            localStorage.removeItem('currentRazorpayOrderId');
 
-          } catch {
-            toast.error("Payment successful but order failed. Contact support.");
+            // Navigate to payment status page
+            navigate("/payment-status?status=success&source=modal");
+
+          } catch (error) {
+            console.error("Error in payment handler:", error);
+            toast.error("Payment successful but order processing failed. Contact support.");
+            localStorage.setItem('failedOrderCreation', JSON.stringify({
+              paymentDetails: {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                payment_method: 'razorpay'
+              },
+              timestamp: Date.now()
+            }));
+            navigate("/payment-status?status=processing&source=modal");
           }
+        },
+        failure: (response) => {
+          console.log("Payment failed:", response);
+          toast.error("Payment failed. Please try again.");
+
+          // Clear temporary data
+          localStorage.removeItem('pendingOrder');
+          localStorage.removeItem('paymentStartTime');
+          localStorage.removeItem('currentRazorpayOrderId');
+
+          setIsProcessingPayment(false);
+          navigate("/payment-status?status=failed&source=modal");
         },
         prefill: {
           name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
@@ -334,7 +260,14 @@ const ShippingPage = () => {
           contact: displayCustomerInfo.phone,
         },
         modal: {
-          ondismiss: () => setIsProcessingPayment(false),
+          ondismiss: () => {
+            console.log("Payment modal dismissed");
+            // Only reset if payment hasn't started redirect flow
+            const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
+            if (!currentOrderId) {
+              setIsProcessingPayment(false);
+            }
+          },
         },
       };
 
@@ -342,9 +275,15 @@ const ShippingPage = () => {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
 
-    } catch {
+    } catch (error) {
+      console.error("Payment initialization failed:", error);
       toast.error("Payment failed. Please try again.");
       setIsProcessingPayment(false);
+
+      // Clear any stored data
+      localStorage.removeItem('pendingOrder');
+      localStorage.removeItem('paymentStartTime');
+      localStorage.removeItem('currentRazorpayOrderId');
     }
   };
 

@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUser } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
-import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 const PaymentCallbackPage = () => {
@@ -11,7 +10,6 @@ const PaymentCallbackPage = () => {
   const [searchParams] = useSearchParams();
   const { clearCart, clearCheckoutData } = useCart();
   const { user } = useUser();
-  const [isProcessing, setIsProcessing] = useState(true);
 
   const generateOrderId = () => {
     const timestamp = Date.now();
@@ -143,11 +141,11 @@ const PaymentCallbackPage = () => {
         const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
         if (currentOrderId) {
           console.log("No payment details in URL, redirecting to status page for polling");
-          navigate("/payment-status?source=callback");
+          navigate("/payment-status?source=callback&status=processing");
           return;
         } else {
           console.error("No payment details found");
-          navigate("/payment-status?status=error&message=no_payment_details");
+          navigate("/payment-status?status=error&message=no_payment_details&source=callback");
           return;
         }
       }
@@ -156,7 +154,7 @@ const PaymentCallbackPage = () => {
       const pendingOrder = localStorage.getItem('pendingOrder');
       if (!pendingOrder) {
         console.error('No pending order found');
-        navigate("/payment-status?status=error&message=no_order_data");
+        navigate("/payment-status?status=error&message=no_order_data&source=callback");
         return;
       }
 
@@ -206,6 +204,7 @@ const PaymentCallbackPage = () => {
         console.log('Order confirmation email sent successfully');
       } catch (emailError) {
         console.error('Failed to send order confirmation email:', emailError);
+        // Don't fail the order creation for email issues
       }
 
       // Navigate to success page
@@ -218,10 +217,19 @@ const PaymentCallbackPage = () => {
       localStorage.setItem('callbackError', JSON.stringify({
         error: error.message,
         timestamp: Date.now(),
-        url: window.location.href
+        url: window.location.href,
+        paymentId: searchParams.get("razorpay_payment_id"),
+        orderId: searchParams.get("razorpay_order_id")
       }));
 
-      navigate("/payment-status?status=error&message=processing_failed");
+      // Try to recover by redirecting to status page for manual processing
+      const pendingOrder = localStorage.getItem('pendingOrder');
+      if (pendingOrder) {
+        console.log("Attempting recovery - redirecting to status page for manual processing");
+        navigate("/payment-status?status=processing&source=callback&recovery=true");
+      } else {
+        navigate("/payment-status?status=error&message=processing_failed&source=callback");
+      }
     }
   };
 
