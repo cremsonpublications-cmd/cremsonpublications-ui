@@ -102,6 +102,7 @@ const ShippingPage = () => {
   };
 
 
+  // eslint-disable-next-line no-unused-vars
   const createOrderInDatabase = async (paymentDetails) => {
     try {
       const orderId = generateOrderId();
@@ -274,6 +275,21 @@ const ShippingPage = () => {
     setIsProcessingPayment(true);
 
     try {
+      // Store pending order data before payment
+      const pendingOrderData = {
+        customerInfo: displayCustomerInfo,
+        shippingDetails: shippingDetails,
+        cartItems: cartItems,
+        orderSummary: orderSummary,
+        shippingNotes: shippingInfo.notes,
+        timestamp: Date.now()
+      };
+
+      localStorage.setItem('pendingOrder', JSON.stringify(pendingOrderData));
+      localStorage.setItem('paymentInProgress', 'true');
+
+      console.log('Stored pending order data:', pendingOrderData);
+
       // Create Razorpay order first
       const razorpayOrder = await createRazorpayOrder();
       console.log('Razorpay order created:', razorpayOrder);
@@ -285,69 +301,38 @@ const ShippingPage = () => {
         order_id: razorpayOrder.id, // Important: Use the order ID
         name: "Cremson Publications",
         description: `Order for ${cartItems.length} books`,
+        callback_url: `${window.location.origin}/payment-status`,
+        redirect: true,
       handler: async (response) => {
         console.log("Payment Success Response:", response);
 
-        // Validate payment response - accept any payment confirmation
-        if (!response || (!response.razorpay_payment_id && !response.payment_id && !response.upi_transaction_id)) {
+        // Clear payment in progress flag
+        localStorage.removeItem('paymentInProgress');
+
+        // For successful payments that don't redirect, handle immediately
+        if (response && (response.razorpay_payment_id || response.payment_id)) {
+          // Extract payment details
+          const paymentDetails = {
+            razorpay_payment_id: response.razorpay_payment_id || response.payment_id || `payment_${Date.now()}`,
+            razorpay_order_id: response.razorpay_order_id || response.order_id || null,
+            razorpay_signature: response.razorpay_signature || response.signature || null,
+            payment_method: response.method || 'card'
+          };
+
+          console.log("Processed payment details:", paymentDetails);
+
+          // Navigate to payment status page with payment details
+          const params = new URLSearchParams({
+            razorpay_payment_id: paymentDetails.razorpay_payment_id,
+            razorpay_order_id: paymentDetails.razorpay_order_id || '',
+            razorpay_signature: paymentDetails.razorpay_signature || ''
+          });
+
+          navigate(`/payment-status?${params.toString()}`);
+        } else {
           console.error("Invalid payment response:", response);
           toast.error("Payment verification failed. Please contact support.");
           setIsProcessingPayment(false);
-          return;
-        }
-
-        // Extract payment details regardless of payment method
-        const paymentDetails = {
-          razorpay_payment_id: response.razorpay_payment_id || response.payment_id || response.upi_transaction_id || `payment_${Date.now()}`,
-          razorpay_order_id: response.razorpay_order_id || response.order_id || null,
-          razorpay_signature: response.razorpay_signature || response.signature || null,
-          payment_method: response.method || 'upi'
-        };
-
-        console.log("Processed payment details:", paymentDetails);
-
-        // ALWAYS show order success since payment went through
-        // Clear cart and checkout data immediately
-        clearCart();
-        clearCheckoutData();
-
-        // Trigger confetti celebration
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 4000);
-
-        // Show success message immediately
-        toast.success("Payment successful! Order placed successfully! 🎉");
-
-        // Navigate to my orders page after showing confetti
-        setTimeout(() => {
-          navigate("/my-orders");
-        }, 1500);
-
-        // Try to save order in background (silent process)
-        try {
-          const { orderData } = await createOrderInDatabase(paymentDetails);
-          console.log("Order saved to database successfully:", orderData);
-
-          // Send order confirmation email (silent background process)
-          fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({ orderData })
-          }).then(() => {
-            console.log('Order confirmation email sent successfully');
-          }).catch((emailError) => {
-            console.error('Failed to send order confirmation email:', emailError);
-          });
-
-        } catch (error) {
-          // Database save failed but we already showed success to user
-          console.error("Error saving order to database (silent failure):", error);
-          console.log("Payment ID for manual processing:", paymentDetails.razorpay_payment_id);
-          // Note: User already sees success, no need to show error since payment went through
         }
 
         setIsProcessingPayment(false);
