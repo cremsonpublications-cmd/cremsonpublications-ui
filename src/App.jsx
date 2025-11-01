@@ -70,8 +70,9 @@ const ConditionalScrollToTopButton = () => {
 const ConditionalFooter = () => {
   const location = useLocation();
   const authPages = ['/signin', '/signup', '/forgot-password', '/auth/callback'];
+  const checkoutPages = ['/checkout', '/checkout/shipping', '/payment-status', '/payment-callback'];
 
-  if (authPages.includes(location.pathname)) {
+  if (authPages.includes(location.pathname) || checkoutPages.includes(location.pathname)) {
     return null;
   }
 
