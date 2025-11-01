@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUser } from "../context/AuthContext";
 import useRazorpay from "react-razorpay";
-import Confetti from "react-confetti";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
 import {
@@ -59,8 +58,31 @@ const ShippingPage = () => {
   // Payment processing state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // Confetti celebration state
-  const [showConfetti, setShowConfetti] = useState(false);
+  // Add payment timeout monitoring
+  useEffect(() => {
+    const checkPaymentTimeout = () => {
+      const paymentStartTime = localStorage.getItem('paymentStartTime');
+      const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
+
+      if (paymentStartTime && currentOrderId) {
+        const timeDiff = Date.now() - parseInt(paymentStartTime);
+
+        // If payment has been in progress for more than 3 minutes, redirect to status page
+        if (timeDiff > 3 * 60 * 1000) {
+          console.log("Payment timeout detected, redirecting to status page");
+          toast.info("Checking payment status, please wait...");
+          navigate("/payment-status?source=timeout");
+        }
+      }
+    };
+
+    // Check every 30 seconds
+    const timeoutInterval = setInterval(checkPaymentTimeout, 30000);
+
+    return () => clearInterval(timeoutInterval);
+  }, [navigate]);
+
+  // Confetti celebration state (removed - now handled in PaymentStatusPage)
 
   // Shipping methods
   const shippingMethods = [
@@ -293,6 +315,10 @@ const ShippingPage = () => {
       const razorpayOrder = await createRazorpayOrder();
       console.log('Razorpay order created:', razorpayOrder);
 
+      // Store Razorpay order ID for polling
+      localStorage.setItem('currentRazorpayOrderId', razorpayOrder.id);
+      localStorage.setItem('paymentStartTime', Date.now().toString());
+
       const options = {
         key: "rzp_live_RZNaICiFgLKhW2",
         amount: razorpayOrder.amount, // Amount from order
@@ -300,6 +326,8 @@ const ShippingPage = () => {
         order_id: razorpayOrder.id, // Important: Use the order ID
         name: "Cremson Publications",
         description: `Order for ${cartItems.length} books`,
+        callback_url: `${window.location.origin}/payment-callback`,
+        redirect: true,
       handler: async (response) => {
         console.log("Payment Success Response:", response);
 
@@ -401,9 +429,37 @@ const ShippingPage = () => {
       modal: {
         ondismiss: () => {
           console.log("Payment dismissed");
-          toast.info("Payment cancelled");
+
+          // Clear processing state
           setIsProcessingPayment(false);
+
+          // Check if payment was actually completed
+          const paymentStartTime = localStorage.getItem('paymentStartTime');
+          if (paymentStartTime) {
+            const timeDiff = Date.now() - parseInt(paymentStartTime);
+
+            // If payment was started recently (within 30 seconds), might be UPI redirection
+            if (timeDiff < 30000) {
+              console.log("Payment dismissed quickly, might be UPI redirection");
+              toast.info("If you completed payment in UPI app, please wait for confirmation");
+
+              // Start monitoring for payment completion
+              setTimeout(() => {
+                navigate("/payment-status?source=modal_dismiss");
+              }, 5000); // Give 5 seconds for potential callback
+            } else {
+              toast.info("Payment cancelled");
+              // Clean up
+              localStorage.removeItem('paymentInProgress');
+              localStorage.removeItem('currentRazorpayOrderId');
+              localStorage.removeItem('paymentStartTime');
+            }
+          } else {
+            toast.info("Payment cancelled");
+          }
         },
+        escape: false, // Prevent accidental dismissal with escape key
+        backdropclose: false, // Prevent dismissal by clicking backdrop
       },
     };
 
@@ -479,141 +535,7 @@ const ShippingPage = () => {
 
   return (
     <div className="max-w-frame mx-auto px-4 py-8">
-      {/* Confetti Effect for Order Success - Left to Right Burst Wave */}
-      {showConfetti && (
-        <>
-          {/* Far Left Burst */}
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={120}
-            gravity={0.2}
-            friction={0.97}
-            wind={0.03}
-            initialVelocityX={{ min: 8, max: 35 }}
-            initialVelocityY={{ min: -35, max: -8 }}
-            confettiSource={{
-              x: window.innerWidth * 0.05,
-              y: window.innerHeight * 0.35,
-              w: 8,
-              h: 8,
-            }}
-            colors={[
-              "#10b981",
-              "#f59e0b",
-              "#8b5cf6",
-              "#06b6d4",
-              "#f43f5e",
-              "#84cc16",
-            ]}
-          />
-          {/* Left-Center Burst */}
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={140}
-            gravity={0.2}
-            friction={0.97}
-            wind={0.03}
-            initialVelocityX={{ min: 5, max: 40 }}
-            initialVelocityY={{ min: -40, max: -10 }}
-            confettiSource={{
-              x: window.innerWidth * 0.25,
-              y: window.innerHeight * 0.25,
-              w: 8,
-              h: 8,
-            }}
-            colors={[
-              "#10b981",
-              "#f59e0b",
-              "#8b5cf6",
-              "#06b6d4",
-              "#f43f5e",
-              "#84cc16",
-            ]}
-          />
-          {/* Center Burst */}
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={160}
-            gravity={0.2}
-            friction={0.97}
-            wind={0.03}
-            initialVelocityX={{ min: 0, max: 45 }}
-            initialVelocityY={{ min: -45, max: -12 }}
-            confettiSource={{
-              x: window.innerWidth * 0.5,
-              y: window.innerHeight * 0.2,
-              w: 8,
-              h: 8,
-            }}
-            colors={[
-              "#10b981",
-              "#f59e0b",
-              "#8b5cf6",
-              "#06b6d4",
-              "#f43f5e",
-              "#84cc16",
-            ]}
-          />
-          {/* Right-Center Burst */}
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={140}
-            gravity={0.2}
-            friction={0.97}
-            wind={0.03}
-            initialVelocityX={{ min: -5, max: 40 }}
-            initialVelocityY={{ min: -40, max: -10 }}
-            confettiSource={{
-              x: window.innerWidth * 0.75,
-              y: window.innerHeight * 0.25,
-              w: 8,
-              h: 8,
-            }}
-            colors={[
-              "#10b981",
-              "#f59e0b",
-              "#8b5cf6",
-              "#06b6d4",
-              "#f43f5e",
-              "#84cc16",
-            ]}
-          />
-          {/* Far Right Burst */}
-          <Confetti
-            width={window.innerWidth}
-            height={window.innerHeight}
-            recycle={false}
-            numberOfPieces={120}
-            gravity={0.2}
-            friction={0.97}
-            wind={0.03}
-            initialVelocityX={{ min: -10, max: 35 }}
-            initialVelocityY={{ min: -35, max: -8 }}
-            confettiSource={{
-              x: window.innerWidth * 0.95,
-              y: window.innerHeight * 0.35,
-              w: 8,
-              h: 8,
-            }}
-            colors={[
-              "#10b981",
-              "#f59e0b",
-              "#8b5cf6",
-              "#06b6d4",
-              "#f43f5e",
-              "#84cc16",
-            ]}
-          />
-        </>
-      )}
+      {/* Confetti celebration now handled in PaymentStatusPage */}
 
       {/* Checkout Breadcrumb */}
       <Breadcrumb className="mb-8">

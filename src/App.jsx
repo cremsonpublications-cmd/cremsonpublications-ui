@@ -31,6 +31,7 @@ const WishlistPage = React.lazy(() => import("./pages/WishlistPage"));
 const CheckoutPage = React.lazy(() => import("./pages/CheckoutPage"));
 const ShippingPage = React.lazy(() => import("./pages/ShippingPage"));
 const PaymentStatusPage = React.lazy(() => import("./pages/PaymentStatusPage"));
+const PaymentCallbackPage = React.lazy(() => import("./pages/PaymentCallbackPage"));
 const MyOrdersPage = React.lazy(() => import("./pages/MyOrdersPage"));
 const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
@@ -118,6 +119,7 @@ function App() {
                             <Route path="/checkout" element={<CheckoutPage />} />
                             <Route path="/checkout/shipping" element={<ShippingPage />} />
                             <Route path="/payment-status" element={<PaymentStatusPage />} />
+                            <Route path="/payment-callback" element={<PaymentCallbackPage />} />
                             <Route path="/my-orders" element={<MyOrdersPage />} />
                             <Route path="/terms-conditions" element={<TermsConditions />} />
                             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

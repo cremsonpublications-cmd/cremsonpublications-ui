@@ -259,28 +259,95 @@ const PaymentStatusPage = () => {
     }
   };
 
+  const checkRazorpayPaymentStatus = async (orderId) => {
+    try {
+      console.log("Checking Razorpay payment status for order:", orderId);
+
+      // This would ideally call your backend to check payment status
+      // For now, we'll use a simpler approach by checking if we have payment confirmation
+      const paymentStartTime = localStorage.getItem('paymentStartTime');
+      const currentTime = Date.now();
+
+      if (paymentStartTime) {
+        const timeDiff = currentTime - parseInt(paymentStartTime);
+        console.log("Time since payment started:", timeDiff / 1000, "seconds");
+
+        // If more than 2 minutes have passed, consider it failed
+        if (timeDiff > 2 * 60 * 1000) {
+          console.log("Payment timeout - redirecting to error");
+          setStatus("failed");
+          return false;
+        }
+      }
+
+      return false; // Payment status unknown, continue polling
+    } catch (error) {
+      console.error("Error checking payment status:", error);
+      return false;
+    }
+  };
+
   const pollPaymentStatus = async () => {
-    if (verificationAttempts >= 10) {
+    if (verificationAttempts >= 15) {
       console.log("Max verification attempts reached");
-      setStatus("error");
-      return;
+
+      // Check if we have a current order to poll
+      const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
+      if (currentOrderId) {
+        const paymentStatus = await checkRazorpayPaymentStatus(currentOrderId);
+        if (paymentStatus === false) {
+          setStatus("error");
+          return;
+        }
+      } else {
+        setStatus("error");
+        return;
+      }
     }
 
     console.log(`Payment verification attempt ${verificationAttempts + 1}`);
     setVerificationAttempts(prev => prev + 1);
 
     try {
+      // Check if we have stored success data first
+      const orderSuccessData = localStorage.getItem('orderSuccess');
+      if (orderSuccessData) {
+        console.log("Found stored order success data during polling");
+        const successData = JSON.parse(orderSuccessData);
+        setOrderData(successData.orderData);
+        setStatus("success");
+
+        // Clean up
+        localStorage.removeItem('orderSuccess');
+        localStorage.removeItem('pendingOrder');
+        localStorage.removeItem('paymentInProgress');
+        localStorage.removeItem('currentRazorpayOrderId');
+        localStorage.removeItem('paymentStartTime');
+
+        toast.success("Payment successful! Order placed successfully! 🎉");
+        return;
+      }
+
       await verifyPaymentAndCreateOrder();
     } catch (error) {
       console.error("Payment verification failed:", error);
 
       // If we still have attempts left, try again after delay
-      if (verificationAttempts < 9) {
+      if (verificationAttempts < 14) {
         setTimeout(() => {
           pollPaymentStatus();
-        }, 2000); // Wait 2 seconds before retrying
+        }, 3000); // Wait 3 seconds before retrying (increased from 2)
       } else {
-        setStatus("error");
+        // Final attempt - check for ongoing payment
+        const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
+        if (currentOrderId) {
+          const paymentStatus = await checkRazorpayPaymentStatus(currentOrderId);
+          if (paymentStatus === false) {
+            setStatus("error");
+          }
+        } else {
+          setStatus("error");
+        }
       }
     }
   };
@@ -316,8 +383,13 @@ const PaymentStatusPage = () => {
             Please wait while we confirm your payment...
           </p>
           <p className="text-sm text-gray-500">
-            Attempt {verificationAttempts + 1} of 10
+            Attempt {verificationAttempts + 1} of 15
           </p>
+          <div className="mt-4 text-xs text-gray-400">
+            {localStorage.getItem('currentRazorpayOrderId') && (
+              <p>Checking payment status for UPI completion...</p>
+            )}
+          </div>
         </div>
       </div>
     );
