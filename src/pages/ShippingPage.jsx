@@ -6,6 +6,7 @@ import { useUser } from "../context/AuthContext";
 import useRazorpay from "react-razorpay";
 import { supabase } from "../lib/supabase";
 import { toast } from "sonner";
+import PaymentModal from "../components/ui/PaymentModal";
 import {
   CreditCard,
   MapPin,
@@ -42,6 +43,12 @@ const ShippingPage = () => {
     clearCheckoutData,
   } = useCart();
   const { user } = useUser();
+
+  // Payment modal states
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentModalStatus, setPaymentModalStatus] = useState('processing'); // 'processing', 'success', 'failed', 'error'
+  const [orderIdResult, setOrderIdResult] = useState(null);
+  const [paymentErrorMessage, setPaymentErrorMessage] = useState(null);
 
 
   // Get data from navigation state
@@ -354,40 +361,110 @@ const ShippingPage = () => {
         description: `Books Order`,
         callback_url: `${window.location.origin}/checkout/shipping`,
         handler: async (response) => {
+          console.log('Payment successful, validating...', response);
+
+          // Show processing modal
+          setPaymentModalStatus('processing');
+          setShowPaymentModal(true);
+
           try {
-            // Create order in database (email will be sent automatically)
-            await createOrderInDatabase({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-              payment_method: 'razorpay'
+            // Prepare order data for validation
+            const orderData = {
+              order_id: `BOOK${Date.now()}${Math.floor(Math.random() * 1000)}`,
+              user_info: {
+                userId: user?.id || "guest",
+                name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
+                email: displayCustomerInfo.email,
+                phone: displayCustomerInfo.phone,
+                address: shippingDetails ? {
+                  street: shippingDetails.streetAddress,
+                  apartment: shippingDetails.apartment,
+                  city: shippingDetails.city,
+                  state: shippingDetails.state,
+                  pincode: shippingDetails.pincode,
+                  country: shippingDetails.country,
+                } : {
+                  street: displayCustomerInfo.address.street,
+                  apartment: displayCustomerInfo.address.apartment,
+                  city: displayCustomerInfo.address.city,
+                  state: displayCustomerInfo.address.state,
+                  pincode: displayCustomerInfo.address.pincode,
+                  country: displayCustomerInfo.address.country,
+                }
+              },
+              items: cartItems.map((item) => ({
+                productId: item.id,
+                name: item.name,
+                author: item.author || "Unknown Author",
+                quantity: item.quantity,
+                currentPrice: item.price,
+                totalPrice: item.price * item.quantity,
+              })),
+              order_summary: {
+                subTotal: subtotal,
+                couponDiscount: couponDiscount,
+                deliveryCharge: deliveryCharge,
+                grandTotal: total,
+              },
+              payment: {
+                method: "Razorpay",
+                amount: total,
+              },
+              order_date: new Date().toISOString().split("T")[0],
+            };
+
+            // Call validation edge function
+            const validationResponse = await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/validate-payment-and-create-order', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+              },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                orderData
+              })
             });
 
-            // Clear cart and checkout data
-            clearCart();
-            clearCheckoutData();
+            const result = await validationResponse.json();
 
-            // Clear temporary payment data
-            localStorage.removeItem('pendingOrder');
-            localStorage.removeItem('paymentStartTime');
-            localStorage.removeItem('currentRazorpayOrderId');
+            if (result.success) {
+              // Payment validated and order created successfully
+              setPaymentModalStatus('success');
+              setOrderIdResult(result.order_id);
 
-            // Success message and redirect
-            toast.success("Order placed successfully!");
-            navigate("/my-orders");
+              // Clear cart and checkout data
+              clearCart();
+              clearCheckoutData();
 
+              // Clear temporary payment data
+              localStorage.removeItem('pendingOrder');
+              localStorage.removeItem('paymentStartTime');
+              localStorage.removeItem('currentRazorpayOrderId');
+
+              console.log('Order created successfully:', result.order_id);
+            } else {
+              // Payment validation failed
+              setPaymentModalStatus('failed');
+              setPaymentErrorMessage(result.message || 'Payment validation failed');
+              console.error('Payment validation failed:', result.message);
+            }
           } catch (error) {
-            console.error("Error creating order:", error);
-            toast.error("Payment successful but order failed. Contact support.");
-            // Still clear payment data
-            localStorage.removeItem('pendingOrder');
-            localStorage.removeItem('paymentStartTime');
-            localStorage.removeItem('currentRazorpayOrderId');
+            console.error('Error validating payment:', error);
+            setPaymentModalStatus('error');
+            setPaymentErrorMessage('An unexpected error occurred while processing your payment.');
           }
         },
         failure: (response) => {
           console.log("Payment failed:", response);
-          toast.error("Payment failed. Please try again.");
+
+          // Show failure modal
+          setPaymentModalStatus('failed');
+          setPaymentErrorMessage('Payment was not completed. Please try again.');
+          setShowPaymentModal(true);
 
           // Clear temporary data
           localStorage.removeItem('pendingOrder');
@@ -459,6 +536,14 @@ const ShippingPage = () => {
         returnFromShipping: true,
       },
     });
+  };
+
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentModalStatus('processing');
+    setOrderIdResult(null);
+    setPaymentErrorMessage(null);
+    setIsProcessingPayment(false);
   };
 
   if (cartItems.length === 0) {
@@ -750,6 +835,15 @@ const ShippingPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        status={paymentModalStatus}
+        onClose={handleClosePaymentModal}
+        orderId={orderIdResult}
+        errorMessage={paymentErrorMessage}
+      />
     </div>
   );
 };
