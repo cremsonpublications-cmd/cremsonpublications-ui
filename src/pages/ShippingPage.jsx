@@ -278,10 +278,13 @@ const ShippingPage = () => {
   };
 
   const handleContinueToPayment = async () => {
-    console.log("Payment button clicked");
+    console.log("=== PAYMENT BUTTON CLICKED ===");
     console.log("useRazorpay error:", error);
     console.log("Razorpay from hook:", Razorpay);
     console.log("window.Razorpay:", window.Razorpay);
+    console.log("isProcessingPayment:", isProcessingPayment);
+    console.log("cartItems:", cartItems);
+    console.log("customerInfo:", customerInfo);
 
     if (error) {
       console.error("useRazorpay error:", error);
@@ -290,9 +293,11 @@ const ShippingPage = () => {
     }
 
     if (isProcessingPayment) {
+      console.log("Payment already in progress, ignoring click");
       return;
     }
 
+    console.log("Setting processing to true...");
     setIsProcessingPayment(true);
 
     try {
@@ -312,8 +317,13 @@ const ShippingPage = () => {
       console.log('Stored pending order data:', pendingOrderData);
 
       // Create Razorpay order first
+      console.log("Creating Razorpay order...");
       const razorpayOrder = await createRazorpayOrder();
-      console.log('Razorpay order created:', razorpayOrder);
+      console.log('Razorpay order created successfully:', razorpayOrder);
+
+      if (!razorpayOrder || !razorpayOrder.id) {
+        throw new Error('Invalid Razorpay order response');
+      }
 
       // Store Razorpay order ID for polling
       localStorage.setItem('currentRazorpayOrderId', razorpayOrder.id);
@@ -328,6 +338,12 @@ const ShippingPage = () => {
         description: `Order for ${cartItems.length} books`,
         callback_url: `${window.location.origin}/payment-callback`,
         redirect: true,
+        remember_customer: false, // Always show payment method selection
+        config: {
+          display: {
+            language: 'en'
+          }
+        },
       handler: async (response) => {
         console.log("Payment Success Response:", response);
 
@@ -475,7 +491,12 @@ const ShippingPage = () => {
 
       console.log("Creating Razorpay instance with options:", options);
 
+      if (!window.Razorpay) {
+        throw new Error("window.Razorpay is not available");
+      }
+
       const razorpayInstance = new window.Razorpay(options);
+      console.log("Razorpay instance created:", razorpayInstance);
 
       razorpayInstance.on("payment.failed", (response) => {
         console.error("Payment Failed:", response.error);
@@ -485,15 +506,38 @@ const ShippingPage = () => {
         setIsProcessingPayment(false);
       });
 
-      console.log("Opening Razorpay checkout...");
+      console.log("Opening Razorpay checkout modal...");
       razorpayInstance.open();
+      console.log("Razorpay modal should be open now!");
 
     } catch (error) {
-      console.error("Error in payment process:", error);
-      toast.error("Failed to initialize payment. Please try again.");
+      console.error("=== PAYMENT ERROR ===");
+      console.error("Error details:", error);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+
+      toast.error(`Payment initialization failed: ${error.message}`);
       setIsProcessingPayment(false);
+
+      // Clean up any stored data
+      localStorage.removeItem('paymentInProgress');
+      localStorage.removeItem('currentRazorpayOrderId');
+      localStorage.removeItem('paymentStartTime');
     }
   };
+
+  // Add timeout to auto-reset processing state if stuck
+  useEffect(() => {
+    if (isProcessingPayment) {
+      const timeout = setTimeout(() => {
+        console.log("Payment processing timeout, resetting state");
+        setIsProcessingPayment(false);
+        toast.error("Payment processing timed out. Please try again.");
+      }, 30000); // 30 seconds timeout
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isProcessingPayment]);
 
   const handleChangeContact = () => {
     navigate("/checkout", {
