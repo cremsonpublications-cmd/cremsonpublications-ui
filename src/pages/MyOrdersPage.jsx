@@ -126,7 +126,7 @@ const MyOrdersPage = () => {
 
   const OrderCard = ({ order }) => (
     <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
         <div className="flex items-center gap-3">
           <Package className="w-5 h-5 text-gray-400" />
           <div>
@@ -139,18 +139,18 @@ const MyOrdersPage = () => {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <span
-            className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(
+            className={`px-2 py-1 sm:px-3 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(
               order.delivery?.status
-            )}`}
+            )} whitespace-nowrap`}
           >
             {getStatusIcon(order.delivery?.status)}
             {order.delivery?.status}
           </span>
           <button
             onClick={() => setSelectedOrder(order)}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1 whitespace-nowrap"
           >
             <Eye size={14} />
             View Details
