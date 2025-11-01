@@ -232,7 +232,7 @@ const ShippingPage = () => {
       // Method 1: Using supabase.functions.invoke (preferred)
       const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
         body: {
-          amount: Math.round(total * 100), // Convert to paise
+          amount: total, // Amount in rupees - Supabase function will convert to paise
           currency: 'INR',
           receipt: `order_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
         }
@@ -258,7 +258,7 @@ const ShippingPage = () => {
             'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({
-            amount: Math.round(total * 100), // Convert to paise
+            amount: total, // Amount in rupees - Supabase function will convert to paise
             currency: 'INR',
             receipt: `order_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
           })
