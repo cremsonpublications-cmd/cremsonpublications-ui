@@ -60,55 +60,8 @@ const ShippingPage = () => {
   // Payment processing state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
-  // Check for successful payment on page load (for Paytm redirect case)
+  // Add payment timeout monitoring
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const razorpayPaymentId = urlParams.get('razorpay_payment_id');
-    const razorpayOrderId = urlParams.get('razorpay_order_id');
-    const razorpaySignature = urlParams.get('razorpay_signature');
-
-    // If payment parameters are present, it means payment was successful via redirect
-    if (razorpayPaymentId && razorpayOrderId) {
-      console.log("Payment success detected via URL parameters");
-
-      // Process the successful payment
-      const processRedirectPayment = async () => {
-        try {
-          // Create order in database
-          await createOrderInDatabase({
-            razorpay_payment_id: razorpayPaymentId,
-            razorpay_order_id: razorpayOrderId,
-            razorpay_signature: razorpaySignature,
-            payment_method: 'razorpay'
-          });
-
-          // Clear cart and checkout data
-          clearCart();
-          clearCheckoutData();
-
-          // Clear temporary payment data
-          localStorage.removeItem('pendingOrder');
-          localStorage.removeItem('paymentStartTime');
-          localStorage.removeItem('currentRazorpayOrderId');
-
-          // Success message and redirect
-          toast.success("Order placed successfully!");
-
-          // Clean URL and redirect
-          window.history.replaceState({}, '', window.location.pathname);
-          navigate("/my-orders");
-
-        } catch (error) {
-          console.error("Error processing redirect payment:", error);
-          toast.error("Payment successful but order failed. Contact support.");
-        }
-      };
-
-      processRedirectPayment();
-      return; // Don't run timeout check if processing payment
-    }
-
-    // Payment timeout monitoring (only if no payment redirect detected)
     const checkPaymentTimeout = () => {
       const paymentStartTime = localStorage.getItem('paymentStartTime');
       const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
@@ -129,7 +82,7 @@ const ShippingPage = () => {
     const timeoutInterval = setInterval(checkPaymentTimeout, 30000);
 
     return () => clearInterval(timeoutInterval);
-  }, [navigate, createOrderInDatabase, clearCart, clearCheckoutData]);
+  }, [navigate]);
 
   // Confetti celebration state (removed - now handled in PaymentStatusPage)
 
@@ -266,6 +219,54 @@ const ShippingPage = () => {
       throw error;
     }
   }, [user, displayCustomerInfo, shippingDetails, cartItems, subtotal, couponDiscount, deliveryCharge, total, shippingInfo.notes]);
+
+  // Check for successful payment on page load (for Paytm redirect case)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const razorpayPaymentId = urlParams.get('razorpay_payment_id');
+    const razorpayOrderId = urlParams.get('razorpay_order_id');
+    const razorpaySignature = urlParams.get('razorpay_signature');
+
+    // If payment parameters are present, it means payment was successful via redirect
+    if (razorpayPaymentId && razorpayOrderId) {
+      console.log("Payment success detected via URL parameters");
+
+      // Process the successful payment
+      const processRedirectPayment = async () => {
+        try {
+          // Create order in database
+          await createOrderInDatabase({
+            razorpay_payment_id: razorpayPaymentId,
+            razorpay_order_id: razorpayOrderId,
+            razorpay_signature: razorpaySignature,
+            payment_method: 'razorpay'
+          });
+
+          // Clear cart and checkout data
+          clearCart();
+          clearCheckoutData();
+
+          // Clear temporary payment data
+          localStorage.removeItem('pendingOrder');
+          localStorage.removeItem('paymentStartTime');
+          localStorage.removeItem('currentRazorpayOrderId');
+
+          // Success message and redirect
+          toast.success("Order placed successfully!");
+
+          // Clean URL and redirect
+          window.history.replaceState({}, '', window.location.pathname);
+          navigate("/my-orders");
+
+        } catch (error) {
+          console.error("Error processing redirect payment:", error);
+          toast.error("Payment successful but order failed. Contact support.");
+        }
+      };
+
+      processRedirectPayment();
+    }
+  }, [createOrderInDatabase, clearCart, clearCheckoutData, navigate]);
 
   const createRazorpayOrder = async () => {
     try {
