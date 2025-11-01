@@ -238,42 +238,111 @@ const ShippingPage = () => {
     if (razorpayPaymentId && razorpayOrderId) {
       console.log("Payment success detected via URL parameters");
 
-      // Process the successful payment
+      // Process the successful payment using the same validation flow as desktop
       const processRedirectPayment = async () => {
         try {
-          // Create order in database
-          await createOrderInDatabase({
-            razorpay_payment_id: razorpayPaymentId,
-            razorpay_order_id: razorpayOrderId,
-            razorpay_signature: razorpaySignature,
-            payment_method: 'razorpay'
+          // Show processing modal
+          setPaymentModalStatus('processing');
+          setShowPaymentModal(true);
+
+          // Prepare order data for validation (same as desktop flow)
+          const orderData = {
+            order_id: `BOOK${Date.now()}${Math.floor(Math.random() * 1000)}`,
+            user_info: {
+              userId: user?.id || "guest",
+              name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
+              email: displayCustomerInfo.email,
+              phone: displayCustomerInfo.phone,
+              address: shippingDetails ? {
+                street: shippingDetails.streetAddress,
+                apartment: shippingDetails.apartment,
+                city: shippingDetails.city,
+                state: shippingDetails.state,
+                pincode: shippingDetails.pincode,
+                country: shippingDetails.country,
+              } : {
+                street: displayCustomerInfo.address.street,
+                apartment: displayCustomerInfo.address.apartment,
+                city: displayCustomerInfo.address.city,
+                state: displayCustomerInfo.address.state,
+                pincode: displayCustomerInfo.address.pincode,
+                country: displayCustomerInfo.address.country,
+              }
+            },
+            items: cartItems.map((item) => ({
+              productId: item.id,
+              name: item.name,
+              author: item.author || "Unknown Author",
+              quantity: item.quantity,
+              currentPrice: item.price,
+              totalPrice: item.price * item.quantity,
+            })),
+            order_summary: {
+              subTotal: subtotal,
+              couponDiscount: couponDiscount,
+              deliveryCharge: deliveryCharge,
+              grandTotal: total,
+            },
+            payment: {
+              method: "Razorpay",
+              amount: total,
+            },
+            order_date: new Date().toISOString().split("T")[0],
+          };
+
+          // Call validation edge function (same as desktop)
+          const validationResponse = await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/validate-payment-and-create-order', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              razorpay_payment_id: razorpayPaymentId,
+              razorpay_order_id: razorpayOrderId,
+              razorpay_signature: razorpaySignature,
+              orderData
+            })
           });
 
-          // Clear cart and checkout data
-          clearCart();
-          clearCheckoutData();
+          const result = await validationResponse.json();
 
-          // Clear temporary payment data
-          localStorage.removeItem('pendingOrder');
-          localStorage.removeItem('paymentStartTime');
-          localStorage.removeItem('currentRazorpayOrderId');
+          if (result.success) {
+            // Payment validated and order created successfully
+            setPaymentModalStatus('success');
+            setOrderIdResult(result.order_id);
 
-          // Success message and redirect
-          toast.success("Order placed successfully!");
+            // Clear cart and checkout data
+            clearCart();
+            clearCheckoutData();
 
-          // Clean URL and redirect
-          window.history.replaceState({}, '', window.location.pathname);
-          navigate("/my-orders");
+            // Clear temporary payment data
+            localStorage.removeItem('pendingOrder');
+            localStorage.removeItem('paymentStartTime');
+            localStorage.removeItem('currentRazorpayOrderId');
+
+            // Clean URL
+            window.history.replaceState({}, '', window.location.pathname);
+
+            console.log('Mobile payment validated successfully:', result.order_id);
+          } else {
+            // Payment validation failed
+            setPaymentModalStatus('failed');
+            setPaymentErrorMessage(result.message || 'Payment validation failed');
+            console.error('Mobile payment validation failed:', result.message);
+          }
 
         } catch (error) {
-          console.error("Error processing redirect payment:", error);
-          toast.error("Payment successful but order failed. Contact support.");
+          console.error("Error processing mobile redirect payment:", error);
+          setPaymentModalStatus('error');
+          setPaymentErrorMessage('An unexpected error occurred while processing your payment.');
         }
       };
 
       processRedirectPayment();
     }
-  }, [createOrderInDatabase, clearCart, clearCheckoutData, navigate]);
+  }, [createOrderInDatabase, clearCart, clearCheckoutData, navigate, cartItems, displayCustomerInfo, shippingDetails, subtotal, couponDiscount, deliveryCharge, total, user]);
 
   const createRazorpayOrder = async () => {
     try {
@@ -482,14 +551,16 @@ const ShippingPage = () => {
         modal: {
           ondismiss: () => {
             console.log("Payment modal dismissed");
-            // Only reset if payment hasn't started redirect flow
-            const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
-            if (!currentOrderId) {
-              setIsProcessingPayment(false);
-            }
+            // Hide processing modal and reset state if user closes without payment
+            setShowPaymentModal(false);
+            setIsProcessingPayment(false);
           },
         },
       };
+
+      // Show processing modal immediately when Razorpay opens
+      setPaymentModalStatus('processing');
+      setShowPaymentModal(true);
 
       // Open payment
       const razorpay = new window.Razorpay(options);
