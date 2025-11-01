@@ -26,6 +26,7 @@ const PaymentStatusPage = () => {
   const razorpayPaymentId = searchParams.get("razorpay_payment_id");
   const razorpayOrderId = searchParams.get("razorpay_order_id");
   const razorpaySignature = searchParams.get("razorpay_signature");
+  const statusParam = searchParams.get("status");
 
   const generateOrderId = () => {
     const timestamp = Date.now();
@@ -144,9 +145,50 @@ const PaymentStatusPage = () => {
   const verifyPaymentAndCreateOrder = async () => {
     try {
       console.log("Starting payment verification...");
+      console.log("Status param:", statusParam);
       console.log("Payment ID from URL:", razorpayPaymentId);
 
-      // Check if we have payment details
+      // Check if we already have success data from the handler
+      const orderSuccessData = localStorage.getItem('orderSuccess');
+      if (orderSuccessData && statusParam === 'success') {
+        console.log("Found existing order success data");
+        const successData = JSON.parse(orderSuccessData);
+        setOrderData(successData.orderData);
+        setStatus("success");
+
+        // Clean up
+        localStorage.removeItem('orderSuccess');
+        localStorage.removeItem('pendingOrder');
+        localStorage.removeItem('paymentInProgress');
+
+        toast.success("Payment successful! Order placed successfully! 🎉");
+        return;
+      }
+
+      // Check for failed order creation but successful payment
+      const failedOrderData = localStorage.getItem('failedOrderCreation');
+      if (failedOrderData && statusParam === 'processing') {
+        console.log("Found failed order creation data, attempting to recreate order");
+        const failedData = JSON.parse(failedOrderData);
+
+        // Try to create order with the payment details
+        const pendingOrder = localStorage.getItem('pendingOrder');
+        if (pendingOrder) {
+          const { orderData } = await createOrderInDatabase(failedData.paymentDetails, JSON.parse(pendingOrder));
+          setOrderData(orderData);
+          setStatus("success");
+
+          // Clean up
+          localStorage.removeItem('failedOrderCreation');
+          localStorage.removeItem('pendingOrder');
+          localStorage.removeItem('paymentInProgress');
+
+          toast.success("Payment successful! Order placed successfully! 🎉");
+          return;
+        }
+      }
+
+      // Check if we have payment details from redirect (UPI flow)
       if (!razorpayPaymentId) {
         // Try to get from localStorage as fallback
         const storedPayment = localStorage.getItem('paymentInProgress');
