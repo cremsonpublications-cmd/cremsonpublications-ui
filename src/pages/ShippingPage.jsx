@@ -278,76 +278,27 @@ const ShippingPage = () => {
   };
 
   const handleContinueToPayment = async () => {
-    console.log("=== PAYMENT BUTTON CLICKED ===");
-    console.log("Cart Items:", cartItems);
-    console.log("Total Amount:", total);
-    console.log("Customer Info:", displayCustomerInfo);
-
     if (isProcessingPayment) return;
-
     setIsProcessingPayment(true);
 
     try {
-      // Clear ALL Razorpay memory/cache for fresh selection every time
-      localStorage.removeItem('razorpay_customer_id');
-      localStorage.removeItem('razorpay_saved_cards');
-      localStorage.removeItem('razorpay_payment_methods');
-      sessionStorage.removeItem('razorpay_customer_id');
-      sessionStorage.removeItem('razorpay_saved_cards');
-      sessionStorage.removeItem('razorpay_payment_methods');
-
-      // Clear any cookies that might store payment preferences
-      document.cookie = 'razorpay_customer_id=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = 'razorpay_payment_method=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-
-      console.log("Cleared all Razorpay cache for fresh selection");
-      console.log("Creating Razorpay order with amount:", total);
-
       // Create Razorpay order
       const razorpayOrder = await createRazorpayOrder();
 
-      console.log("Razorpay order response:", razorpayOrder);
-
       if (!razorpayOrder?.id) {
-        console.error("Invalid Razorpay order:", razorpayOrder);
-        throw new Error('Failed to create Razorpay order');
+        throw new Error('Failed to create order');
       }
 
-      console.log("Razorpay order created successfully:", {
-        id: razorpayOrder.id,
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency
-      });
-
+      // Simple payment options
       const options = {
         key: "rzp_live_RZNaICiFgLKhW2",
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         order_id: razorpayOrder.id,
         name: "Cremson Publications",
-        description: `Order for ${cartItems.length} books - ${Date.now()}`,
-        remember_customer: false,
-        customer_id: null,
-        save: false, // Don't save payment methods
-        retry: {
-          enabled: false // Disable retry to avoid caching
-        },
-        config: {
-          display: {
-            language: 'en',
-            hide: {
-              email: false,
-              contact: false
-            },
-            preferences: {
-              show_default_blocks: true // Always show all payment options
-            }
-          }
-        },
+        description: `Books Order`,
         handler: async (response) => {
           try {
-            setIsProcessingPayment(true);
-
             // Create order in database
             const { orderData } = await createOrderInDatabase({
               razorpay_payment_id: response.razorpay_payment_id,
@@ -356,8 +307,8 @@ const ShippingPage = () => {
               payment_method: 'razorpay'
             });
 
-            // Send confirmation email
-            await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
+            // Send email (don't wait for it)
+            fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -367,70 +318,31 @@ const ShippingPage = () => {
               body: JSON.stringify({ orderData })
             });
 
-            // Clear cart and navigate to success
+            // Success!
             clearCart();
             clearCheckoutData();
-
-            toast.success("Payment successful! Order placed!");
+            toast.success("Order placed successfully!");
             navigate("/my-orders");
 
-          } catch (error) {
-            console.error("Error:", error);
-            toast.error("Payment successful but order creation failed. Please contact support.");
-          } finally {
-            setIsProcessingPayment(false);
+          } catch {
+            toast.error("Payment successful but order failed. Contact support.");
           }
         },
-      prefill: {
-        name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
-        email: displayCustomerInfo.email,
-        contact: displayCustomerInfo.phone,
-      },
-      notes: {
-        address: `${displayCustomerInfo.address.street}, ${displayCustomerInfo.address.city}, ${displayCustomerInfo.address.state} - ${displayCustomerInfo.address.pincode}`,
-        items: cartItems
-          .map((item) => `${item.name} (${item.quantity})`)
-          .join(", "),
-      },
-      theme: {
-        color: "#000000",
-      },
-      modal: {
-        ondismiss: () => {
-          setIsProcessingPayment(false);
-          toast.info("Payment cancelled");
+        prefill: {
+          name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
+          email: displayCustomerInfo.email,
+          contact: displayCustomerInfo.phone,
         },
-      },
-    };
+        modal: {
+          ondismiss: () => setIsProcessingPayment(false),
+        },
+      };
 
-      console.log("Razorpay options:", JSON.stringify(options, null, 2));
+      // Open payment
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
 
-      // Validate amount
-      if (!options.amount || options.amount <= 0) {
-        throw new Error(`Invalid amount: ${options.amount}`);
-      }
-
-      // Check if Razorpay is loaded
-      if (!window.Razorpay) {
-        throw new Error("Razorpay script not loaded");
-      }
-
-      console.log("Creating Razorpay instance...");
-      const razorpayInstance = new window.Razorpay(options);
-
-      console.log("Adding payment failed listener...");
-      razorpayInstance.on("payment.failed", (response) => {
-        console.error("Payment Failed:", response.error);
-        toast.error("Payment failed. Please try again.");
-        setIsProcessingPayment(false);
-      });
-
-      console.log("Opening Razorpay modal...");
-      razorpayInstance.open();
-      console.log("Razorpay modal opened successfully!");
-
-    } catch (error) {
-      console.error("Payment Error:", error);
+    } catch {
       toast.error("Payment failed. Please try again.");
       setIsProcessingPayment(false);
     }
