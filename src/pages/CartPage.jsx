@@ -23,6 +23,7 @@ export default function CartPage() {
     getTotalItems,
     getTotalMRP,
     getTotalProductDiscounts,
+    hasBulkItems,
     appliedCoupon,
     applyCoupon,
     removeCoupon,
@@ -75,6 +76,7 @@ export default function CartPage() {
   const shippingCharge = getShippingCharge();
   const shippingInfo = getCartShippingInfo();
   const finalTotalWithShipping = getFinalTotalWithShipping();
+  const containsBulkItems = hasBulkItems();
   
   // Make sure shipping charges are calculated when going to checkout
 
@@ -322,7 +324,24 @@ export default function CartPage() {
                 {/* Coupon Input Section */}
                 {!appliedCoupon && (
                   <div className="space-y-4">
-                    <div className="flex space-x-3">
+                    {/* Bulk Items Warning */}
+                    {containsBulkItems && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-orange-800 font-medium text-sm">
+                            Bulk Purchase Detected
+                          </span>
+                        </div>
+                        <p className="text-orange-700 text-sm mt-1">
+                          Coupons cannot be applied to bulk orders as you're already getting bulk pricing discounts.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className={`flex space-x-3 ${containsBulkItems ? 'opacity-50' : ''}`}>
                       <InputGroup className="bg-[#F0F0F0] flex-1">
                         <InputGroup.Text>
                           <MdOutlineLocalOffer className="text-black/40 text-2xl" />
@@ -334,14 +353,15 @@ export default function CartPage() {
                           onChange={(e) =>
                             setCouponCode(e.target.value.toUpperCase())
                           }
-                          placeholder="Add promo code"
+                          placeholder={containsBulkItems ? "Coupons not available for bulk orders" : "Add promo code"}
                           className="bg-transparent placeholder:text-black/40"
+                          disabled={containsBulkItems}
                         />
                       </InputGroup>
                       <Button
                         type="button"
                         onClick={handleApplyCoupon}
-                        disabled={isValidatingCoupon || !couponCode.trim()}
+                        disabled={isValidatingCoupon || !couponCode.trim() || containsBulkItems}
                         className="bg-black rounded-full w-full max-w-[119px] h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isValidatingCoupon ? "Checking..." : "Apply"}
@@ -360,21 +380,22 @@ export default function CartPage() {
                     )}
 
                     {/* Available Coupons Toggle */}
-                    <div className="border-t border-gray-200 pt-4">
-                      <button
-                        onClick={() => setShowCoupons(!showCoupons)}
-                        className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-700 hover:text-black"
-                      >
-                        <span className="flex items-center gap-2">
-                          <Tag size={16} />
-                          Available Coupons ({selectedCoupons.length})
-                        </span>
-                        {showCoupons ? (
-                          <ChevronUp size={16} />
-                        ) : (
-                          <ChevronDown size={16} />
-                        )}
-                      </button>
+                    {!containsBulkItems && (
+                      <div className="border-t border-gray-200 pt-4">
+                        <button
+                          onClick={() => setShowCoupons(!showCoupons)}
+                          className="flex items-center justify-between w-full text-left text-sm font-medium text-gray-700 hover:text-black"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Tag size={16} />
+                            Available Coupons ({selectedCoupons.length})
+                          </span>
+                          {showCoupons ? (
+                            <ChevronUp size={16} />
+                          ) : (
+                            <ChevronDown size={16} />
+                          )}
+                        </button>
 
                       {/* Available Coupons List */}
                       {showCoupons && (
@@ -423,7 +444,8 @@ export default function CartPage() {
                           )}
                         </div>
                       )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 <Button

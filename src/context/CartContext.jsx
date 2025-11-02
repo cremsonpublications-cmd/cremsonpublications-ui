@@ -322,6 +322,11 @@ export const CartProvider = ({ children }) => {
     }, 0);
   };
 
+  // Check if cart contains bulk purchase items
+  const hasBulkItems = () => {
+    return cartItems.some(item => item.is_bulk_purchase === true);
+  };
+
   // Get cart subtotal (before any discounts)
   const getSubtotal = () => {
     return getTotalPrice();
@@ -457,6 +462,7 @@ export const CartProvider = ({ children }) => {
     getTotalPrice,
     getTotalMRP,
     getTotalProductDiscounts,
+    hasBulkItems,
     getSubtotal,
     applyCoupon,
     removeCoupon,

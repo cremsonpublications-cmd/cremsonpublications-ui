@@ -192,7 +192,8 @@ const Header = ({ data }: { data: Product }) => {
       categories: data.categories,
       has_own_discount: data.has_own_discount,
       own_discount_percentage: data.own_discount_percentage,
-      use_category_discount: data.use_category_discount
+      use_category_discount: data.use_category_discount,
+      is_bulk_purchase: true // Flag to indicate this is a bulk purchase
     };
 
     addToCart(productForCart, quantity);
