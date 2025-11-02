@@ -302,6 +302,26 @@ export const CartProvider = ({ children }) => {
     }, 0);
   };
 
+  // Get total MRP (before any product discounts)
+  const getTotalMRP = () => {
+    return cartItems.reduce((total, item) => {
+      const mrp = parseFloat(item.mrp) || parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      return total + mrp * quantity;
+    }, 0);
+  };
+
+  // Get total product discounts (category + own discounts)
+  const getTotalProductDiscounts = () => {
+    return cartItems.reduce((total, item) => {
+      const mrp = parseFloat(item.mrp) || parseFloat(item.price) || 0;
+      const price = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      const discountPerItem = mrp > price ? mrp - price : 0;
+      return total + (discountPerItem * quantity);
+    }, 0);
+  };
+
   // Get cart subtotal (before any discounts)
   const getSubtotal = () => {
     return getTotalPrice();
@@ -435,6 +455,8 @@ export const CartProvider = ({ children }) => {
     clearCart,
     getTotalItems,
     getTotalPrice,
+    getTotalMRP,
+    getTotalProductDiscounts,
     getSubtotal,
     applyCoupon,
     removeCoupon,

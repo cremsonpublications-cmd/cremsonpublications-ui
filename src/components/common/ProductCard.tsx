@@ -37,8 +37,13 @@ const ProductCard = ({ data }: ProductCardProps) => {
       status: data.status,
       bulk_pricing: data.bulk_pricing,
       mrp: data.mrp,
-      finalPrice: finalPrice
+      finalPrice: finalPrice,
+      categories: data.categories,
+      has_own_discount: data.has_own_discount,
+      own_discount_percentage: data.own_discount_percentage,
+      use_category_discount: data.use_category_discount
     };
+    console.log('Adding to cart:', productForCart);
     addToCart(productForCart, 1);
   };
 

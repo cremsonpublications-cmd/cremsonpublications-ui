@@ -21,6 +21,8 @@ export default function CartPage() {
     cartItems,
     getTotalPrice,
     getTotalItems,
+    getTotalMRP,
+    getTotalProductDiscounts,
     appliedCoupon,
     applyCoupon,
     removeCoupon,
@@ -66,6 +68,8 @@ export default function CartPage() {
 
   const totalPrice = getTotalPrice();
   const totalItems = getTotalItems();
+  const totalMRP = getTotalMRP();
+  const productDiscounts = getTotalProductDiscounts();
   const couponDiscount = getCouponDiscount();
   const finalTotal = getFinalTotal();
   const shippingCharge = getShippingCharge();
@@ -199,13 +203,39 @@ export default function CartPage() {
                   </div>
                   <hr className="border-t-black/10" />
 
+                  {/* MRP Total */}
+                  {productDiscounts > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="md:text-xl text-black/60">MRP Total</span>
+                      <span className="text-xl md:text-2xl font-bold text-black/60">
+                        ₹{totalMRP}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Product Discounts */}
+                  {productDiscounts > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="md:text-xl text-green-600">
+                        Product Discounts
+                      </span>
+                      <span className="text-xl md:text-2xl font-bold text-green-600">
+                        -₹{productDiscounts}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Subtotal */}
                   <div className="flex items-center justify-between">
-                    <span className="md:text-xl text-black/60">Subtotal</span>
+                    <span className="md:text-xl text-black/60">
+                      {productDiscounts > 0 ? 'Subtotal (After Product Discounts)' : 'Subtotal'}
+                    </span>
                     <span className="text-xl md:text-2xl font-bold">
                       ₹{totalPrice}
                     </span>
                   </div>
+
+                  {productDiscounts > 0 && <hr className="border-t-black/10" />}
 
                   {/* Applied Coupon Discount */}
                   {appliedCoupon && (

@@ -16,11 +16,14 @@ const ProductCard = ({ data }: ProductCardProps) => {
   console.log('Cart item data:', data);
 
   // Get price from available fields
-  const itemPrice = data.price || data.mrp || 0;
-  
-  // Calculate discount percentage if old_price exists
-  const discountPercentage = data.old_price ?
-    Math.round(((data.old_price - itemPrice) / data.old_price) * 100) : 0;
+  const itemPrice = data.price || data.finalPrice || data.mrp || 0;
+  const originalPrice = data.mrp || data.old_price || itemPrice;
+
+  // Calculate discount percentage and amount
+  const hasDiscount = originalPrice > itemPrice;
+  const discountPercentage = hasDiscount ?
+    Math.round(((originalPrice - itemPrice) / originalPrice) * 100) : 0;
+  const discountAmount = hasDiscount ? originalPrice - itemPrice : 0;
 
   return (
     <div className="flex items-start space-x-4">
@@ -76,15 +79,15 @@ const ProductCard = ({ data }: ProductCardProps) => {
             <span className="font-bold text-black text-xl xl:text-2xl">
               ₹{itemPrice}
             </span>
-            {data.old_price && (
-              <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
-                ₹{data.old_price}
-              </span>
-            )}
-            {discountPercentage > 0 && (
-              <span className="font-medium text-[10px] xl:text-xs py-1.5 px-3.5 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
-                -{discountPercentage}%
-              </span>
+            {hasDiscount && (
+              <>
+                <span className="font-bold text-black/40 line-through text-xl xl:text-2xl">
+                  ₹{originalPrice}
+                </span>
+                <span className="font-medium text-[10px] xl:text-xs py-1.5 px-3.5 rounded-full bg-[#FF3333]/10 text-[#FF3333]">
+                  -{discountPercentage}% OFF
+                </span>
+              </>
             )}
           </div>
 

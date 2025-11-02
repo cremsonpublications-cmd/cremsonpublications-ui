@@ -32,7 +32,7 @@ const AddToCardSection = ({ data }: { data: Product }) => {
       if (category.offer_type === "percentage" && category.offer_percentage) {
         discountPercentage = category.offer_percentage;
       } else if (
-        category.offer_type === "flat_amount" &&
+        category.offer_type === "fixed" &&
         category.offer_amount
       ) {
         finalPrice = mrp - category.offer_amount;
@@ -75,7 +75,11 @@ const AddToCardSection = ({ data }: { data: Product }) => {
         status: data.status,
         bulk_pricing: data.bulk_pricing,
         mrp: data.mrp,
-        finalPrice: finalPrice
+        finalPrice: finalPrice,
+        categories: data.categories,
+        has_own_discount: data.has_own_discount,
+        own_discount_percentage: data.own_discount_percentage,
+        use_category_discount: data.use_category_discount
       };
       addToCart(productForCart, 1);
     }
@@ -94,7 +98,11 @@ const AddToCardSection = ({ data }: { data: Product }) => {
       status: data.status,
       bulk_pricing: data.bulk_pricing,
       mrp: data.mrp,
-      finalPrice: finalPrice
+      finalPrice: finalPrice,
+      categories: data.categories,
+      has_own_discount: data.has_own_discount,
+      own_discount_percentage: data.own_discount_percentage,
+      use_category_discount: data.use_category_discount
     };
     addToCart(productForCart, 1);
   };

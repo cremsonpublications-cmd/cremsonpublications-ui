@@ -79,14 +79,17 @@ const Header = ({ data }: { data: Product }) => {
       if (category.offer_type === "percentage" && category.offer_percentage) {
         discountPercentage = category.offer_percentage;
       } else if (
-        category.offer_type === "flat_amount" &&
+        category.offer_type === "fixed" &&
         category.offer_amount
       ) {
         finalPrice = mrp - category.offer_amount;
+        // Calculate equivalent percentage for badge display
+        const equivalentPercentage = mrp > 0 ? Math.round((category.offer_amount / mrp) * 100) : 0;
         return {
           finalPrice: Math.max(0, finalPrice),
           mrp,
-          discountPercentage: 0,
+          discountPercentage: equivalentPercentage,
+          discountAmount: category.offer_amount,
         };
       }
     }
@@ -103,7 +106,7 @@ const Header = ({ data }: { data: Product }) => {
     };
   };
 
-  const { finalPrice, mrp, discountPercentage } = calculatePrice();
+  const { finalPrice, mrp, discountPercentage, discountAmount } = calculatePrice();
   const hasDiscount = finalPrice < mrp;
   const isOutOfStock = data.status === "Out of Stock";
   const hasMRP = data.mrp && data.mrp > 0;
@@ -185,7 +188,11 @@ const Header = ({ data }: { data: Product }) => {
       status: data.status,
       bulk_pricing: data.bulk_pricing, // Include bulk pricing data
       mrp: data.mrp,
-      finalPrice: finalPrice
+      finalPrice: finalPrice,
+      categories: data.categories,
+      has_own_discount: data.has_own_discount,
+      own_discount_percentage: data.own_discount_percentage,
+      use_category_discount: data.use_category_discount
     };
 
     addToCart(productForCart, quantity);
@@ -268,9 +275,9 @@ const Header = ({ data }: { data: Product }) => {
                   <span className="font-bold text-black/40 line-through text-2xl sm:text-[32px]">
                     ₹{mrp}
                   </span>
-                  {discountPercentage > 0 && (
+                  {(discountPercentage > 0 || discountAmount > 0) && (
                     <span className="font-medium text-[10px] sm:text-xs py-1.5 px-3.5 rounded-full bg-green-100 text-green-800">
-                      -{discountPercentage}%
+                      {discountAmount ? `₹${discountAmount} OFF` : `-${discountPercentage}%`}
                     </span>
                   )}
                 </>
