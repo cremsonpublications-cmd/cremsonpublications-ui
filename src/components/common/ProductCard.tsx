@@ -70,14 +70,17 @@ const ProductCard = ({ data }: ProductCardProps) => {
       if (category.offer_type === "percentage" && category.offer_percentage) {
         discountPercentage = category.offer_percentage;
       } else if (
-        category.offer_type === "flat_amount" &&
+        category.offer_type === "fixed" &&
         category.offer_amount
       ) {
         finalPrice = mrp - category.offer_amount;
+        // Calculate equivalent percentage for badge display
+        const equivalentPercentage = mrp > 0 ? Math.round((category.offer_amount / mrp) * 100) : 0;
         return {
           finalPrice: Math.max(0, finalPrice),
           mrp,
-          discountPercentage: 0,
+          discountPercentage: equivalentPercentage,
+          discountAmount: category.offer_amount,
         };
       }
     }
@@ -94,7 +97,7 @@ const ProductCard = ({ data }: ProductCardProps) => {
     };
   };
 
-  const { finalPrice, mrp, discountPercentage } = calculatePrice();
+  const { finalPrice, mrp, discountPercentage, discountAmount } = calculatePrice();
   const hasDiscount = finalPrice < mrp;
   const isOutOfStock = data.status === "Out of Stock";
   const hasPricing = data.mrp && data.mrp > 0; // Check if product has valid pricing
@@ -121,9 +124,9 @@ const ProductCard = ({ data }: ProductCardProps) => {
           ) : (
             <>
               {/* Discount badge - only show if not sold out and has discount */}
-              {discountPercentage > 0 && (
+              {(discountPercentage > 0 || discountAmount > 0) && (
                 <span className="bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded shadow-md">
-                  -{discountPercentage}%
+                  {discountAmount ? `₹${discountAmount} OFF` : `-${discountPercentage}%`}
                 </span>
               )}
             </>

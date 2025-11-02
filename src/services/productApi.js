@@ -47,7 +47,10 @@ export const productsApi = {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .order('created_at', { ascending: false });
@@ -69,7 +72,10 @@ export const productsApi = {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .eq('id', id)
@@ -92,7 +98,10 @@ export const productsApi = {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .eq('category_id', categoryId)
@@ -115,7 +124,10 @@ export const productsApi = {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .or(`name.ilike.%${searchTerm}%, description.ilike.%${searchTerm}%`)
@@ -138,7 +150,10 @@ export const productsApi = {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .eq('is_featured', true)
@@ -161,7 +176,10 @@ export const productsApi = {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .or('discount_percentage.gt.0, discount_amount.gt.0')

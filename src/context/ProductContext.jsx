@@ -64,7 +64,10 @@ export const ProductProvider = ({ children }) => {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .order('created_at', { ascending: false });
@@ -93,7 +96,10 @@ export const ProductProvider = ({ children }) => {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .eq('category_id', categoryId)
@@ -128,7 +134,10 @@ export const ProductProvider = ({ children }) => {
           *,
           categories (
             id,
-            main_category_name
+            main_category_name,
+            offer_type,
+            offer_percentage,
+            offer_amount
           )
         `)
         .or(`name.ilike.%${searchTerm}%, description.ilike.%${searchTerm}%`)
