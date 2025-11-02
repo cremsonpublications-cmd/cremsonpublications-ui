@@ -107,17 +107,6 @@ const CouponPopup = ({ isOpen, onClose }) => {
           </div>
 
           {/* Main Header Text */}
-          <div className="relative z-10 text-center text-white">
-            <h2 className="text-base sm:text-xl font-bold mb-1">
-              Save up to
-            </h2>
-            <div className="text-2xl sm:text-4xl font-bold text-red-400 mb-1">
-              {getBestOffer()}
-            </div>
-            <p className="text-xs sm:text-base opacity-90">
-              off on your next order
-            </p>
-          </div>
         </div>
 
         {/* Coupons Section */}
@@ -127,65 +116,75 @@ const CouponPopup = ({ isOpen, onClose }) => {
               <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-2 sm:mb-3 text-center flex-shrink-0">
                 Available Coupons
               </h3>
-              <div className="overflow-y-auto max-h-[40vh] sm:max-h-[50vh] space-y-2 pr-2" style={{
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#d1d5db #f3f4f6'
-              }}>
-              {availableCoupons.map((coupon) => (
-                <div
-                  key={coupon.id}
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-3 hover:border-purple-400 transition-colors flex-shrink-0"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {coupon.discount_type === "percentage" ? (
-                          <Percent
-                            size={16}
-                            className="text-purple-600 shrink-0"
-                          />
-                        ) : (
-                          <Tag size={16} className="text-green-600 shrink-0" />
-                        )}
-                        <span className="font-mono font-bold text-xs sm:text-sm text-gray-800 truncate">
-                          {coupon.code}
-                        </span>
+              <div
+                className="overflow-y-auto max-h-[40vh] sm:max-h-[50vh] space-y-2 pr-2"
+                style={{
+                  scrollbarWidth: "thin",
+                  scrollbarColor: "#d1d5db #f3f4f6",
+                }}
+              >
+                {availableCoupons.map((coupon) => (
+                  <div
+                    key={coupon.id}
+                    className="border-2 border-dashed border-gray-300 rounded-lg p-2 sm:p-3 hover:border-purple-400 transition-colors flex-shrink-0"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          {coupon.discount_type === "percentage" ? (
+                            <Percent
+                              size={16}
+                              className="text-purple-600 shrink-0"
+                            />
+                          ) : (
+                            <Tag
+                              size={16}
+                              className="text-green-600 shrink-0"
+                            />
+                          )}
+                          <span className="font-mono font-bold text-xs sm:text-sm text-gray-800 truncate">
+                            {coupon.code}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-1 truncate">
+                          {coupon.description}
+                        </p>
+                        <p className="text-xs text-purple-600 font-medium">
+                          {coupon.discount_type === "percentage"
+                            ? `${coupon.discount_value}% OFF`
+                            : `₹${coupon.discount_value} OFF`}
+                          {coupon.minimum_order_amount &&
+                            ` • Min ₹${coupon.minimum_order_amount}`}
+                        </p>
                       </div>
-                      <p className="text-xs text-gray-600 mb-1 truncate">
-                        {coupon.description}
-                      </p>
-                      <p className="text-xs text-purple-600 font-medium">
-                        {coupon.discount_type === "percentage"
-                          ? `${coupon.discount_value}% OFF`
-                          : `₹${coupon.discount_value} OFF`}
-                        {coupon.minimum_order_amount &&
-                          ` • Min ₹${coupon.minimum_order_amount}`}
-                      </p>
+                      <button
+                        onClick={() => handleCopyCoupon(coupon.code)}
+                        className={`ml-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md font-medium transition-all text-xs ${
+                          copiedCoupon === coupon.code
+                            ? "bg-green-500 text-white"
+                            : "bg-purple-600 hover:bg-purple-700 text-white"
+                        }`}
+                      >
+                        {copiedCoupon === coupon.code ? (
+                          <div className="flex items-center gap-1">
+                            <Check size={12} />
+                            <span className="hidden sm:inline text-xs">
+                              Copied!
+                            </span>
+                            <span className="sm:hidden">✓</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <Copy size={12} />
+                            <span className="hidden sm:inline text-xs">
+                              Copy
+                            </span>
+                          </div>
+                        )}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => handleCopyCoupon(coupon.code)}
-                      className={`ml-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md font-medium transition-all text-xs ${
-                        copiedCoupon === coupon.code
-                          ? "bg-green-500 text-white"
-                          : "bg-purple-600 hover:bg-purple-700 text-white"
-                      }`}
-                    >
-                      {copiedCoupon === coupon.code ? (
-                        <div className="flex items-center gap-1">
-                          <Check size={12} />
-                          <span className="hidden sm:inline text-xs">Copied!</span>
-                          <span className="sm:hidden">✓</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <Copy size={12} />
-                          <span className="hidden sm:inline text-xs">Copy</span>
-                        </div>
-                      )}
-                    </button>
                   </div>
-                </div>
-              ))}
+                ))}
               </div>
             </div>
           ) : (

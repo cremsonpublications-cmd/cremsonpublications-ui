@@ -11,13 +11,36 @@ const BoughtTogether = ({ currentProduct }) => {
 
   useEffect(() => {
     if (currentProduct && products.length > 0) {
-      // Find products with same class or subcategories, excluding sold out products
+      // Find products with same class or subcategories, excluding sold out products and 0 price products
       const related = products
         .filter((product) => {
           if (product.id === currentProduct.id) return false;
 
           // Exclude sold out products
           if (product.status === "Out of Stock") return false;
+
+          // Exclude products with 0 price
+          const mrp = product.mrp || 0;
+          let finalPrice = mrp;
+
+          // Check if product has its own discount
+          if (product.has_own_discount && product.own_discount_percentage) {
+            finalPrice = mrp - (mrp * product.own_discount_percentage) / 100;
+          }
+          // Otherwise use category discount if enabled
+          else if (product.use_category_discount && product.categories) {
+            const category = product.categories;
+            if (category.offer_type === "percentage" && category.offer_percentage) {
+              finalPrice = mrp - (mrp * category.offer_percentage) / 100;
+            } else if (
+              category.offer_type === "flat_amount" &&
+              category.offer_amount
+            ) {
+              finalPrice = mrp - category.offer_amount;
+            }
+          }
+
+          if (Math.round(finalPrice) === 0) return false;
 
           // Check if same class
           const sameClass =
