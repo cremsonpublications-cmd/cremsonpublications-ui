@@ -453,6 +453,23 @@ const SpecimenPage = () => {
           throw new Error("Failed to save specimen request");
         }
 
+        // Step 4: Send email notification
+        try {
+          const emailResponse = await supabase.functions.invoke('specimen-form-email', {
+            body: specimenData
+          });
+
+          if (emailResponse.error) {
+            console.error("Error sending email:", emailResponse.error);
+            // Don't throw error here as the main form submission was successful
+          } else {
+            console.log("Email sent successfully:", emailResponse.data);
+          }
+        } catch (emailError) {
+          console.error("Email service error:", emailError);
+          // Don't throw error here as the main form submission was successful
+        }
+
         // Success
         toast.success("Specimen request submitted successfully! We'll contact you soon via WhatsApp.");
         console.log("Specimen request saved:", data);
@@ -823,15 +840,43 @@ const SpecimenPage = () => {
               disabled={!isFormValid() || loading}
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-semibold py-4 px-6 rounded-lg hover:from-blue-700 hover:to-indigo-800 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed mt-6"
             >
-              {loading ? "Submitting..." : "Submit Request"}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-              </svg>
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Submit Request
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                  </svg>
+                </>
+              )}
             </button>
           </form>
         </div>
