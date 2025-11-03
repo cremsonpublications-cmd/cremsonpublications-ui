@@ -18,15 +18,49 @@ const SignUpPage = () => {
   const [loading, setLoading] = useState(false);
   const [showOTPVerification, setShowOTPVerification] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [passwordErrors, setPasswordErrors] = useState([]);
 
   const { signUp, checkUserExists } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    // Real-time password validation
+    if (name === "password") {
+      const errors = validatePassword(value);
+      setPasswordErrors(errors);
+    }
+  };
+
+  const validatePassword = (password) => {
+    const errors = [];
+
+    if (password.length < 8) {
+      errors.push("at least 8 characters");
+    }
+
+    if (!/(?=.*[A-Z])/.test(password)) {
+      errors.push("one uppercase letter");
+    }
+
+    if (!/(?=.*[a-z])/.test(password)) {
+      errors.push("one lowercase letter");
+    }
+
+    if (!/(?=.*\d)/.test(password)) {
+      errors.push("one number");
+    }
+
+    if (!/(?=.*[!@#$%^&*()_+\-=[\]{}|;':",.<>?])/.test(password)) {
+      errors.push("one special character");
+    }
+
+    return errors;
   };
 
   const handleSubmit = async (e) => {
@@ -41,8 +75,9 @@ const SignUpPage = () => {
     }
 
     // Validate password strength
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+    const passwordErrors = validatePassword(formData.password);
+    if (passwordErrors.length > 0) {
+      toast.error(`Password must contain: ${passwordErrors.join(", ")}`);
       setLoading(false);
       return;
     }
@@ -137,7 +172,7 @@ const SignUpPage = () => {
                     required
                     value={formData.firstName}
                     onChange={handleChange}
-                    className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                     placeholder="First name"
                   />
                 </div>
@@ -155,7 +190,7 @@ const SignUpPage = () => {
                     required
                     value={formData.lastName}
                     onChange={handleChange}
-                    className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                     placeholder="Last name"
                   />
                 </div>
@@ -175,7 +210,7 @@ const SignUpPage = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-2 sm:px-3 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                   placeholder="Enter your email"
                 />
               </div>
@@ -195,7 +230,7 @@ const SignUpPage = () => {
                     required
                     value={formData.password}
                     onChange={handleChange}
-                    className="w-full px-2 sm:px-3 py-2 sm:py-2.5 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-2 sm:px-3 py-2 sm:py-2.5 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                     placeholder="Enter your password"
                   />
                   <button
@@ -210,6 +245,18 @@ const SignUpPage = () => {
                     )}
                   </button>
                 </div>
+                {passwordErrors.length > 0 && (
+                  <div className="mt-1">
+                    <ul className="text-xs text-red-600 space-y-1">
+                      {passwordErrors.map((error, index) => (
+                        <li key={index} className="flex items-center">
+                          <span className="mr-1">•</span>
+                          {error}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -227,7 +274,7 @@ const SignUpPage = () => {
                     required
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="w-full px-2 sm:px-3 py-2 sm:py-2.5 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-2 sm:px-3 py-2 sm:py-2.5 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
                     placeholder="Confirm your password"
                   />
                   <button

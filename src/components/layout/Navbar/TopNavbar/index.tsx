@@ -35,12 +35,19 @@ const data: NavMenu = [
   {
     id: 3,
     type: "MenuItem",
+    label: "Specimen",
+    url: "/specimen",
+    children: [],
+  },
+  {
+    id: 4,
+    type: "MenuItem",
     label: "About Us",
     url: "/about-us",
     children: [],
   },
   {
-    id: 4,
+    id: 5,
     type: "MenuItem",
     label: "Contact Us",
     url: "/contact-us",

@@ -36,6 +36,7 @@ const MyOrdersPage = React.lazy(() => import("./pages/MyOrdersPage"));
 const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const ContactPage = React.lazy(() => import("./pages/ContactPage"));
+const SpecimenPage = React.lazy(() => import("./pages/SpecimenPage"));
 const SignInPage = React.lazy(() => import("./pages/SignInPage"));
 const SignUpPage = React.lazy(() => import("./pages/SignUpPage"));
 const ForgotPasswordPage = React.lazy(() => import("./pages/ForgotPasswordPage"));
@@ -125,6 +126,7 @@ function App() {
                             <Route path="/terms-conditions" element={<TermsConditions />} />
                             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                             <Route path="/contact-us" element={<ContactPage />} />
+                            <Route path="/specimen" element={<SpecimenPage />} />
                             <Route path="/signin" element={<SignInPage />} />
                             <Route path="/signup" element={<SignUpPage />} />
                             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
