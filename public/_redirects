@@ -1,1 +1,4 @@
+# Handle SPA routing and iOS Safari compatibility
+/payment-callback/* /payment-callback/index.html 200
+/payment-status/* /payment-status/index.html 200
 /*    /index.html   200

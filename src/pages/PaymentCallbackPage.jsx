@@ -30,7 +30,11 @@ const PaymentCallbackPage = () => {
         const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
         if (currentOrderId) {
           console.log("No payment details in URL, redirecting to status page for polling");
-          navigate("/payment-status?source=callback&status=processing");
+          if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+            window.location.href = "/payment-status?source=callback&status=processing";
+          } else {
+            navigate("/payment-status?source=callback&status=processing");
+          }
           return;
         } else {
           console.error("No payment details found");
@@ -117,8 +121,14 @@ const PaymentCallbackPage = () => {
         // Don't fail the order creation for email issues
       }
 
-      // Navigate to success page
-      navigate("/payment-status?status=success&source=callback");
+      // iOS-specific redirect handling
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        // Force a hard redirect for iOS Safari
+        window.location.href = "/payment-status?status=success&source=callback";
+      } else {
+        // Navigate to success page
+        navigate("/payment-status?status=success&source=callback");
+      }
 
     } catch (error) {
       console.error("Error processing payment callback:", error);

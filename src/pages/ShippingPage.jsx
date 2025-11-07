@@ -616,15 +616,34 @@ const ShippingPage = () => {
             setShowPaymentModal(false);
             setIsProcessingPayment(false);
           },
+          // iOS Safari compatibility
+          escape: false,
+          animation: false,
+          backdrop_close: false,
         },
+        // iOS Safari specific configurations
+        theme: {
+          color: '#3B82F6', // Your brand color
+          backdrop_color: 'rgba(0,0,0,0.6)'
+        },
+        // Force redirect method for iOS
+        redirect: true,
       };
 
       // Show processing modal immediately when Razorpay opens
       setPaymentModalStatus("processing");
       setShowPaymentModal(true);
 
-      // Open payment
+      // Open payment with iOS-specific handling
       const razorpay = new window.Razorpay(options);
+
+      // For iOS Safari, add additional redirect handling
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        console.log('iOS device detected, using redirect flow');
+        // Store current page for return navigation
+        localStorage.setItem('prePaymentLocation', window.location.pathname);
+      }
+
       razorpay.open();
     } catch (error) {
       console.error("Payment initialization failed:", error);
