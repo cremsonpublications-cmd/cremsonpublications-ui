@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     host: true,
   },
-  base: "https://www.cremsonpublications.com/",
+  base: "/",
   build: {
     rollupOptions: {
       output: {

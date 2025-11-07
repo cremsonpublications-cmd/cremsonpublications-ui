@@ -1,126 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { useUser } from "../context/AuthContext";
-import { supabase } from "../lib/supabase";
 import { Loader2 } from "lucide-react";
 
 const PaymentCallbackPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { clearCart, clearCheckoutData } = useCart();
-  const { user } = useUser();
 
-  const generateOrderId = () => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    return `BOOK${timestamp}${random}`;
-  };
 
-  const createOrderInDatabase = async (paymentDetails, pendingOrderData) => {
-    try {
-      const orderId = generateOrderId();
-      const currentDate = new Date().toISOString().split("T")[0];
-
-      const orderInfo = pendingOrderData || JSON.parse(localStorage.getItem('pendingOrder') || '{}');
-
-      if (!orderInfo.customerInfo || !orderInfo.cartItems) {
-        throw new Error('Missing order information');
-      }
-
-      const deliveryAddress = orderInfo.shippingDetails
-        ? {
-            street: orderInfo.shippingDetails.streetAddress,
-            apartment: orderInfo.shippingDetails.apartment,
-            city: orderInfo.shippingDetails.city,
-            state: orderInfo.shippingDetails.state,
-            pincode: orderInfo.shippingDetails.pincode,
-            country: orderInfo.shippingDetails.country,
-          }
-        : {
-            street: orderInfo.customerInfo.address.street,
-            apartment: orderInfo.customerInfo.address.apartment,
-            city: orderInfo.customerInfo.address.city,
-            state: orderInfo.customerInfo.address.state,
-            pincode: orderInfo.customerInfo.address.pincode,
-            country: orderInfo.customerInfo.address.country,
-          };
-
-      const orderData = {
-        order_id: orderId,
-        user_info: {
-          userId: user?.id || "guest",
-          name: `${orderInfo.customerInfo.firstName} ${orderInfo.customerInfo.lastName}`,
-          email: orderInfo.customerInfo.email,
-          phone: orderInfo.customerInfo.phone,
-          address: deliveryAddress,
-        },
-        ...(orderInfo.shippingDetails && {
-          billing_info: {
-            name: `${orderInfo.customerInfo.firstName} ${orderInfo.customerInfo.lastName}`,
-            email: orderInfo.customerInfo.email,
-            phone: orderInfo.customerInfo.phone,
-            address: {
-              street: orderInfo.customerInfo.address.street,
-              apartment: orderInfo.customerInfo.address.apartment,
-              city: orderInfo.customerInfo.address.city,
-              state: orderInfo.customerInfo.address.state,
-              pincode: orderInfo.customerInfo.address.pincode,
-              country: orderInfo.customerInfo.address.country,
-            },
-          },
-        }),
-        items: orderInfo.cartItems.map((item) => ({
-          productId: item.id,
-          name: item.name,
-          author: item.author || "Unknown Author",
-          quantity: item.quantity,
-          currentPrice: item.price,
-          totalPrice: item.price * item.quantity,
-        })),
-        order_summary: {
-          subTotal: orderInfo.orderSummary.subtotal,
-          couponDiscount: orderInfo.orderSummary.couponDiscount,
-          discountTotal: orderInfo.orderSummary.couponDiscount,
-          deliveryCharge: orderInfo.orderSummary.deliveryCharge,
-          grandTotal: orderInfo.orderSummary.total,
-        },
-        payment: {
-          method: paymentDetails.payment_method || "Razorpay",
-          status: "Paid",
-          transactionId: paymentDetails.razorpay_payment_id,
-          razorpay_order_id: paymentDetails.razorpay_order_id || null,
-          razorpay_signature: paymentDetails.razorpay_signature || null,
-          amount: orderInfo.orderSummary.total,
-          payment_confirmed: true,
-        },
-        delivery: {
-          status: "Order Placed",
-          notes: orderInfo.shippingNotes || "",
-        },
-        order_status: "Confirmed",
-        order_date: currentDate,
-      };
-
-      const { error } = await supabase
-        .from("orders")
-        .insert([orderData])
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Error creating order:", error);
-        throw new Error("Failed to save order to database");
-      }
-
-      return { orderId, orderData };
-    } catch (error) {
-      console.error("Error in createOrderInDatabase:", error);
-      throw error;
-    }
-  };
-
-  const processPaymentCallback = async () => {
+  const processPaymentCallback = useCallback(async () => {
     try {
       console.log("Processing payment callback...");
 
@@ -168,8 +57,29 @@ const PaymentCallbackPage = () => {
 
       console.log("Creating order with payment details:", paymentDetails);
 
-      // Create order in database
-      const { orderData } = await createOrderInDatabase(paymentDetails, JSON.parse(pendingOrder));
+      // Use the improved backend validation endpoint
+      const validationResponse = await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/validate-payment-and-create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          razorpay_payment_id: razorpayPaymentId,
+          razorpay_order_id: razorpayOrderId,
+          razorpay_signature: razorpaySignature,
+          orderData: JSON.parse(pendingOrder)
+        })
+      });
+
+      const validationResult = await validationResponse.json();
+
+      if (!validationResult.success) {
+        throw new Error(validationResult.message || 'Payment validation failed');
+      }
+
+      const orderData = validationResult.order_data;
 
       // Store success data
       localStorage.setItem('orderSuccess', JSON.stringify({
@@ -222,6 +132,19 @@ const PaymentCallbackPage = () => {
         orderId: searchParams.get("razorpay_order_id")
       }));
 
+      // Store failed order creation data for recovery
+      const paymentId = searchParams.get("razorpay_payment_id");
+      if (paymentId) {
+        localStorage.setItem('failedOrderCreation', JSON.stringify({
+          paymentDetails: {
+            razorpay_payment_id: paymentId,
+            razorpay_order_id: searchParams.get("razorpay_order_id"),
+            razorpay_signature: searchParams.get("razorpay_signature")
+          },
+          timestamp: Date.now()
+        }));
+      }
+
       // Try to recover by redirecting to status page for manual processing
       const pendingOrder = localStorage.getItem('pendingOrder');
       if (pendingOrder) {
@@ -231,11 +154,11 @@ const PaymentCallbackPage = () => {
         navigate("/payment-status?status=error&message=processing_failed&source=callback");
       }
     }
-  };
+  }, [navigate, searchParams, clearCart, clearCheckoutData]);
 
   useEffect(() => {
     processPaymentCallback();
-  }, []);
+  }, [processPaymentCallback]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">

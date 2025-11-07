@@ -160,31 +160,110 @@ const PaymentStatusPage = () => {
         localStorage.removeItem('orderSuccess');
         localStorage.removeItem('pendingOrder');
         localStorage.removeItem('paymentInProgress');
+        localStorage.removeItem('currentRazorpayOrderId');
+        localStorage.removeItem('paymentStartTime');
 
         toast.success("Payment successful! Order placed successfully! 🎉");
         return;
       }
 
+      // First, try to check payment status using our new endpoint
+      const pendingOrder = localStorage.getItem('pendingOrder');
+      if (razorpayPaymentId || razorpayOrderId) {
+        console.log("Checking payment status with backend...");
+
+        try {
+          const statusResponse = await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/check-payment-status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            },
+            body: JSON.stringify({
+              razorpay_payment_id: razorpayPaymentId,
+              razorpay_order_id: razorpayOrderId,
+              orderData: pendingOrder ? JSON.parse(pendingOrder) : null
+            })
+          });
+
+          const statusResult = await statusResponse.json();
+          console.log("Payment status check result:", statusResult);
+
+          if (statusResult.success) {
+            if (statusResult.status === 'order_exists' || statusResult.status === 'order_created') {
+              setOrderData(statusResult.order_data);
+              setStatus("success");
+
+              // Clean up
+              localStorage.removeItem('pendingOrder');
+              localStorage.removeItem('paymentInProgress');
+              localStorage.removeItem('currentRazorpayOrderId');
+              localStorage.removeItem('paymentStartTime');
+
+              // Clear cart
+              clearCart();
+              clearCheckoutData();
+
+              toast.success("Payment successful! Order placed successfully! 🎉");
+              return;
+            }
+          } else if (statusResult.status === 'payment_failed') {
+            setStatus("failed");
+            return;
+          }
+        } catch (statusError) {
+          console.warn("Payment status check failed, continuing with fallback:", statusError);
+          // Continue with fallback logic
+        }
+      }
+
       // Check for failed order creation but successful payment
       const failedOrderData = localStorage.getItem('failedOrderCreation');
       if (failedOrderData && statusParam === 'processing') {
-        console.log("Found failed order creation data, attempting to recreate order");
+        console.log("Found failed order creation data, attempting recovery...");
         const failedData = JSON.parse(failedOrderData);
 
-        // Try to create order with the payment details
-        const pendingOrder = localStorage.getItem('pendingOrder');
-        if (pendingOrder) {
-          const { orderData } = await createOrderInDatabase(failedData.paymentDetails, JSON.parse(pendingOrder));
-          setOrderData(orderData);
-          setStatus("success");
+        // Use the payment status check endpoint for recovery
+        const pendingOrderForRecovery = localStorage.getItem('pendingOrder');
+        if (pendingOrderForRecovery) {
+          try {
+            const recoveryResponse = await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/check-payment-status', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+              },
+              body: JSON.stringify({
+                razorpay_payment_id: failedData.paymentDetails.razorpay_payment_id,
+                razorpay_order_id: failedData.paymentDetails.razorpay_order_id,
+                orderData: JSON.parse(pendingOrderForRecovery)
+              })
+            });
 
-          // Clean up
-          localStorage.removeItem('failedOrderCreation');
-          localStorage.removeItem('pendingOrder');
-          localStorage.removeItem('paymentInProgress');
+            const recoveryResult = await recoveryResponse.json();
+            if (recoveryResult.success && (recoveryResult.status === 'order_exists' || recoveryResult.status === 'order_created')) {
+              setOrderData(recoveryResult.order_data);
+              setStatus("success");
 
-          toast.success("Payment successful! Order placed successfully! 🎉");
-          return;
+              // Clean up
+              localStorage.removeItem('failedOrderCreation');
+              localStorage.removeItem('pendingOrder');
+              localStorage.removeItem('paymentInProgress');
+              localStorage.removeItem('currentRazorpayOrderId');
+              localStorage.removeItem('paymentStartTime');
+
+              clearCart();
+              clearCheckoutData();
+
+              toast.success("Payment successful! Order recovered successfully! 🎉");
+              return;
+            }
+          } catch (recoveryError) {
+            console.error("Recovery attempt failed:", recoveryError);
+            // Continue with fallback
+          }
         }
       }
 
@@ -201,14 +280,14 @@ const PaymentStatusPage = () => {
       }
 
       // Get pending order data
-      const pendingOrder = localStorage.getItem('pendingOrder');
-      if (!pendingOrder) {
+      const pendingOrderFromStorage = localStorage.getItem('pendingOrder');
+      if (!pendingOrderFromStorage) {
         console.error('No pending order found');
         setStatus("error");
         return;
       }
 
-      const pendingOrderData = JSON.parse(pendingOrder);
+      const pendingOrderData = JSON.parse(pendingOrderFromStorage);
 
       // Create payment details object
       const paymentDetails = {

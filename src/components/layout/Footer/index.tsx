@@ -3,7 +3,7 @@ import { integralCF } from "@/styles/fonts";
 import React, { useState } from "react";
 import { PaymentBadge, SocialNetworks } from "./footer.types";
 // Replaced react-icons with SVG components to reduce bundle size
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Search, Heart, User, ShoppingCart, Instagram, Youtube, CreditCard } from "lucide-react";
 import LinksSection from "./LinksSection";
 import NewsLetterSection from "./NewsLetterSection";
@@ -33,14 +33,19 @@ const Footer = () => {
   const { getWishlistCount } = useWishlist();
   const { user, isSignedIn } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showSearchModal, setShowSearchModal] = useState(false);
+
+  // Define routes where map should be hidden
+  const hideMapRoutes = ['/cart', '/checkout', '/payment', '/payment-status', '/payment-callback'];
+  const shouldHideMap = hideMapRoutes.some(route => location.pathname.startsWith(route));
 
   return (
     <footer className="mt-10">
       {/* Contact Section Above Footer */}
       <section className="py-8 md:py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 xl:px-0">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-12 items-start">
+          <div className={`grid gap-6 md:gap-12 items-start ${shouldHideMap ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'}`}>
             {/* Company Information */}
             <div className="bg-white rounded-2xl shadow-lg p-4 md:p-8">
               <div className="mb-6 md:mb-8">
@@ -139,19 +144,21 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Map Container */}
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-              <div className="h-[300px] md:h-[500px] relative">
-                <iframe
-                  title="Cremson Publications Location"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3501.674920656613!2d77.243199!3d28.6489313!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390cfdb930b05529%3A0xc91931c5625f55a3!2sCremson%20Publications%204578%2F15%2C%20Ansari%20Rd%20opp.%20Happy%20School%2C%20Daryaganj%20New%20Delhi%2C%20Delhi%2C%20110002!5e0!3m2!1sen!2sin!4v1750450282497!5m2!1sen!2sin"
-                  className="w-full h-full rounded-lg"
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
+            {/* Map Container - Hidden on cart/payment pages */}
+            {!shouldHideMap && (
+              <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div className="h-[300px] md:h-[500px] relative">
+                  <iframe
+                    title="Cremson Publications Location"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3501.674920656613!2d77.243199!3d28.6489313!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390cfdb930b05529%3A0xc91931c5625f55a3!2sCremson%20Publications%204578%2F15%2C%20Ansari%20Rd%20opp.%20Happy%20School%2C%20Daryaganj%20New%20Delhi%2C%20Delhi%2C%20110002!5e0!3m2!1sen!2sin!4v1750450282497!5m2!1sen!2sin"
+                    className="w-full h-full rounded-lg"
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </section>

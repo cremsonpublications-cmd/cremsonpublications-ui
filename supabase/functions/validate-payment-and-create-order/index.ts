@@ -91,9 +91,9 @@ serve(async (req) => {
       );
     }
 
-    // Get Razorpay credentials
-    const razorpayKeyId = 'rzp_live_RZNaICiFgLKhW2';
-    const razorpayKeySecret = 'opVmGuDHyNwjLmIYkguQjmL6';
+    // Get Razorpay credentials from environment
+    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID') || 'rzp_live_RZNaICiFgLKhW2';
+    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET') || 'opVmGuDHyNwjLmIYkguQjmL6';
 
     if (!razorpayKeyId || !razorpayKeySecret) {
       return new Response(
@@ -203,21 +203,26 @@ serve(async (req) => {
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZheWlzdXR3ZWh2Ympwa2h6aGNjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDAwODY3NCwiZXhwIjoyMDc1NTg0Njc0fQ.l6nfm7EBXi0XaIwn7hzQIZoo6F5mT9P1ec7O0FjCljs";
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 5. Check if order already exists
-    const { data: existingOrder } = await supabase
+    // 5. Check if order already exists (idempotency check)
+    const { data: existingOrders } = await supabase
       .from("orders")
-      .select("order_id")
-      .eq("payment->razorpay_order_id", razorpay_order_id)
-      .single();
+      .select("order_id, order_status, payment")
+      .or(`payment->>razorpay_order_id.eq.${razorpay_order_id},payment->>razorpay_payment_id.eq.${razorpay_payment_id}`);
 
-    if (existingOrder) {
-      console.log("Order already exists for payment:", razorpay_order_id);
+    if (existingOrders && existingOrders.length > 0) {
+      const existingOrder = existingOrders[0];
+      console.log("Order already exists for payment:", {
+        razorpay_order_id,
+        razorpay_payment_id,
+        existing_order_id: existingOrder.order_id
+      });
       return new Response(
         JSON.stringify({
           success: true,
           status: "success",
           order_id: existingOrder.order_id,
-          message: "Order already processed",
+          order_data: existingOrder,
+          message: "Order already processed - idempotent response",
         }),
         {
           status: 200,
@@ -250,19 +255,65 @@ serve(async (req) => {
       created_at: new Date().toISOString(),
     };
 
-    // 8. Create order in database
+    // 8. Create order in database with retry logic
     console.log("Creating order in database...", finalOrderId);
 
-    const { data: createdOrder, error: orderError } = await supabase
-      .from("orders")
-      .insert([finalOrderData])
-      .select()
-      .single();
+    let createdOrder;
+    let orderError;
+    let retryAttempts = 0;
+    const maxRetries = 3;
+
+    while (retryAttempts < maxRetries) {
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .insert([finalOrderData])
+          .select()
+          .single();
+
+        createdOrder = data;
+        orderError = error;
+
+        if (!error) {
+          break; // Success, exit retry loop
+        }
+
+        // Check if it's a duplicate key error (order already exists)
+        if (error.code === '23505' || error.message?.includes('duplicate')) {
+          console.log("Duplicate order detected, checking existing order");
+          const { data: existingOrder } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("order_id", finalOrderId)
+            .single();
+
+          if (existingOrder) {
+            createdOrder = existingOrder;
+            orderError = null;
+            break;
+          }
+        }
+
+        retryAttempts++;
+        if (retryAttempts < maxRetries) {
+          console.log(`Retry attempt ${retryAttempts} for order creation`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryAttempts));
+        }
+      } catch (err) {
+        console.error(`Order creation attempt ${retryAttempts + 1} failed:`, err);
+        retryAttempts++;
+        if (retryAttempts < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryAttempts));
+        } else {
+          orderError = err;
+        }
+      }
+    }
 
     if (orderError) {
-      console.error("Error creating order:", orderError);
+      console.error("Error creating order after retries:", orderError);
       throw new Error(
-        `Failed to save order to database: ${orderError.message}`
+        `Failed to save order to database after ${maxRetries} attempts: ${orderError.message}`
       );
     }
 
