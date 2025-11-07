@@ -476,174 +476,22 @@ const ShippingPage = () => {
         order_id: razorpayOrder.id,
         name: "Cremson Publications",
         description: `Books Order`,
-        callback_url: `${window.location.origin}/checkout/shipping`,
-        handler: async (response) => {
-          console.log("Payment successful, validating...", response);
-
-          // Show processing modal
-          setPaymentModalStatus("processing");
-          setShowPaymentModal(true);
-
-          try {
-            // Prepare order data for validation
-            const orderData = {
-              order_id: `BOOK${Date.now()}${Math.floor(Math.random() * 1000)}`,
-              user_info: {
-                userId: user?.id || "guest",
-                name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
-                email: displayCustomerInfo.email,
-                phone: displayCustomerInfo.phone,
-                address: shippingDetails
-                  ? {
-                      street: shippingDetails.streetAddress,
-                      apartment: shippingDetails.apartment,
-                      city: shippingDetails.city,
-                      state: shippingDetails.state,
-                      pincode: shippingDetails.pincode,
-                      country: shippingDetails.country,
-                    }
-                  : {
-                      street: displayCustomerInfo.address.street,
-                      apartment: displayCustomerInfo.address.apartment,
-                      city: displayCustomerInfo.address.city,
-                      state: displayCustomerInfo.address.state,
-                      pincode: displayCustomerInfo.address.pincode,
-                      country: displayCustomerInfo.address.country,
-                    },
-              },
-              items: cartItems.map((item) => ({
-                productId: item.id,
-                name: item.name,
-                author: item.author || "Unknown Author",
-                quantity: item.quantity,
-                currentPrice: item.price,
-                totalPrice: item.price * item.quantity,
-              })),
-              order_summary: {
-                subTotal: subtotal,
-                couponDiscount: couponDiscount,
-                deliveryCharge: deliveryCharge,
-                grandTotal: total,
-              },
-              payment: {
-                method: "Razorpay",
-                amount: total,
-              },
-              order_date: new Date().toISOString().split("T")[0],
-            };
-
-            // Call validation edge function
-            const validationResponse = await fetch(
-              "https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/validate-payment-and-create-order",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${
-                    import.meta.env.VITE_SUPABASE_ANON_KEY
-                  }`,
-                  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-                },
-                body: JSON.stringify({
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                  orderData,
-                }),
-              }
-            );
-
-            const result = await validationResponse.json();
-
-            if (result.success) {
-              // Payment validated and order created successfully
-              setPaymentModalStatus("success");
-              setOrderIdResult(result.order_id);
-
-              // Clear cart and checkout data
-              clearCart();
-              clearCheckoutData();
-
-              // Clear temporary payment data
-              localStorage.removeItem("pendingOrder");
-              localStorage.removeItem("paymentStartTime");
-              localStorage.removeItem("currentRazorpayOrderId");
-
-              console.log("Order created successfully:", result.order_id);
-            } else {
-              // Payment validation failed
-              setPaymentModalStatus("failed");
-              setPaymentErrorMessage(
-                result.message || "Payment validation failed"
-              );
-              console.error("Payment validation failed:", result.message);
-            }
-          } catch (error) {
-            console.error("Error validating payment:", error);
-            setPaymentModalStatus("error");
-            setPaymentErrorMessage(
-              "An unexpected error occurred while processing your payment."
-            );
-          }
-        },
-        failure: (response) => {
-          console.log("Payment failed:", response);
-
-          // Show failure modal
-          setPaymentModalStatus("failed");
-          setPaymentErrorMessage(
-            "Payment was not completed. Please try again."
-          );
-          setShowPaymentModal(true);
-
-          // Clear temporary data
-          localStorage.removeItem("pendingOrder");
-          localStorage.removeItem("paymentStartTime");
-          localStorage.removeItem("currentRazorpayOrderId");
-
-          setIsProcessingPayment(false);
-          navigate("/payment-status?status=failed&source=modal");
-        },
+        callback_url: `${window.location.origin}/payment-callback`,
+        redirect: true,
         prefill: {
           name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
           email: displayCustomerInfo.email,
           contact: displayCustomerInfo.phone,
         },
-        modal: {
-          ondismiss: () => {
-            console.log("Payment modal dismissed");
-            // Hide processing modal and reset state if user closes without payment
-            setShowPaymentModal(false);
-            setIsProcessingPayment(false);
-          },
-          // iOS Safari compatibility
-          escape: false,
-          animation: false,
-          backdrop_close: false,
-        },
-        // iOS Safari specific configurations
         theme: {
-          color: '#3B82F6', // Your brand color
-          backdrop_color: 'rgba(0,0,0,0.6)'
+          color: '#3B82F6',
         },
-        // Force redirect method for iOS
-        redirect: true,
       };
 
-      // Show processing modal immediately when Razorpay opens
-      setPaymentModalStatus("processing");
-      setShowPaymentModal(true);
+      // In redirect mode, don't show processing modal as payment happens on Razorpay's server
+      console.log('Opening Razorpay in redirect mode for bulletproof iOS compatibility');
 
-      // Open payment with iOS-specific handling
       const razorpay = new window.Razorpay(options);
-
-      // For iOS Safari, add additional redirect handling
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        console.log('iOS device detected, using redirect flow');
-        // Store current page for return navigation
-        localStorage.setItem('prePaymentLocation', window.location.pathname);
-      }
-
       razorpay.open();
     } catch (error) {
       console.error("Payment initialization failed:", error);
