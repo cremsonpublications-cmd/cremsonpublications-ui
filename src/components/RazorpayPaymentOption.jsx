@@ -100,11 +100,8 @@ const RazorpayPaymentOption = () => {
       };
 
       // Store order data for verification
-      localStorage.setItem('pending_payment_order', JSON.stringify({
-        razorpay_order_id: razorpayOrder.id,
-        order_data: fullOrderData,
-        timestamp: Date.now()
-      }));
+      localStorage.setItem('pendingOrder', JSON.stringify(fullOrderData));
+      localStorage.setItem('currentRazorpayOrderId', razorpayOrder.id);
 
       // Start payment
       await startPayment(razorpayOrder, fullOrderData);
@@ -146,7 +143,12 @@ const RazorpayPaymentOption = () => {
           // Navigate back or show message
           navigate(-1);
         }
-      }
+      },
+      // For external app payments (Paytm, PhonePe, etc.)
+      callback_url: window.location.origin + '/payment-callback',
+      redirect: true,
+      timeout: 300, // 5 minutes timeout
+      remember_customer: true
     };
 
     const rzp = new window.Razorpay(options);
@@ -188,7 +190,8 @@ const RazorpayPaymentOption = () => {
         setLoading(false);
 
         // Clear stored data
-        localStorage.removeItem('pending_payment_order');
+        localStorage.removeItem('pendingOrder');
+        localStorage.removeItem('currentRazorpayOrderId');
 
         // Navigate to success page
         navigate('/payment-success', { state: verifyResult });
