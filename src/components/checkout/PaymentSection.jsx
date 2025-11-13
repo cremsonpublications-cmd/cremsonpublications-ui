@@ -4,7 +4,7 @@ import { useCart } from '../../context/CartContext';
 import { CreditCard, Shield, Truck } from 'lucide-react';
 
 const PaymentSection = ({ orderSummary }) => {
-  const { cartItems } = useCart();
+  const { cartItems, customerInfo, appliedCoupon } = useCart();
   const navigate = useNavigate();
 
   // Prepare order data for payment - transform to match PaymentOption format
@@ -23,6 +23,18 @@ const PaymentSection = ({ orderSummary }) => {
           issuer_name: "Product Purchase",
           issuer_logo: ""
         }
+      },
+      // Include complete checkout data
+      checkoutData: {
+        cartItems,
+        customerInfo,
+        orderSummary: {
+          subtotal: orderSummary.subtotal,
+          couponDiscount: orderSummary.couponDiscount,
+          deliveryCharge: orderSummary.deliveryCharge,
+          total: orderSummary.total
+        },
+        appliedCoupon
       }
     };
   };

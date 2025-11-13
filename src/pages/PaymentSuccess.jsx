@@ -11,10 +11,18 @@ const PaymentSuccess = () => {
     // Redirect if no order data
     if (!order) {
       navigate('/', { replace: true });
+      return;
     }
 
     // Clear location state to prevent re-processing
     window.history.replaceState({}, document.title);
+
+    // Automatically redirect to My Orders page after 3 seconds
+    const timer = setTimeout(() => {
+      navigate('/my-orders', { replace: true });
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, [order, navigate]);
 
   if (!order) {
@@ -43,6 +51,9 @@ const PaymentSuccess = () => {
           <p className="text-lg text-gray-600">
             Thank you for your purchase. Your order has been confirmed.
           </p>
+          <p className="text-sm text-gray-500 mt-2">
+            You will be automatically redirected to your orders page in a few seconds...
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -58,26 +69,26 @@ const PaymentSuccess = () => {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Order ID:</span>
-                  <span className="font-medium text-gray-900">{order.id}</span>
+                  <span className="font-medium text-gray-900">{order.order_id}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Payment ID:</span>
-                  <span className="font-medium text-gray-900">{order.payment_id}</span>
+                  <span className="font-medium text-gray-900">{order.payment?.transactionId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Order Date:</span>
                   <span className="font-medium text-gray-900">
-                    {formatDate(order.created_at)}
+                    {formatDate(order.order_date)}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Amount:</span>
-                  <span className="font-medium text-gray-900">₹{order.amount?.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">₹{order.payment?.amount?.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {order.status}
+                    {order.order_status}
                   </span>
                 </div>
               </div>
@@ -87,7 +98,7 @@ const PaymentSuccess = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Items</h3>
               <div className="space-y-4">
-                {order.order_items?.map((item, index) => (
+                {order.items?.map((item, index) => (
                   <div key={index} className="flex items-center space-x-4 p-4 border border-gray-100 rounded-lg">
                     <img
                       src={item.main_image}
@@ -124,21 +135,21 @@ const PaymentSuccess = () => {
               </div>
               <div className="text-gray-700">
                 <p className="font-medium">
-                  {order.customer_info?.firstName} {order.customer_info?.lastName}
+                  {order.user_info?.firstName} {order.user_info?.lastName}
                 </p>
-                <p>{order.shipping_address?.street}</p>
-                {order.shipping_address?.apartment && (
-                  <p>{order.shipping_address.apartment}</p>
+                <p>{order.delivery?.shipping_address?.street}</p>
+                {order.delivery?.shipping_address?.apartment && (
+                  <p>{order.delivery.shipping_address.apartment}</p>
                 )}
                 <p>
-                  {order.shipping_address?.city}, {order.shipping_address?.state} {order.shipping_address?.pincode}
+                  {order.delivery?.shipping_address?.city}, {order.delivery?.shipping_address?.state} {order.delivery?.shipping_address?.pincode}
                 </p>
-                <p>{order.shipping_address?.country}</p>
+                <p>{order.delivery?.shipping_address?.country}</p>
                 <p className="mt-2">
-                  <span className="font-medium">Phone:</span> {order.customer_info?.phone}
+                  <span className="font-medium">Phone:</span> {order.user_info?.phone}
                 </p>
                 <p>
-                  <span className="font-medium">Email:</span> {order.customer_info?.email}
+                  <span className="font-medium">Email:</span> {order.user_info?.email}
                 </p>
               </div>
             </div>

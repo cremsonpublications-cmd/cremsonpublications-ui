@@ -190,12 +190,65 @@ serve(async (req) => {
       });
     }
 
+    // Validate required order data
+    if (!orderData.customerInfo || Object.keys(orderData.customerInfo).length === 0) {
+      console.error('Customer info is missing or empty');
+      return new Response(JSON.stringify({
+        error: 'Customer information is required',
+        details: 'Please ensure billing details are filled'
+      }), {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
+    if (!orderData.cartItems || orderData.cartItems.length === 0) {
+      console.error('Cart items are missing or empty');
+      return new Response(JSON.stringify({
+        error: 'Cart items are required',
+        details: 'Please ensure items are added to cart'
+      }), {
+        status: 400,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
+    // Transform customer info to match admin panel expectations
+    const transformedUserInfo = {
+      ...orderData.customerInfo,
+      name: `${orderData.customerInfo.firstName || ''} ${orderData.customerInfo.lastName || ''}`.trim() || orderData.customerInfo.full_name || 'Customer',
+      userId: orderData.customerInfo.userId || null
+    };
+
+    // Transform order summary to match admin panel expectations
+    const transformedOrderSummary = {
+      ...orderData.orderSummary,
+      grandTotal: orderData.orderSummary.total,
+      subTotal: orderData.orderSummary.subtotal || orderData.orderSummary.total,
+      couponDiscount: orderData.orderSummary.couponDiscount || 0,
+      deliveryCharge: orderData.orderSummary.deliveryCharge || 0
+    };
+
+    // Transform cart items to match admin panel expectations
+    const transformedItems = orderData.cartItems.map(item => ({
+      ...item,
+      productId: item.id, // Map id to productId
+      currentPrice: item.price || item.finalPrice || item.mrp || 0,
+      totalPrice: (item.price || item.finalPrice || item.mrp || 0) * (item.quantity || 1)
+    }));
+
     // Save order to database
     const orderRecord = {
       order_id: `BOOK${Date.now()}${Math.floor(Math.random() * 1000000)}`,
-      user_info: orderData.customerInfo,
-      items: orderData.cartItems,
-      order_summary: orderData.orderSummary,
+      user_info: transformedUserInfo,
+      items: transformedItems,
+      order_summary: transformedOrderSummary,
       payment: {
         amount: paymentDetails.amount / 100, // Convert back to rupees
         method: 'Razorpay',
@@ -205,6 +258,7 @@ serve(async (req) => {
         razorpay_signature: razorpay_signature
       },
       delivery: {
+        status: 'Order Placed',
         shipping_address: orderData.shippingAddress
       },
       order_status: 'Confirmed',

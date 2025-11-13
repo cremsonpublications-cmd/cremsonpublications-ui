@@ -23,7 +23,9 @@ const PaymentOption = () => {
   const [profileData, setProfileData] = useState({});
   const { isLoading, loadingMessage, startLoading, stopLoading } = useLoader();
 
+  // Extract data from location state
   const buyPlaceOrderApiData = location.state?.buyPlaceOrderApiData;
+  const checkoutData = location.state?.checkoutData;
 
   const loadRazorpayScript = () =>
     new Promise((resolve) => {
@@ -113,19 +115,19 @@ const PaymentOption = () => {
     try {
       startLoading("Verifying payment...");
 
-      // Prepare the orderData in the format expected by test-verify-payment
+      // Prepare the orderData using checkout data instead of mock data
       const orderData = {
-        total: buyPlaceOrderApiData.total_buy_amount,
+        total: checkoutData?.orderSummary?.total || buyPlaceOrderApiData.total_buy_amount,
         transaction_id: buyPlaceOrderApiData.transaction_id,
-        customerInfo: profileData,
-        cartItems: [], // This would need to be passed from checkout
-        orderSummary: {
+        customerInfo: checkoutData?.customerInfo || profileData,
+        cartItems: checkoutData?.cartItems || [],
+        orderSummary: checkoutData?.orderSummary || {
           total: buyPlaceOrderApiData.total_buy_amount,
           subtotal: buyPlaceOrderApiData.total_buy_amount,
           couponDiscount: 0,
           deliveryCharge: 0
         },
-        shippingAddress: profileData.address || {},
+        shippingAddress: checkoutData?.customerInfo?.address || profileData.address || {},
         bond_details: buyPlaceOrderApiData.bond_details
       };
 
@@ -143,7 +145,7 @@ const PaymentOption = () => {
       }
 
       console.log(verificationResponse, "paymentresponse");
-      buyConfirm();
+      buyConfirm(verificationResponse.order);
 
     } catch (err) {
       console.error("Payment verification failed:", err);
@@ -168,7 +170,7 @@ const PaymentOption = () => {
     }
   };
 
-  const buyConfirm = async () => {
+  const buyConfirm = async (order) => {
     try {
       startLoading("Confirming your order...");
 
@@ -179,7 +181,7 @@ const PaymentOption = () => {
       setTimeout(() => {
         sessionStorage.setItem("paymentSuccess", "true");
         stopLoading();
-        navigate("/payment-success", { state: { order_detail: { status: "CONFIRMED" } } });
+        navigate("/payment-success", { state: { order } });
       }, 2000);
 
     } catch (err) {
