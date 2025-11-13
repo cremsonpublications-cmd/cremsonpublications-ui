@@ -7,7 +7,7 @@ import LoadingSpinner from "./common/LoadingSpinner/LoadingSpinner";
 import useLoader from "../hooks/useLoader";
 
 // Use the test Razorpay key that matches the backend
-const PAYMENT_CLIENT_ID = "rzp_test_RfJyHQFLVPUrXK";
+const PAYMENT_CLIENT_ID = "rzp_live_RZNaICiFgLKhW2";
 
 const PaymentOption = () => {
   const showToast = () => (options) => {
