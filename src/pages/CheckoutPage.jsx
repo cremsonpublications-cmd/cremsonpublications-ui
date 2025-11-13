@@ -104,6 +104,49 @@ const CheckoutPage = () => {
     }
   }, [user, customerInfo.email, updateCustomerInfo]);
 
+  // Check for completed payment when page loads (for Android UPI payments)
+  useEffect(() => {
+    const checkCompletedPayment = async () => {
+      const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
+      if (!currentOrderId) return;
+
+      try {
+        // Check if payment was completed via UPI/external app
+        const response = await fetch(`https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/check-payment-status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZheWlzdXR3ZWh2Ympwa2h6aGNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMDg2NzQsImV4cCI6MjA3NTU4NDY3NH0.368e_Tz9pWhTevzXmwXJI3bZ3G9OktrlZzy6lBA8oL4`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZheWlzdXR3ZWh2Ympwa2h6aGNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMDg2NzQsImV4cCI6MjA3NTU4NDY3NH0.368e_Tz9pWhTevzXmwXJI3bZ3G9OktrlZzy6lBA8oL4'
+          },
+          body: JSON.stringify({ razorpay_order_id: currentOrderId })
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.payment_status === 'captured') {
+          // Payment completed, get order data and proceed
+          const orderData = localStorage.getItem('payment_order_data');
+          if (orderData) {
+            localStorage.removeItem('currentRazorpayOrderId');
+            // Redirect to verification with payment details
+            window.location.replace(`/payment-verification?razorpay_payment_id=${result.payment_id}&razorpay_order_id=${currentOrderId}&razorpay_signature=${result.signature}`);
+          }
+        }
+      } catch (error) {
+        console.log('Payment status check failed:', error);
+      }
+    };
+
+    // Check on page load
+    checkCompletedPayment();
+
+    // Check periodically if user stays on page
+    const interval = setInterval(checkCompletedPayment, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const [deliverToDifferentAddress, setDeliverToDifferentAddress] =
     useState(false);
   const [validationErrors, setValidationErrors] = useState([]);

@@ -82,6 +82,9 @@ const useRazorpayPayment = () => {
         timestamp: Date.now()
       }));
 
+      // Store current order ID for payment status checking
+      localStorage.setItem('currentRazorpayOrderId', razorpayOrder.id);
+
       // 2️⃣ Open Razorpay Checkout
       const options = {
         key: RAZORPAY_KEY_ID,
