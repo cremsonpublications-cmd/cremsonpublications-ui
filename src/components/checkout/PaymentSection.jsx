@@ -5,6 +5,7 @@ import PaymentButton from '../PaymentButton';
 const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
   const { cartItems, customerInfo } = useCart();
   const [isOrderReady, setIsOrderReady] = useState(false);
+  const paymentMethod = 'razorpay'; // Only Razorpay available
 
   // Validate if order is ready
   useEffect(() => {
@@ -144,6 +145,17 @@ const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
         </div>
       )}
 
+      {/* Payment Method Info */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+        <h4 className="font-medium text-gray-900 mb-4">Payment Method</h4>
+        <div className="flex items-center p-4 border border-gray-200 rounded-lg bg-blue-50">
+          <div className="ml-3">
+            <div className="font-medium text-gray-900">Online Payment</div>
+            <div className="text-sm text-gray-600">Pay securely with Razorpay</div>
+          </div>
+        </div>
+      </div>
+
       {/* Place Order Button - Primary Action */}
       <div className="text-center">
         <div className="bg-gray-50 rounded-lg p-6 mb-4">
@@ -160,6 +172,7 @@ const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
             orderSummary={orderSummary}
             shippingInfo={shippingInfo}
             onPaymentStart={handleOrderStart}
+            paymentMethod={paymentMethod}
           >
             {isOrderReady
               ? `📦 Place Order - ₹${orderSummary?.total?.toFixed(2) || '0.00'}`

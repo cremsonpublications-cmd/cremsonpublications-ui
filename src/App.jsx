@@ -35,6 +35,7 @@ const PaymentCallbackPage = React.lazy(() => import("./pages/PaymentCallbackPage
 const PaymentVerification = React.lazy(() => import("./pages/PaymentVerification"));
 const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
 const PaymentFailed = React.lazy(() => import("./pages/PaymentFailed"));
+const BuyOrderPayment = React.lazy(() => import("./pages/BuyOrderPayment"));
 const MyOrdersPage = React.lazy(() => import("./pages/MyOrdersPage"));
 const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
@@ -75,7 +76,7 @@ const ConditionalScrollToTopButton = () => {
 const ConditionalFooter = () => {
   const location = useLocation();
   const authPages = ['/signin', '/signup', '/forgot-password', '/auth/callback'];
-  const checkoutPages = ['/checkout', '/checkout/shipping', '/payment-verification', '/payment-success', '/payment-failed', '/payment-status', '/payment-callback'];
+  const checkoutPages = ['/checkout', '/checkout/shipping', '/payment-verification', '/payment-success', '/payment-failed', '/payment-status', '/payment-callback', '/buy_order/payment'];
 
   if (authPages.includes(location.pathname) || checkoutPages.includes(location.pathname)) {
     return null;
@@ -129,6 +130,7 @@ function App() {
                             <Route path="/payment-failed" element={<PaymentFailed />} />
                             <Route path="/payment-status" element={<PaymentStatusPage />} />
                             <Route path="/payment-callback" element={<PaymentCallbackPage />} />
+                            <Route path="/buy_order/payment" element={<BuyOrderPayment />} />
                             <Route path="/my-orders" element={<MyOrdersPage />} />
                             <Route path="/terms-conditions" element={<TermsConditions />} />
                             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

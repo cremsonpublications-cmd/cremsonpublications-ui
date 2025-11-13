@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 
-const PaymentButton = ({ onPaymentStart, children, orderSummary, shippingInfo }) => {
+const PaymentButton = ({ onPaymentStart, children, orderSummary, shippingInfo, paymentMethod = 'cod' }) => {
   const { cartItems, customerInfo, clearCart } = useCart();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -44,6 +44,29 @@ const PaymentButton = ({ onPaymentStart, children, orderSummary, shippingInfo })
     setIsProcessing(true);
 
     try {
+      if (paymentMethod === 'razorpay') {
+        // Navigate to Razorpay payment page with order data
+        const buyPlaceOrderApiData = {
+          transaction_id: `TXN${Date.now()}`,
+          total_buy_amount: orderSummary.total,
+          subtotal: orderSummary.subtotal,
+          coupon_discount: orderSummary.couponDiscount || 0,
+          delivery_charge: orderSummary.deliveryCharge || 0,
+          items: cartItems,
+          user_name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+          user_email: customerInfo.email,
+          user_phone: customerInfo.phone,
+          user_address: customerInfo.address,
+          notes: shippingInfo?.notes || ""
+        };
+
+        navigate('/buy_order/payment', {
+          state: { buyPlaceOrderApiData }
+        });
+        return;
+      }
+
+      // Handle COD payment
       // Create order data
       const orderData = {
         user_info: {
