@@ -61,8 +61,8 @@ const PaymentCallbackPage = () => {
 
       console.log("Creating order with payment details:", paymentDetails);
 
-      // Use the improved backend validation endpoint
-      const validationResponse = await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/validate-payment-and-create-order', {
+      // Use the test verify payment endpoint
+      const validationResponse = await fetch('https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/test-verify-payment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

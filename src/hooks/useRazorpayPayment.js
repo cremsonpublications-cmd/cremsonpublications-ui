@@ -107,6 +107,9 @@ const useRazorpayPayment = () => {
           // Store order data for verification
           localStorage.setItem('payment_order_data', JSON.stringify(orderData));
 
+          // Clear the current order ID since payment completed
+          localStorage.removeItem('currentRazorpayOrderId');
+
           // Immediately redirect to verification screen
           window.location.replace(`/payment-verification?razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}&razorpay_signature=${response.razorpay_signature}`);
         },
@@ -132,7 +135,11 @@ const useRazorpayPayment = () => {
         // Mobile-specific optimizations
         remember_customer: false,
         timeout: 900, // 15 minutes
-        retry: { enabled: false }
+        retry: { enabled: false },
+
+        // Callback URLs for UPI payments (when payment happens outside browser)
+        callback_url: window.location.origin + '/payment-callback',
+        redirect: true
       };
 
       // Load Razorpay script if not already loaded
