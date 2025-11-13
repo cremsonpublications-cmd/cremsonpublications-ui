@@ -30,12 +30,7 @@ const CartPage = React.lazy(() => import("./pages/CartPage"));
 const WishlistPage = React.lazy(() => import("./pages/WishlistPage"));
 const CheckoutPage = React.lazy(() => import("./pages/CheckoutPage"));
 const ShippingPage = React.lazy(() => import("./pages/ShippingPage"));
-const PaymentStatusPage = React.lazy(() => import("./pages/PaymentStatusPage"));
-const PaymentCallbackPage = React.lazy(() => import("./pages/PaymentCallbackPage"));
-const PaymentVerification = React.lazy(() => import("./pages/PaymentVerification"));
-const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
-const PaymentFailed = React.lazy(() => import("./pages/PaymentFailed"));
-const BuyOrderPayment = React.lazy(() => import("./pages/BuyOrderPayment"));
+
 const MyOrdersPage = React.lazy(() => import("./pages/MyOrdersPage"));
 const TermsConditions = React.lazy(() => import("./pages/TermsConditions"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
@@ -63,9 +58,8 @@ const PageLoader = () => (
 const ConditionalScrollToTopButton = () => {
   const location = useLocation();
   const authPages = ['/signin', '/signup', '/forgot-password', '/auth/callback'];
-  const paymentPages = ['/payment-verification', '/payment-success', '/payment-failed'];
 
-  if (authPages.includes(location.pathname) || paymentPages.includes(location.pathname)) {
+  if (authPages.includes(location.pathname)) {
     return null;
   }
 
@@ -76,7 +70,7 @@ const ConditionalScrollToTopButton = () => {
 const ConditionalFooter = () => {
   const location = useLocation();
   const authPages = ['/signin', '/signup', '/forgot-password', '/auth/callback'];
-  const checkoutPages = ['/checkout', '/checkout/shipping', '/payment-verification', '/payment-success', '/payment-failed', '/payment-status', '/payment-callback', '/buy_order/payment'];
+  const checkoutPages = ['/checkout', '/checkout/shipping'];
 
   if (authPages.includes(location.pathname) || checkoutPages.includes(location.pathname)) {
     return null;
@@ -125,12 +119,6 @@ function App() {
                             />
                             <Route path="/checkout" element={<CheckoutPage />} />
                             <Route path="/checkout/shipping" element={<ShippingPage />} />
-                            <Route path="/payment-verification" element={<PaymentVerification />} />
-                            <Route path="/payment-success" element={<PaymentSuccess />} />
-                            <Route path="/payment-failed" element={<PaymentFailed />} />
-                            <Route path="/payment-status" element={<PaymentStatusPage />} />
-                            <Route path="/payment-callback" element={<PaymentCallbackPage />} />
-                            <Route path="/buy_order/payment" element={<BuyOrderPayment />} />
                             <Route path="/my-orders" element={<MyOrdersPage />} />
                             <Route path="/terms-conditions" element={<TermsConditions />} />
                             <Route path="/privacy-policy" element={<PrivacyPolicy />} />

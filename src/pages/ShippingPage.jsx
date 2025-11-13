@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { useUser } from "../context/AuthContext";
 
-import useRazorpay from "react-razorpay";
-import { supabase } from "../lib/supabase";
-import { toast } from "sonner";
-import PaymentModal from "../components/ui/PaymentModal";
+
+
 import {
   CreditCard,
   MapPin,
@@ -28,7 +25,6 @@ import { Link } from "react-router-dom";
 const ShippingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { error, Razorpay } = useRazorpay();
   const {
     cartItems,
     getTotalPrice,
@@ -39,21 +35,11 @@ const ShippingPage = () => {
     shippingInfo,
     updateShippingMethod,
     updateShippingNotes,
-    clearCart,
-    clearCheckoutData,
   } = useCart();
-  const { user } = useUser();
-
-  // Payment modal states
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentModalStatus, setPaymentModalStatus] = useState("processing"); // 'processing', 'success', 'failed', 'error'
-  const [orderIdResult, setOrderIdResult] = useState(null);
-  const [paymentErrorMessage, setPaymentErrorMessage] = useState(null);
 
   // Get data from navigation state
   const navigationData = location.state;
   const displayCustomerInfo = navigationData?.customerInfo || customerInfo;
-  const shippingDetails = navigationData?.shippingDetails; // Only exists if different delivery address
 
   // Order summary state
   const [orderSummary, setOrderSummary] = useState({
@@ -62,35 +48,6 @@ const ShippingPage = () => {
     deliveryCharge: 0,
     total: 0,
   });
-
-  // Payment processing state
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-  // Add payment timeout monitoring
-  useEffect(() => {
-    const checkPaymentTimeout = () => {
-      const paymentStartTime = localStorage.getItem("paymentStartTime");
-      const currentOrderId = localStorage.getItem("currentRazorpayOrderId");
-
-      if (paymentStartTime && currentOrderId) {
-        const timeDiff = Date.now() - parseInt(paymentStartTime);
-
-        // If payment has been in progress for more than 3 minutes, redirect to status page
-        if (timeDiff > 3 * 60 * 1000) {
-          console.log("Payment timeout detected, redirecting to status page");
-          toast.info("Checking payment status, please wait...");
-          navigate("/payment-status?source=timeout");
-        }
-      }
-    };
-
-    // Check every 30 seconds
-    const timeoutInterval = setInterval(checkPaymentTimeout, 30000);
-
-    return () => clearInterval(timeoutInterval);
-  }, [navigate]);
-
-  // Confetti celebration state (removed - now handled in PaymentStatusPage)
 
   // Shipping methods
   const shippingMethods = [
@@ -118,395 +75,6 @@ const ShippingPage = () => {
     });
   }, [cartItems, getTotalPrice, getCouponDiscount, shippingInfo.method]);
 
-  // Calculate final order values
-  const subtotal = getTotalPrice();
-  const couponDiscount = getCouponDiscount();
-  const deliveryCharge = 0; // Use calculated shipping charge
-  const total = subtotal - couponDiscount + deliveryCharge;
-
-  const createOrderInDatabase = useCallback(
-    async (paymentDetails) => {
-      try {
-        const orderId = `BOOK${Date.now()}${Math.floor(Math.random() * 1000)}`;
-        const currentDate = new Date().toISOString().split("T")[0];
-
-        // Determine which address to use for delivery
-        const deliveryAddress = shippingDetails
-          ? {
-              street: shippingDetails.streetAddress,
-              apartment: shippingDetails.apartment,
-              city: shippingDetails.city,
-              state: shippingDetails.state,
-              pincode: shippingDetails.pincode,
-              country: shippingDetails.country,
-            }
-          : {
-              street: displayCustomerInfo.address.street,
-              apartment: displayCustomerInfo.address.apartment,
-              city: displayCustomerInfo.address.city,
-              state: displayCustomerInfo.address.state,
-              pincode: displayCustomerInfo.address.pincode,
-              country: displayCustomerInfo.address.country,
-            };
-
-        // Prepare order data
-        const orderData = {
-          order_id: orderId,
-          user_info: {
-            userId: user?.id || "guest",
-            name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
-            email: displayCustomerInfo.email,
-            phone: displayCustomerInfo.phone,
-            address: deliveryAddress,
-          },
-          items: cartItems.map((item) => ({
-            productId: item.id,
-            name: item.name,
-            author: item.author || "Unknown Author",
-            quantity: item.quantity,
-            currentPrice: item.price,
-            totalPrice: item.price * item.quantity,
-          })),
-          order_summary: {
-            subTotal: subtotal,
-            couponDiscount: couponDiscount,
-            discountTotal: couponDiscount,
-            deliveryCharge: deliveryCharge,
-            grandTotal: total,
-          },
-          payment: {
-            method: paymentDetails.payment_method || "Razorpay",
-            status: "Paid",
-            transactionId: paymentDetails.razorpay_payment_id,
-            razorpay_order_id: paymentDetails.razorpay_order_id || null,
-            razorpay_signature: paymentDetails.razorpay_signature || null,
-            amount: total,
-            payment_confirmed: true,
-          },
-          delivery: {
-            status: "Order Placed",
-            notes: shippingInfo.notes || "",
-          },
-          order_status: "Confirmed",
-          order_date: currentDate,
-        };
-
-        // Insert order into database
-        const { error } = await supabase
-          .from("orders")
-          .insert([orderData])
-          .select()
-          .single();
-
-        if (error) {
-          console.error("Error creating order:", error);
-          throw new Error("Failed to save order to database");
-        }
-
-        // Send order confirmation email immediately after order creation
-        fetch(
-          "https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/send-order-confirmation-email",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({ orderData }),
-          }
-        ).catch((error) => {
-          console.error("Email sending failed:", error);
-          // Don't block the order creation if email fails
-        });
-
-        return { orderId, orderData };
-      } catch (error) {
-        console.error("Error in createOrderInDatabase:", error);
-        throw error;
-      }
-    },
-    [
-      user,
-      displayCustomerInfo,
-      shippingDetails,
-      cartItems,
-      subtotal,
-      couponDiscount,
-      deliveryCharge,
-      total,
-      shippingInfo.notes,
-    ]
-  );
-
-  // Check for successful payment on page load (for Paytm redirect case)
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const razorpayPaymentId = urlParams.get("razorpay_payment_id");
-    const razorpayOrderId = urlParams.get("razorpay_order_id");
-    const razorpaySignature = urlParams.get("razorpay_signature");
-
-    // If payment parameters are present, it means payment was successful via redirect
-    if (razorpayPaymentId && razorpayOrderId) {
-      console.log("Payment success detected via URL parameters");
-
-      // Process the successful payment using the same validation flow as desktop
-      const processRedirectPayment = async () => {
-        try {
-          // Show processing modal
-          setPaymentModalStatus("processing");
-          setShowPaymentModal(true);
-
-          // Prepare order data for validation (same as desktop flow)
-          const orderData = {
-            order_id: `BOOK${Date.now()}${Math.floor(Math.random() * 1000)}`,
-            user_info: {
-              userId: user?.id || "guest",
-              name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
-              email: displayCustomerInfo.email,
-              phone: displayCustomerInfo.phone,
-              address: shippingDetails
-                ? {
-                    street: shippingDetails.streetAddress,
-                    apartment: shippingDetails.apartment,
-                    city: shippingDetails.city,
-                    state: shippingDetails.state,
-                    pincode: shippingDetails.pincode,
-                    country: shippingDetails.country,
-                  }
-                : {
-                    street: displayCustomerInfo.address.street,
-                    apartment: displayCustomerInfo.address.apartment,
-                    city: displayCustomerInfo.address.city,
-                    state: displayCustomerInfo.address.state,
-                    pincode: displayCustomerInfo.address.pincode,
-                    country: displayCustomerInfo.address.country,
-                  },
-            },
-            items: cartItems.map((item) => ({
-              productId: item.id,
-              name: item.name,
-              author: item.author || "Unknown Author",
-              quantity: item.quantity,
-              currentPrice: item.price,
-              totalPrice: item.price * item.quantity,
-            })),
-            order_summary: {
-              subTotal: subtotal,
-              couponDiscount: couponDiscount,
-              deliveryCharge: deliveryCharge,
-              grandTotal: total,
-            },
-            payment: {
-              method: "Razorpay",
-              amount: total,
-            },
-            order_date: new Date().toISOString().split("T")[0],
-          };
-
-          // Call validation edge function (same as desktop)
-          const validationResponse = await fetch(
-            "https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/validate-payment-and-create-order",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${
-                  import.meta.env.VITE_SUPABASE_ANON_KEY
-                }`,
-                apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-              },
-              body: JSON.stringify({
-                razorpay_payment_id: razorpayPaymentId,
-                razorpay_order_id: razorpayOrderId,
-                razorpay_signature: razorpaySignature,
-                orderData,
-              }),
-            }
-          );
-
-          const result = await validationResponse.json();
-
-          if (result.success) {
-            // Payment validated and order created successfully
-            setPaymentModalStatus("success");
-            setOrderIdResult(result.order_id);
-
-            // Clear cart and checkout data
-            clearCart();
-            clearCheckoutData();
-
-            // Clear temporary payment data
-            localStorage.removeItem("pendingOrder");
-            localStorage.removeItem("paymentStartTime");
-            localStorage.removeItem("currentRazorpayOrderId");
-
-            // Clean URL
-            window.history.replaceState({}, "", window.location.pathname);
-
-            console.log(
-              "Mobile payment validated successfully:",
-              result.order_id
-            );
-          } else {
-            // Payment validation failed
-            setPaymentModalStatus("failed");
-            setPaymentErrorMessage(
-              result.message || "Payment validation failed"
-            );
-            console.error("Mobile payment validation failed:", result.message);
-          }
-        } catch (error) {
-          console.error("Error processing mobile redirect payment:", error);
-          setPaymentModalStatus("error");
-          setPaymentErrorMessage(
-            "An unexpected error occurred while processing your payment."
-          );
-        }
-      };
-
-      processRedirectPayment();
-    }
-  }, [
-    createOrderInDatabase,
-    clearCart,
-    clearCheckoutData,
-    navigate,
-    cartItems,
-    displayCustomerInfo,
-    shippingDetails,
-    subtotal,
-    couponDiscount,
-    deliveryCharge,
-    total,
-    user,
-  ]);
-
-  const createRazorpayOrder = async () => {
-    try {
-      // Method 1: Using supabase.functions.invoke (preferred)
-      const { data, error } = await supabase.functions.invoke(
-        "create-razorpay-order",
-        {
-          body: {
-            amount: total, // Amount in rupees - Supabase function will convert to paise
-            currency: "INR",
-            receipt: `order_${Date.now()}_${Math.random()
-              .toString(36)
-              .substring(2, 11)}`,
-          },
-        }
-      );
-
-      if (error) {
-        console.error("Supabase function error:", error);
-        // Fallback to direct API call if needed
-        throw error;
-      }
-
-      return data;
-    } catch (error) {
-      console.error("Error creating Razorpay order:", error);
-
-      // Method 2: Direct API call as fallback
-      try {
-        const response = await fetch(
-          "https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/create-razorpay-order",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-              apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-            },
-            body: JSON.stringify({
-              amount: total, // Amount in rupees - Supabase function will convert to paise
-              currency: "INR",
-              receipt: `order_${Date.now()}_${Math.random()
-                .toString(36)
-                .substring(2, 11)}`,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return data;
-      } catch (fetchError) {
-        console.error("Direct API call failed:", fetchError);
-        throw new Error("Failed to create payment order");
-      }
-    }
-  };
-
-  const handleContinueToPayment = async () => {
-    if (isProcessingPayment) return;
-    setIsProcessingPayment(true);
-
-    try {
-      // Create Razorpay order
-      const razorpayOrder = await createRazorpayOrder();
-
-      if (!razorpayOrder?.id) {
-        throw new Error("Failed to create order");
-      }
-
-      // Store pending order data for redirect-based payments
-      const pendingOrderData = {
-        customerInfo: displayCustomerInfo,
-        shippingDetails,
-        cartItems,
-        orderSummary,
-        shippingNotes: shippingInfo.notes,
-        timestamp: Date.now(),
-      };
-
-      localStorage.setItem("pendingOrder", JSON.stringify(pendingOrderData));
-      localStorage.setItem("paymentStartTime", Date.now().toString());
-      localStorage.setItem("currentRazorpayOrderId", razorpayOrder.id);
-
-      // Payment options supporting both modal and redirect flows
-      const options = {
-        key: "rzp_live_RZNaICiFgLKhW2",
-        amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
-        order_id: razorpayOrder.id,
-        name: "Cremson Publications",
-        description: `Books Order`,
-        callback_url: `${window.location.origin}/payment-callback`,
-        redirect: true,
-        prefill: {
-          name: `${displayCustomerInfo.firstName} ${displayCustomerInfo.lastName}`,
-          email: displayCustomerInfo.email,
-          contact: displayCustomerInfo.phone,
-        },
-        theme: {
-          color: '#3B82F6',
-        },
-      };
-
-      // In redirect mode, don't show processing modal as payment happens on Razorpay's server
-      console.log('Opening Razorpay in redirect mode for bulletproof iOS compatibility');
-
-      const razorpay = new window.Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      console.error("Payment initialization failed:", error);
-      toast.error("Payment failed. Please try again.");
-      setIsProcessingPayment(false);
-
-      // Clear any stored data
-      localStorage.removeItem("pendingOrder");
-      localStorage.removeItem("paymentStartTime");
-      localStorage.removeItem("currentRazorpayOrderId");
-    }
-  };
-
-  // Add timeout to auto-reset processing state if stuck
-
   const handleChangeContact = () => {
     navigate("/checkout", {
       state: {
@@ -525,16 +93,8 @@ const ShippingPage = () => {
     });
   };
 
-  const handleClosePaymentModal = () => {
-    setShowPaymentModal(false);
-    setPaymentModalStatus("processing");
-    setOrderIdResult(null);
-    setPaymentErrorMessage(null);
-    setIsProcessingPayment(false);
-  };
-
-  // Don't show empty cart message if payment modal is showing or payment is being processed
-  if (cartItems.length === 0 && !showPaymentModal && !isProcessingPayment) {
+  // Show empty cart message
+  if (cartItems.length === 0) {
     return (
       <div className="max-w-frame mx-auto px-4 py-8">
         <div className="text-center">
@@ -790,48 +350,17 @@ const ShippingPage = () => {
               </div>
             </div>
 
-            {/* Pay Now Button */}
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <p className="text-red-600 text-sm">
-                  Error loading Razorpay: {error}
-                </p>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="text-red-600 underline mt-2 text-sm"
-                >
-                  Refresh Page
-                </button>
-              </div>
-            )}
-
+            {/* Payment Button */}
             <button
-              onClick={handleContinueToPayment}
-              disabled={isProcessingPayment || error}
-              className={`w-full mt-6 py-3 px-4 rounded-md font-semibold transition-colors flex items-center justify-center gap-2 ${
-                isProcessingPayment || error
-                  ? "bg-gray-400 cursor-not-allowed text-white"
-                  : "bg-black text-white hover:bg-gray-800"
-              }`}
+              onClick={() => alert('Payment functionality has been disabled.')}
+              className="w-full mt-6 py-3 px-4 rounded-md font-semibold transition-colors flex items-center justify-center gap-2 bg-black text-white hover:bg-gray-800"
             >
               <CreditCard size={16} />
-              {isProcessingPayment
-                ? "Processing..."
-                : `Pay ₹${orderSummary.total.toFixed(2)}`}
+              Complete Order - ₹{orderSummary.total.toFixed(2)}
             </button>
           </div>
         </div>
       </div>
-
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={showPaymentModal}
-        status={paymentModalStatus}
-        onClose={handleClosePaymentModal}
-        orderId={orderIdResult}
-        errorMessage={paymentErrorMessage}
-      />
     </div>
   );
 };
