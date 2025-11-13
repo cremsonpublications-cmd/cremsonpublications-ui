@@ -14,6 +14,7 @@ import {
   BreadcrumbSeparator,
 } from "../components/ui/breadcrumb";
 import { Link } from "react-router-dom";
+import PaymentSection from "../components/checkout/PaymentSection";
 
 const countries = ["India"];
 
@@ -125,6 +126,12 @@ const CheckoutPage = () => {
     couponDiscount: 0,
     deliveryCharge: 0,
     total: 0,
+  });
+
+  // Shipping info for payment
+  const [paymentShippingInfo, setPaymentShippingInfo] = useState({
+    method: "standard",
+    notes: "",
   });
 
   // Calculate order summary
@@ -838,18 +845,13 @@ const CheckoutPage = () => {
               </div>
             </div>
 
-            {/* Continue to Shipping Button */}
-            <button
-              onClick={handleContinueToShipping}
-              disabled={!isFormValid()}
-              className={`w-full mt-6 py-3 px-4 rounded-md transition-colors flex items-center justify-center gap-2 ${
-                isFormValid()
-                  ? "bg-black text-white hover:bg-gray-800"
-                  : "bg-gray-300 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              Continue to shipping →
-            </button>
+            {/* Payment Section - Direct Payment */}
+            <div className="mt-6">
+              <PaymentSection
+                orderSummary={orderSummary}
+                shippingInfo={paymentShippingInfo}
+              />
+            </div>
           </div>
         </div>
       </div>
