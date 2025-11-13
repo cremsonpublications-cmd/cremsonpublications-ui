@@ -105,7 +105,7 @@ const useRazorpayPayment = () => {
           localStorage.setItem('payment_order_data', JSON.stringify(orderData));
 
           // Immediately redirect to verification screen
-          window.location.href = `/payment-verification?razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}&razorpay_signature=${response.razorpay_signature}`;
+          window.location.replace(`/payment-verification?razorpay_payment_id=${response.razorpay_payment_id}&razorpay_order_id=${response.razorpay_order_id}&razorpay_signature=${response.razorpay_signature}`);
         },
 
         modal: {
@@ -144,7 +144,7 @@ const useRazorpayPayment = () => {
         console.error('Payment failed:', response.error);
         setError(response.error.description);
         setLoading(false);
-        window.location.href = `/payment-failed?error=${encodeURIComponent(response.error.description)}`;
+        window.location.replace(`/payment-failed?error=${encodeURIComponent(response.error.description)}`);
       });
 
       // Open payment modal
@@ -198,7 +198,7 @@ const useRazorpayPayment = () => {
           // Payment was successful, clear storage and redirect
           localStorage.removeItem('pending_payment_order');
           localStorage.removeItem('payment_success_data');
-          window.location.href = `/payment-success?order_id=${result.order_id}&payment_id=${paymentData.razorpay_payment_id}`;
+          window.location.replace(`/payment-success?order_id=${result.order_id}&payment_id=${paymentData.razorpay_payment_id}`);
         }
       } catch (error) {
         console.log('Could not verify pending payment:', error);
