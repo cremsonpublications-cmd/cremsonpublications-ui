@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import useRazorpayPayment from '../hooks/useRazorpayPayment';
+import { useNavigate } from 'react-router-dom';
 
 const PaymentButton = ({ onPaymentStart, children, orderSummary, shippingInfo }) => {
-  const { cartItems, customerInfo } = useCart();
-  const { initiatePayment, loading, error } = useRazorpayPayment();
+  const { cartItems, customerInfo, clearCart } = useCart();
+  const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Check if payment is ready
-  const isPaymentReady =
+  // Check if order is ready
+  const isOrderReady =
     cartItems?.length > 0 &&
     customerInfo?.email &&
     customerInfo?.firstName &&
@@ -19,7 +20,7 @@ const PaymentButton = ({ onPaymentStart, children, orderSummary, shippingInfo })
     customerInfo?.phone &&
     orderSummary?.total > 0;
 
-  const handlePayNow = async () => {
+  const handlePlaceOrder = async () => {
     if (onPaymentStart) {
       onPaymentStart();
     }
@@ -40,42 +41,95 @@ const PaymentButton = ({ onPaymentStart, children, orderSummary, shippingInfo })
       return;
     }
 
-    await initiatePayment(cartItems, customerInfo, orderSummary, shippingInfo);
-  };
+    setIsProcessing(true);
 
-  if (error) {
-    return (
-      <div className="payment-error">
-        <p style={{ color: 'red' }}>Payment Error: {error}</p>
-        <button onClick={() => window.location.reload()}>
-          Retry Payment
-        </button>
-      </div>
-    );
-  }
+    try {
+      // Create order data
+      const orderData = {
+        user_info: {
+          name: `${customerInfo.firstName} ${customerInfo.lastName}`,
+          email: customerInfo.email,
+          phone: customerInfo.phone,
+          address: customerInfo.address
+        },
+        items: cartItems.map(item => ({
+          name: item.name,
+          author: item.author,
+          quantity: item.quantity,
+          productId: item.id,
+          currentPrice: item.price,
+          totalPrice: item.price * item.quantity
+        })),
+        order_summary: {
+          subTotal: orderSummary.subtotal,
+          grandTotal: orderSummary.total,
+          discountTotal: orderSummary.couponDiscount || 0,
+          couponDiscount: orderSummary.couponDiscount || 0,
+          deliveryCharge: orderSummary.deliveryCharge || 0
+        },
+        delivery: {
+          status: "Order Placed",
+          notes: shippingInfo?.notes || ""
+        },
+        payment: {
+          method: "Cash on Delivery",
+          status: "Pending",
+          amount: orderSummary.total
+        },
+        order_status: "Confirmed",
+        order_date: new Date().toISOString().split('T')[0],
+        created_at: new Date().toISOString()
+      };
+
+      // Generate order ID
+      const orderId = `BOOK${Date.now()}${Math.floor(Math.random() * 1000)}`;
+      orderData.order_id = orderId;
+
+      // Save order to database (you might want to create a simple API endpoint for this)
+      // For now, we'll just store in localStorage for demonstration
+      const existingOrders = JSON.parse(localStorage.getItem('user_orders') || '[]');
+      existingOrders.push(orderData);
+      localStorage.setItem('user_orders', JSON.stringify(existingOrders));
+
+      // Clear cart
+      clearCart();
+
+      // Show success alert
+      alert('Order successful! Your order has been placed.');
+
+      // Navigate to orders page
+      navigate('/my-orders');
+
+    } catch (error) {
+      console.error('Order placement error:', error);
+      alert('Failed to place order. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <button
-      onClick={handlePayNow}
-      disabled={loading || !isPaymentReady}
-      className={`payment-button ${loading ? 'loading' : ''} ${!isPaymentReady ? 'disabled' : ''}`}
+      onClick={handlePlaceOrder}
+      disabled={isProcessing || !isOrderReady}
+      className={`payment-button ${isProcessing ? 'loading' : ''} ${!isOrderReady ? 'disabled' : ''}`}
       style={{
-        backgroundColor: loading ? '#ccc' : isPaymentReady ? '#F37254' : '#e5e5e5',
-        color: loading ? '#666' : isPaymentReady ? 'white' : '#999',
+        backgroundColor: isProcessing ? '#ccc' : isOrderReady ? '#F37254' : '#e5e5e5',
+        color: isProcessing ? '#666' : isOrderReady ? 'white' : '#999',
         padding: '16px 32px',
         border: 'none',
         borderRadius: '12px',
         fontSize: '18px',
         fontWeight: 'bold',
-        cursor: loading || !isPaymentReady ? 'not-allowed' : 'pointer',
-        opacity: loading ? 0.7 : 1,
+        cursor: isProcessing || !isOrderReady ? 'not-allowed' : 'pointer',
+        opacity: isProcessing ? 0.7 : 1,
         transition: 'all 0.3s ease',
         width: '100%',
         minHeight: '56px',
-        boxShadow: isPaymentReady && !loading ? '0 4px 12px rgba(243, 114, 84, 0.3)' : 'none'
+        boxShadow: isOrderReady && !isProcessing ? '0 4px 12px rgba(243, 114, 84, 0.3)' : 'none'
       }}
     >
-      {loading ? 'Processing...' : (children || `Pay ₹${orderSummary?.total || 0}`)}
+      {isProcessing ? 'Placing Order...' : (children || `Place Order - ₹${orderSummary?.total?.toFixed(2) || '0.00'}`)}
     </button>
   );
 };

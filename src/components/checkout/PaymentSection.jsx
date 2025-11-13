@@ -1,19 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../../context/CartContext';
 import PaymentButton from '../PaymentButton';
-import useRazorpayPayment from '../../hooks/useRazorpayPayment';
 
 const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
   const { cartItems, customerInfo } = useCart();
-  const { checkPendingPayment } = useRazorpayPayment();
-  const [isPaymentReady, setIsPaymentReady] = useState(false);
+  const [isOrderReady, setIsOrderReady] = useState(false);
 
-  // Check for pending payments on component load
-  useEffect(() => {
-    checkPendingPayment();
-  }, [checkPendingPayment]);
-
-  // Validate if payment is ready
+  // Validate if order is ready
   useEffect(() => {
     const isReady =
       cartItems?.length > 0 &&
@@ -27,11 +20,11 @@ const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
       customerInfo?.phone &&
       orderSummary?.total > 0;
 
-    setIsPaymentReady(isReady);
+    setIsOrderReady(isReady);
   }, [cartItems, customerInfo, orderSummary]);
 
-  const handlePaymentStart = () => {
-    console.log('Payment started with:', {
+  const handleOrderStart = () => {
+    console.log('Order started with:', {
       items: cartItems?.length,
       customer: customerInfo?.email,
       total: orderSummary?.total
@@ -88,45 +81,6 @@ const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
 
   return (
     <div className="payment-section">
-      {/* Payment Method - Razorpay Only */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          💳 Complete Your Payment
-        </h3>
-
-        <div className="p-4 border-2 border-orange-200 bg-orange-50 rounded-lg mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-gray-900">
-                Pay with Credit/Debit Card, UPI, Net Banking
-              </div>
-              <div className="text-sm text-gray-500">
-                100% Secure Payment • Powered by Razorpay
-              </div>
-            </div>
-            <img
-              src="https://razorpay.com/assets/razorpay-logo.svg"
-              alt="Razorpay"
-              className="h-6"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Validation Errors */}
-      {errors.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <h4 className="text-red-800 font-semibold mb-2">
-            Please complete the following:
-          </h4>
-          <ul className="list-disc list-inside text-red-700 space-y-1">
-            {errors.map((error, index) => (
-              <li key={index} className="text-sm">{error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {/* Order Summary Display */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6">
         <h4 className="font-medium text-gray-900 mb-3">Order Summary</h4>
@@ -157,6 +111,20 @@ const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
         </div>
       </div>
 
+      {/* Validation Errors */}
+      {errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <h4 className="text-red-800 font-semibold mb-2">
+            Please complete the following:
+          </h4>
+          <ul className="list-disc list-inside text-red-700 space-y-1">
+            {errors.map((error, index) => (
+              <li key={index} className="text-sm">{error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Customer Details Display */}
       {customerInfo?.email && (
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
@@ -176,7 +144,7 @@ const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
         </div>
       )}
 
-      {/* Payment Button - Primary Action */}
+      {/* Place Order Button - Primary Action */}
       <div className="text-center">
         <div className="bg-gray-50 rounded-lg p-6 mb-4">
           <div className="text-center mb-4">
@@ -184,36 +152,29 @@ const PaymentSection = ({ orderSummary, shippingInfo = {} }) => {
               Total Amount: ₹{orderSummary?.total?.toFixed(2) || '0.00'}
             </h4>
             <p className="text-sm text-gray-600">
-              Click below to proceed with secure payment
+              Click below to place your order
             </p>
           </div>
 
           <PaymentButton
             orderSummary={orderSummary}
             shippingInfo={shippingInfo}
-            onPaymentStart={handlePaymentStart}
+            onPaymentStart={handleOrderStart}
           >
-            {isPaymentReady
-              ? `💳 Pay ₹${orderSummary?.total?.toFixed(2) || '0.00'} Now`
-              : '⚠️ Complete Information to Pay'
+            {isOrderReady
+              ? `📦 Place Order - ₹${orderSummary?.total?.toFixed(2) || '0.00'}`
+              : '⚠️ Complete Information to Place Order'
             }
           </PaymentButton>
 
-          {!isPaymentReady && (
+          {!isOrderReady && (
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-sm text-yellow-800 font-medium">
-                Please fill all required information above to proceed with payment
+                Please fill all required information above to place your order
               </p>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Security Notice */}
-      <div className="mt-6 text-center text-sm text-gray-500">
-        🔒 Your payment information is secure and encrypted
-        <br />
-        Powered by Razorpay - India's most trusted payment gateway
       </div>
     </div>
   );

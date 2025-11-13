@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
 import { useUser } from "../context/AuthContext";
-import { toast } from "sonner";
 import { MapPin, User, Mail, ShoppingBag } from "lucide-react";
 import SearchableSelect from "../components/ui/SearchableSelect";
 import {
@@ -104,53 +103,10 @@ const CheckoutPage = () => {
     }
   }, [user, customerInfo.email, updateCustomerInfo]);
 
-  // Check for completed payment when page loads (for Android UPI payments)
-  useEffect(() => {
-    const checkCompletedPayment = async () => {
-      const currentOrderId = localStorage.getItem('currentRazorpayOrderId');
-      if (!currentOrderId) return;
 
-      try {
-        // Check if payment was completed via UPI/external app
-        const response = await fetch(`https://vayisutwehvbjpkhzhcc.supabase.co/functions/v1/check-payment-status`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZheWlzdXR3ZWh2Ympwa2h6aGNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMDg2NzQsImV4cCI6MjA3NTU4NDY3NH0.368e_Tz9pWhTevzXmwXJI3bZ3G9OktrlZzy6lBA8oL4`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZheWlzdXR3ZWh2Ympwa2h6aGNjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMDg2NzQsImV4cCI6MjA3NTU4NDY3NH0.368e_Tz9pWhTevzXmwXJI3bZ3G9OktrlZzy6lBA8oL4'
-          },
-          body: JSON.stringify({ razorpay_order_id: currentOrderId })
-        });
-
-        const result = await response.json();
-
-        if (result.success && result.payment_status === 'captured') {
-          // Payment completed, get order data and proceed
-          const orderData = localStorage.getItem('payment_order_data');
-          if (orderData) {
-            localStorage.removeItem('currentRazorpayOrderId');
-            // Redirect to verification with payment details
-            window.location.replace(`/payment-verification?razorpay_payment_id=${result.payment_id}&razorpay_order_id=${currentOrderId}&razorpay_signature=${result.signature}`);
-          }
-        }
-      } catch (error) {
-        console.log('Payment status check failed:', error);
-      }
-    };
-
-    // Check on page load
-    checkCompletedPayment();
-
-    // Check periodically if user stays on page
-    const interval = setInterval(checkCompletedPayment, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const [deliverToDifferentAddress, setDeliverToDifferentAddress] =
     useState(false);
-  const [validationErrors, setValidationErrors] = useState([]);
-  const [showValidation, setShowValidation] = useState(false);
   const [shippingDetails, setShippingDetails] = useState({
     firstName: "",
     lastName: "",
@@ -171,11 +127,7 @@ const CheckoutPage = () => {
     total: 0,
   });
 
-  // Shipping info for payment
-  const [paymentShippingInfo, setPaymentShippingInfo] = useState({
-    method: "standard",
-    notes: "",
-  });
+
 
   // Calculate order summary
   useEffect(() => {
@@ -235,104 +187,9 @@ const CheckoutPage = () => {
     }));
   };
 
-  // Validation function
-  const validateCustomerInfo = () => {
-    const errors = [];
 
-    // Validate billing/customer information
-    if (!customerInfo.email?.trim()) {
-      errors.push("Email is required");
-    }
-    if (!customerInfo.firstName?.trim()) {
-      errors.push("First name is required");
-    }
-    if (!customerInfo.lastName?.trim()) {
-      errors.push("Last name is required");
-    }
-    if (!customerInfo.address?.street?.trim()) {
-      errors.push("Billing street address is required");
-    }
-    if (!customerInfo.address?.city?.trim()) {
-      errors.push("Billing city is required");
-    }
-    if (!customerInfo.address?.state?.trim()) {
-      errors.push("Billing state is required");
-    }
-    if (!customerInfo.address?.pincode?.trim()) {
-      errors.push("Billing pincode is required");
-    }
-    if (!customerInfo.phone?.trim()) {
-      errors.push("Phone number is required");
-    }
 
-    // Validate shipping address if different delivery address is selected
-    if (deliverToDifferentAddress) {
-      if (!shippingDetails.firstName?.trim()) {
-        errors.push("Shipping first name is required");
-      }
-      if (!shippingDetails.lastName?.trim()) {
-        errors.push("Shipping last name is required");
-      }
-      if (!shippingDetails.streetAddress?.trim()) {
-        errors.push("Shipping street address is required");
-      }
-      if (!shippingDetails.city?.trim()) {
-        errors.push("Shipping city is required");
-      }
-      if (!shippingDetails.state?.trim()) {
-        errors.push("Shipping state is required");
-      }
-      if (!shippingDetails.pincode?.trim()) {
-        errors.push("Shipping pincode is required");
-      }
-      if (!shippingDetails.country?.trim()) {
-        errors.push("Shipping country is required");
-      }
-    }
 
-    return errors;
-  };
-
-  // Check if form is valid (all required fields filled)
-  const isFormValid = () => {
-    return validateCustomerInfo().length === 0;
-  };
-
-  // Handle continue to shipping (legacy function - keeping for navigation)
-  const handleContinueToShipping = () => {
-    const errors = validateCustomerInfo();
-
-    if (errors.length > 0) {
-      setValidationErrors(errors);
-      setShowValidation(true);
-
-      // Scroll to top to show errors
-      window.scrollTo({ top: 0, behavior: "smooth" });
-
-      // Show toast for immediate feedback
-      toast.error(
-        "Please fill in all required fields to continue to shipping."
-      );
-      return;
-    }
-
-    // Clear any previous validation errors
-    setValidationErrors([]);
-    setShowValidation(false);
-
-    console.log("Proceeding to shipping with:", {
-      customer: customerInfo,
-      shipping: deliverToDifferentAddress ? shippingDetails : customerInfo,
-    });
-
-    // Navigate to shipping page using React Router with state
-    navigate("/checkout/shipping", {
-      state: {
-        customerInfo: customerInfo,
-        shippingDetails: deliverToDifferentAddress ? shippingDetails : null,
-      },
-    });
-  };
 
   // If user is not signed in, show only the sign-in modal (no checkout content)
   if (!isSignedIn) {
@@ -407,20 +264,6 @@ const CheckoutPage = () => {
       </Breadcrumb>
 
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
-
-      {/* Validation Errors */}
-      {showValidation && validationErrors.length > 0 && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-          <h3 className="text-red-800 font-semibold mb-2">
-            Please complete the following required fields:
-          </h3>
-          <ul className="list-disc list-inside text-red-700 space-y-1">
-            {validationErrors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Checkout Form */}
@@ -892,7 +735,7 @@ const CheckoutPage = () => {
             <div className="mt-6">
               <PaymentSection
                 orderSummary={orderSummary}
-                shippingInfo={paymentShippingInfo}
+                shippingInfo={{}}
               />
             </div>
           </div>
