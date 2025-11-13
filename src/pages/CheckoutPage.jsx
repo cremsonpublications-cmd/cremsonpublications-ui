@@ -4,6 +4,7 @@ import { useCart } from "../context/CartContext";
 import { useUser } from "../context/AuthContext";
 import { MapPin, User, Mail, ShoppingBag } from "lucide-react";
 import SearchableSelect from "../components/ui/SearchableSelect";
+import PaymentSection from "../components/checkout/PaymentSection";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -731,28 +732,11 @@ const CheckoutPage = () => {
               </div>
             </div>
 
-            {/* Payment Button */}
-            <div className="mt-6">
-              <div className="bg-gray-50 rounded-lg p-6 mb-4">
-                <div className="text-center mb-4">
-                  <h4 className="text-xl font-semibold text-gray-900 mb-2">
-                    Total Amount: ₹{orderSummary?.total?.toFixed(2) || '0.00'}
-                  </h4>
-                  <p className="text-sm text-gray-600">
-                    Click below to place your order
-                  </p>
-                </div>
-
-                <div className="text-center">
-                  <button
-                    onClick={() => alert('Payment functionality has been disabled.')}
-                    className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-800 transition-colors w-full"
-                  >
-                    📦 Place Order - ₹{orderSummary?.total?.toFixed(2) || '0.00'}
-                  </button>
-                </div>
-              </div>
-            </div>
+            {/* Payment Section */}
+            <PaymentSection
+              orderSummary={orderSummary}
+              shippingInfo={{}}
+            />
           </div>
         </div>
       </div>

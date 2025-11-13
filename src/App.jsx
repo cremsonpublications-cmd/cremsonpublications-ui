@@ -40,6 +40,9 @@ const SignInPage = React.lazy(() => import("./pages/SignInPage"));
 const SignUpPage = React.lazy(() => import("./pages/SignUpPage"));
 const ForgotPasswordPage = React.lazy(() => import("./pages/ForgotPasswordPage"));
 const AuthCallbackPage = React.lazy(() => import("./pages/AuthCallbackPage"));
+const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
+const PaymentFailed = React.lazy(() => import("./pages/PaymentFailed"));
+const PaymentOption = React.lazy(() => import("./components/PaymentOption"));
 
 import "./styles/globals.css";
 
@@ -128,6 +131,9 @@ function App() {
                             <Route path="/signup" element={<SignUpPage />} />
                             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                             <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                            <Route path="/payment" element={<PaymentOption />} />
+                            <Route path="/payment-success" element={<PaymentSuccess />} />
+                            <Route path="/payment-failed" element={<PaymentFailed />} />
                           </Routes>
                         </Suspense>
                       </div>
