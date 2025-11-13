@@ -243,6 +243,14 @@ serve(async (req) => {
       totalPrice: (item.price || item.finalPrice || item.mrp || 0) * (item.quantity || 1)
     }));
 
+    // Get current timestamp
+    const now = new Date().toISOString();
+    // Get current date in IST (Indian Standard Time) - adjust timezone as needed
+    const today = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+    const istDate = new Date(today.getTime() + istOffset);
+    const currentDate = istDate.toISOString().split('T')[0];
+
     // Save order to database
     const orderRecord = {
       order_id: `BOOK${Date.now()}${Math.floor(Math.random() * 1000000)}`,
@@ -262,7 +270,9 @@ serve(async (req) => {
         shipping_address: orderData.shippingAddress
       },
       order_status: 'Confirmed',
-      order_date: new Date().toISOString().split('T')[0]
+      order_date: currentDate, // Current date for display
+      created_at: now,
+      updated_at: now
     };
 
     const { data: savedOrder, error: orderError } = await supabase
