@@ -1,5 +1,5 @@
 // Cloudinary upload utility for review images
-const CLOUD_NAME = "dkxxa3xt0"; // Same as admin project
+const CLOUD_NAME = "dxktjfl7i"; // Same as admin project
 const UPLOAD_PRESET = "unsigned_preset"; // Same as admin project
 
 /**
@@ -8,7 +8,10 @@ const UPLOAD_PRESET = "unsigned_preset"; // Same as admin project
  * @param {string} folder - Cloudinary folder (optional)
  * @returns {Promise<string>} - Returns Cloudinary URL
  */
-export const uploadImageToCloudinary = async (file, folder = "review-images") => {
+export const uploadImageToCloudinary = async (
+  file,
+  folder = "review-images"
+) => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
@@ -45,7 +48,12 @@ export const uploadImageToCloudinary = async (file, folder = "review-images") =>
  * @param {string} folder - Cloudinary folder (optional)
  * @returns {Promise<string[]>} - Returns array of Cloudinary URLs
  */
-export const uploadMultipleImagesToCloudinary = async (files, folder = "review-images") => {
-  const uploadPromises = files.map(file => uploadImageToCloudinary(file, folder));
+export const uploadMultipleImagesToCloudinary = async (
+  files,
+  folder = "review-images"
+) => {
+  const uploadPromises = files.map((file) =>
+    uploadImageToCloudinary(file, folder)
+  );
   return Promise.all(uploadPromises);
 };
