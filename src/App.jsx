@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 import { makeStore } from "./lib/store";
@@ -134,6 +134,7 @@ function App() {
                             <Route path="/payment" element={<PaymentOption />} />
                             <Route path="/payment-success" element={<PaymentSuccess />} />
                             <Route path="/payment-failed" element={<PaymentFailed />} />
+                            <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </Suspense>
                       </div>
